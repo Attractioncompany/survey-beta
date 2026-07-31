@@ -1053,7 +1053,10 @@ function liveCheck(){
   g.strokeStyle = pass ? "rgba(80,200,120,.95)" : "rgba(255,255,255,.75)";
   g.lineWidth=3; g.setLineDash(pass?[]:[10,7]);
   g.beginPath();
-  g.ellipse(ov.width/2, ov.height*0.46, ov.width*0.30, ov.height*0.38, 0, 0, Math.PI*2);
+  // 얼굴 가이드 타원 — 세로 반지름을 화면 높이가 아니라 얼굴 비율(가로×1.3)로 고정.
+  // 화면 높이 기준(0.38h)이면 세로 긴 폰에서 얼굴형과 무관한 길쭉한 타원이 됨 (대표 실기기 피드백 2026-07-31)
+  const grx=ov.width*0.30, gry=Math.min(grx*1.3, ov.height*0.42);
+  g.ellipse(ov.width/2, ov.height*0.46, grx, gry, 0, 0, Math.PI*2);
   g.stroke();
   $("shotBtn").style.background = pass ? "#2C6B3A" : "var(--accent)";
 }
