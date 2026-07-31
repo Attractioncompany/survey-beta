@@ -113,7 +113,8 @@ details[open] summary::after{content:" ▴";}
     <div class="small" style="margin-top:8px;line-height:1.9">
     ⓪ <b>촬영 전 렌즈를 한 번 닦아주세요</b> — 뿌연 막이 색을 다 씻어내요<br>
     ① <b>흰 배경</b>에서 — 흰 종이·A4를 얼굴 옆에 들면 최고예요<br>
-    ② <b>정면 · 자연광(백색등)</b> — 얼굴 기울이지 않기</div>
+    ② <b>정면 · 자연광(백색등)</b> — 얼굴 기울이지 않기<br>
+    ③ <b>후면 카메라(2배줌) 권장</b> — 다른 분이 찍어주거나 폰을 세워두면 색이 더 정확해요</div>
     <details style="border-top:none;padding-top:6px;margin-top:8px">
       <summary>자세한 팁 펼치기</summary>
       <div class="small" style="margin-top:6px;line-height:1.9">
@@ -159,7 +160,7 @@ details[open] summary::after{content:" ▴";}
       </div>
       <div id="liveMsg" class="small" style="text-align:center;margin-top:8px;font-size:13.5px;min-height:1.6em">카메라 준비 중...</div>
       <button class="btn" id="shotBtn">📷 촬영</button>
-      <button class="btn sub" id="camSwitchBtn">🔄 전·후면 전환</button>
+      <button class="btn sub" id="camSwitchBtn">🤳 셀프로 찍기 (전면 전환)</button>
       <button class="btn sub" id="liveCloseBtn">닫기</button>
     </div>
     <!-- 촬영 확인 단계 (대표 피드백 2026-07-22) — 찍힌 사진을 보고 유저가 결정 -->
@@ -948,8 +949,12 @@ function finalize(){
 // ---------- 즉시촬영(라이브 카메라) 모드 ----------
 // 실시간 가이드는 업로드 게이트와 같은 임계값을 씁니다 — 찍기 전에 미리 통과시키는 것이 목적.
 let liveStream=null, liveTimer=null, livePrevRaf=null;
-let LIVE_FACING="user", LIVE_LOCK=null;   // 전면 기본 · 후면 전환 가능(도우미 촬영·강의 현장) — 후면 2배율 권장은 대표 검토 중
-function liveSwitchCam(){ LIVE_FACING = LIVE_FACING==="user" ? "environment" : "user"; liveStop(); liveStart(); }
+let LIVE_FACING="environment", LIVE_LOCK=null;   // 후면 기본(2배줌 자동) + 전면 전환 버튼 — 대표 확정 2026-07-31. 후면 미보유 기기는 브라우저가 가용 카메라로 폴백
+function liveSwitchCam(){
+  LIVE_FACING = LIVE_FACING==="user" ? "environment" : "user";
+  liveStop(); liveStart();
+  $("camSwitchBtn").textContent = LIVE_FACING==="user" ? "📷 후면으로 (권장·2배줌)" : "🤳 셀프로 찍기 (전면 전환)";
+}
 // 촬영 순간 흰 플래시 (햅틱 대체 — iOS 웹은 진동 API 미지원, REPLY_dev_VLAS §1-2)
 function liveFlash(){
   const wrap=$("liveWrap"); if(!wrap) return;
