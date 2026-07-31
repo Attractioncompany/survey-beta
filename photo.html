@@ -121,6 +121,7 @@ details[open] summary::after{content:" ▴";}
       · 카메라는 눈높이에<br>
       · 민낯 권장 (베이스 메이크업은 색 판정을 바꿔요)<br>
       · 안경 벗기 · 무표정 (입꼬리·눈매 측정)<br>
+      · <b>필터·뷰티 모드는 꼭 꺼주세요</b> — 피부색이 실제와 달라져서 판정이 흔들려요 (기본 카메라 앱 권장)<br>
       · <b>밝게 염색한 머리라면</b>: 밝은 창가나 조명을 <b>마주 보고</b>, 얼굴이 화면에 <b>꽉 차게</b> 가까이서 찍으면
         눈동자로 또렷함을 잴 수 있어요 (☀️ 태양은 절대 직접 보지 마세요)</div>
     </details>
@@ -899,11 +900,12 @@ function finalize(){
   const pc1=scored[0], pc2=scored[1];
 
   // 탁기 해설용 표시 전용 값 (v2.6 — 판정 거리식 절대 미사용)
+  // strength(피부 저채도 스칼라)는 v2.8-C로 폐기 — "뮤트=피부 저채도"는 팔레트→피부 범주 오류로 판명 (label 분기 단독)
   const mute_display =
-    (S.draping.r4==="tonedown") ? {label:"mute_confirmed",  strength:+N.mute.toFixed(2), basis:"r4"}
-  : (S.draping.r4==="vivid")    ? {label:"clear_confirmed", strength:+N.mute.toFixed(2), basis:"r4"}
-  : isMuteName(pc1.name)        ? {label:"mute_tentative",  strength:+N.mute.toFixed(2), basis:"type"}
-  :                               {label:"none",            strength:+N.mute.toFixed(2), basis:"none"};
+    (S.draping.r4==="tonedown") ? {label:"mute_confirmed",  basis:"r4"}
+  : (S.draping.r4==="vivid")    ? {label:"clear_confirmed", basis:"r4"}
+  : isMuteName(pc1.name)        ? {label:"mute_tentative",  basis:"type"}
+  :                               {label:"none",            basis:"none"};
 
   // ---------- [추구미 8타입 판정] ----------
   const temp8 = -WC.value, depth8 = S.axes_partial.soft_deep;   // ← 부호 반전 지점 (T8 주석 참고)
