@@ -84,6 +84,8 @@ details[open] summary::after{content:" ▴";}
 .drape-panel img{width:78%;aspect-ratio:1;object-fit:cover;border-radius:50%;display:block;}
 .drape-name{font-size:12.5px;color:var(--sub);margin-top:9px;font-weight:700;}
 .drape-step{font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.06em;}
+/* 전면 카메라 거울 모드 — video 요소 직접 transform은 iOS 검은화면(실기기 진단 2026-07-22)이라 컨테이너에 적용 */
+#livePane.mir{transform:scaleX(-1);}
 /* 접근성 선택 카드 (Plan C Task3) */
 .seg-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
 .seg{flex:1 1 auto;min-height:44px;display:flex;align-items:center;justify-content:center;gap:6px;
@@ -149,7 +151,7 @@ details[open] summary::after{content:" ▴";}
     <div id="status">잠깐만요, 구미가 준비하고 있어요</div>
     <!-- 즉시촬영 모드: 실시간 가이드(밝기·거리·정면·타원 정렬) 후 촬영 -->
     <div id="liveWrap" style="display:none;margin-top:12px">
-      <div style="position:relative;border-radius:12px;overflow:hidden;background:#111">
+      <div id="livePane" style="position:relative;border-radius:12px;overflow:hidden;background:#111">
         <!-- iOS 실기기 진단(2026-07-22): 캔버스에 drawImage(비디오)는 픽셀이 실제로 그려지나(luma 변함)
              iOS Safari가 그 onscreen 캔버스를 화면에 합성하지 않음(같은 캔버스라도 벡터 오버레이는 보임).
              해법: 비디오를 네이티브로 직접 표시(iOS가 확실히 합성하는 경로). 미러 transform은 검은화면 유발이라 안 검 —
@@ -994,6 +996,7 @@ async function liveStart(){
     $("status").innerHTML=`<div class="warn">카메라를 열지 못했어요 — 브라우저의 카메라 권한을 확인해주세요. 사진 선택으로도 진단할 수 있어요</div>`; return;
   }
   $("liveWrap").style.display="block";
+  $("livePane").classList.toggle("mir", LIVE_FACING==="user");   // 전면만 거울 — 후면은 그대로
   $("resultCard").style.display="none"; $("drapeCard").style.display="none";
   const v=$("liveVideo");
   v.setAttribute("playsinline",""); v.setAttribute("webkit-playsinline","");
