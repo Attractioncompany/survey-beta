@@ -86,6 +86,22 @@ details[open] summary::after{content:" ▴";}
 .drape-step{font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.06em;}
 /* 전면 카메라 거울 모드 — video 요소 직접 transform은 iOS 검은화면(실기기 진단 2026-07-22)이라 컨테이너에 적용 */
 #livePane.mir{transform:scaleX(-1);}
+/* 풀스크린 카메라 (VLAS식 네이티브 카메라 경험 — 대표 확정 2026-07-31) */
+#liveWrap{display:none;position:fixed;inset:0;z-index:1000;background:#000;}
+#liveWrap.open{display:block;}
+#livePane{position:absolute;inset:0;background:#111;}
+#liveVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+#liveOverlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.cam-top{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;z-index:2;}
+.cam-top button{background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:20px;
+  padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;}
+.cam-bottom{position:absolute;left:0;right:0;bottom:0;text-align:center;z-index:2;
+  padding:14px 16px calc(20px + env(safe-area-inset-bottom));background:linear-gradient(transparent, rgba(0,0,0,.55));}
+#liveMsg{color:#fff;font-size:14px;min-height:1.6em;margin-bottom:12px;text-shadow:0 1px 4px rgba(0,0,0,.7);}
+#shotBtn{width:74px;height:74px;border-radius:50%;border:5px solid rgba(255,255,255,.85);
+  background:var(--accent);color:#fff;font-size:24px;cursor:pointer;box-shadow:0 2px 14px rgba(0,0,0,.4);}
+body.cam-open{overflow:hidden;}
 /* 접근성 선택 카드 (Plan C Task3) */
 .seg-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
 .seg{flex:1 1 auto;min-height:44px;display:flex;align-items:center;justify-content:center;gap:6px;
@@ -150,20 +166,22 @@ details[open] summary::after{content:" ▴";}
     <button class="btn sub dev-only" id="pickBtn" disabled onclick="document.getElementById('file').click()">📂 사진 업로드 (검수 전용)</button>
     <div id="status">잠깐만요, 구미가 준비하고 있어요</div>
     <!-- 즉시촬영 모드: 실시간 가이드(밝기·거리·정면·타원 정렬) 후 촬영 -->
-    <div id="liveWrap" style="display:none;margin-top:12px">
-      <div id="livePane" style="position:relative;border-radius:12px;overflow:hidden;background:#111">
-        <!-- iOS 실기기 진단(2026-07-22): 캔버스에 drawImage(비디오)는 픽셀이 실제로 그려지나(luma 변함)
-             iOS Safari가 그 onscreen 캔버스를 화면에 합성하지 않음(같은 캔버스라도 벡터 오버레이는 보임).
-             해법: 비디오를 네이티브로 직접 표시(iOS가 확실히 합성하는 경로). 미러 transform은 검은화면 유발이라 안 검 —
-             미러 없는 프리뷰(분석은 원본 사용, 타원 정렬엔 반전 불필요). livePrev 캔버스는 미사용(숨김). -->
-        <video id="liveVideo" autoplay playsinline muted style="display:block;width:100%"></video>
+    <!-- 풀스크린 카메라 오버레이 — 카드 임베드 폐지(대표 확정 2026-07-31, VLAS식).
+         iOS 제약 이력 유지: 비디오 네이티브 직접 표시 · 미러는 컨테이너 transform (실기기 진단 2026-07-22) -->
+    <div id="liveWrap">
+      <div id="livePane">
+        <video id="liveVideo" autoplay playsinline muted></video>
         <canvas id="livePrev" style="display:none"></canvas>
-        <canvas id="liveOverlay" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;background:transparent;border-radius:0"></canvas>
+        <canvas id="liveOverlay"></canvas>
       </div>
-      <div id="liveMsg" class="small" style="text-align:center;margin-top:8px;font-size:13.5px;min-height:1.6em">카메라 준비 중...</div>
-      <button class="btn" id="shotBtn">📷 촬영</button>
-      <button class="btn sub" id="camSwitchBtn">🤳 셀프로 찍기 (전면 전환)</button>
-      <button class="btn sub" id="liveCloseBtn">닫기</button>
+      <div class="cam-top">
+        <button id="camSwitchBtn">🤳 셀프로 찍기</button>
+        <button id="liveCloseBtn">✕ 닫기</button>
+      </div>
+      <div class="cam-bottom">
+        <div id="liveMsg">카메라 준비 중...</div>
+        <button id="shotBtn" aria-label="촬영">📷</button>
+      </div>
     </div>
     <!-- 촬영 확인 단계 (대표 피드백 2026-07-22) — 찍힌 사진을 보고 유저가 결정 -->
     <div id="shotConfirm" style="display:none;margin-top:12px">
@@ -955,7 +973,7 @@ let LIVE_FACING="environment", LIVE_LOCK=null;   // 후면 기본(2배줌 자동
 function liveSwitchCam(){
   LIVE_FACING = LIVE_FACING==="user" ? "environment" : "user";
   liveStop(); liveStart();
-  $("camSwitchBtn").textContent = LIVE_FACING==="user" ? "📷 후면으로 (권장·2배줌)" : "🤳 셀프로 찍기 (전면 전환)";
+  $("camSwitchBtn").textContent = LIVE_FACING==="user" ? "📷 후면으로 (권장)" : "🤳 셀프로 찍기";
 }
 // 촬영 순간 흰 플래시 (햅틱 대체 — iOS 웹은 진동 API 미지원, REPLY_dev_VLAS §1-2)
 function liveFlash(){
@@ -995,7 +1013,9 @@ async function liveStart(){
   }catch(e){
     $("status").innerHTML=`<div class="warn">카메라를 열지 못했어요 — 브라우저의 카메라 권한을 확인해주세요. 사진 선택으로도 진단할 수 있어요</div>`; return;
   }
-  $("liveWrap").style.display="block";
+  document.body.appendChild($("liveWrap"));   // 글라스 카드(backdrop-filter)가 fixed 기준을 가로채므로 body 직속으로 이동
+  $("liveWrap").classList.add("open");
+  document.body.classList.add("cam-open");
   $("livePane").classList.toggle("mir", LIVE_FACING==="user");   // 전면만 거울 — 후면은 그대로
   $("resultCard").style.display="none"; $("drapeCard").style.display="none";
   const v=$("liveVideo");
@@ -1010,7 +1030,8 @@ function liveStop(){
   if(liveTimer){ clearInterval(liveTimer); liveTimer=null; }
   if(livePrevRaf){ cancelAnimationFrame(livePrevRaf); livePrevRaf=null; }
   if(liveStream){ liveStream.getTracks().forEach(t=>t.stop()); liveStream=null; }
-  $("liveWrap").style.display="none";
+  $("liveWrap").classList.remove("open");
+  document.body.classList.remove("cam-open");
 }
 function liveCheck(){
   const v=$("liveVideo");
@@ -1044,7 +1065,7 @@ function liveCheck(){
   // 자동 촬영은 대표 피드백(2026-07-22)으로 철회 — "어떤 상태로 찍혔는지 확인이 안 되어 불쾌"
   // 대신 수동 촬영 후 확인 단계(shotConfirm)로 통제감을 준다. 재도입하려면 대표 승인 필요.
   $("liveMsg").textContent=msg;
-  $("liveMsg").style.color = pass ? "#2C6B3A" : "var(--sub)";
+  $("liveMsg").style.color = pass ? "#9FE6B0" : "#fff";
   // 타원 가이드라인
   const ov=$("liveOverlay"), pv=$("liveVideo");
   ov.width=pv.clientWidth; ov.height=pv.clientHeight;
