@@ -141,8 +141,10 @@ details[open] summary::after{content:" ▴";}
   <div class="card">
     <div class="tag">📷 촬영 · 업로드</div>
 <input type="file" id="file" accept="image/*" style="display:none">
-    <button class="btn" id="pickBtn" disabled onclick="document.getElementById('file').click()">구미 깨우는 중...</button>
-    <button class="btn sub" id="liveBtn" disabled>📸 지금 촬영하기</button>
+    <!-- 입력은 직접촬영 전용 (대표 확정 2026-07-31 — 필터·뷰티앱 원천 차단, 오류대장 040)
+         업로드는 검수(?dev=1) 전용 강등: 검증셋 배치 측정 경로 보존 -->
+    <button class="btn" id="liveBtn" disabled>구미 깨우는 중...</button>
+    <button class="btn sub dev-only" id="pickBtn" disabled onclick="document.getElementById('file').click()">📂 사진 업로드 (검수 전용)</button>
     <div id="status">잠깐만요, 구미가 준비하고 있어요</div>
     <!-- 즉시촬영 모드: 실시간 가이드(밝기·거리·정면·타원 정렬) 후 촬영 -->
     <div id="liveWrap" style="display:none;margin-top:12px">
@@ -157,6 +159,7 @@ details[open] summary::after{content:" ▴";}
       </div>
       <div id="liveMsg" class="small" style="text-align:center;margin-top:8px;font-size:13.5px;min-height:1.6em">카메라 준비 중...</div>
       <button class="btn" id="shotBtn">📷 촬영</button>
+      <button class="btn sub" id="camSwitchBtn">🔄 전·후면 전환</button>
       <button class="btn sub" id="liveCloseBtn">닫기</button>
     </div>
     <!-- 촬영 확인 단계 (대표 피드백 2026-07-22) — 찍힌 사진을 보고 유저가 결정 -->
@@ -295,8 +298,9 @@ async function sendMeasurement(out){
 }
 
 async function init(){
+  $("liveBtn").disabled=true;
+  $("liveBtn").textContent="구미 깨우는 중...";
   $("pickBtn").disabled=true;
-  $("pickBtn").textContent="구미 깨우는 중...";
   $("status").textContent="잠깐만요, 구미가 준비하고 있어요";
   try{
     const fs = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
@@ -305,9 +309,9 @@ async function init(){
       runningMode:"IMAGE", numFaces:1
     });
     $("pickBtn").disabled=false;
-    $("pickBtn").textContent="📷 기기에서 사진 고르기";
     $("liveBtn").disabled=false;
-    $("status").textContent="구미가 준비됐어요 — 사진을 선택하거나 바로 촬영해주세요";
+    $("liveBtn").textContent="📸 촬영 시작";
+    $("status").textContent="구미가 준비됐어요 — 촬영 시작을 눌러주세요";
   }catch(e){
     // 원시 에러 메시지는 개발 모드에서만. 고객에게는 다음 행동만 안내합니다.
     $("status").innerHTML=`<div class="warn">🫧 구미를 깨우지 못했어요 — 인터넷 연결을 확인하고 다시 시도해주세요`
@@ -645,7 +649,7 @@ function analyze(img){
     wc_color: warm_cool,                    // 색채 측정 단독 신호 (보조로 강등 — 가중 0.2)
     draping: {r1:null, r2:null, r3:null, r4:null},
     conf_base: confidence,
-    quality:{pass:true, light:+(lum/255).toFixed(2), tilt_deg:+tilt.toFixed(1), light_ref:refType, L_corrected, L_gain:+L_gain.toFixed(3), L_shift:+L_shift.toFixed(1), bg_blown:bgBlown, bg_dim:bgDim, forehead_used:browDelta<=18, hairline_detected:hairTop.detected, skin_clip:+skinClipMax.toFixed(2), skinL_A:+skinL_A.toFixed(1), skinL_pre:+skinL.toFixed(1), global_sat:+globalSat.toFixed(1), hazy, device:DEVICE, ua:(/Mobi/i.test(navigator.userAgent)?"mobile":"desktop")},
+    quality:{pass:true, cam_lock:LIVE_LOCK, light:+(lum/255).toFixed(2), tilt_deg:+tilt.toFixed(1), light_ref:refType, L_corrected, L_gain:+L_gain.toFixed(3), L_shift:+L_shift.toFixed(1), bg_blown:bgBlown, bg_dim:bgDim, forehead_used:browDelta<=18, hairline_detected:hairTop.detected, skin_clip:+skinClipMax.toFixed(2), skinL_A:+skinL_A.toFixed(1), skinL_pre:+skinL.toFixed(1), global_sat:+globalSat.toFixed(1), hazy, device:DEVICE, ua:(/Mobi/i.test(navigator.userAgent)?"mobile":"desktop")},
     axes_partial:{soft_deep:+soft_deep.toFixed(2), line_score:+lineScore.toFixed(2)},
     color:{ // ── 5기준 체계: 웜쿨 / 명도 / 채도 / 탁기 / 대비 ──
       hue_angle:+hue.toFixed(1), skin_a:+a_corr.toFixed(1), skin_b:+b_corr.toFixed(1),
@@ -944,6 +948,8 @@ function finalize(){
 // ---------- 즉시촬영(라이브 카메라) 모드 ----------
 // 실시간 가이드는 업로드 게이트와 같은 임계값을 씁니다 — 찍기 전에 미리 통과시키는 것이 목적.
 let liveStream=null, liveTimer=null, livePrevRaf=null;
+let LIVE_FACING="user", LIVE_LOCK=null;   // 전면 기본 · 후면 전환 가능(도우미 촬영·강의 현장) — 후면 2배율 권장은 대표 검토 중
+function liveSwitchCam(){ LIVE_FACING = LIVE_FACING==="user" ? "environment" : "user"; liveStop(); liveStart(); }
 // 촬영 순간 흰 플래시 (햅틱 대체 — iOS 웹은 진동 API 미지원, REPLY_dev_VLAS §1-2)
 function liveFlash(){
   const wrap=$("liveWrap"); if(!wrap) return;
@@ -956,10 +962,29 @@ const liveWork=document.createElement("canvas");   // 검사용 저해상 프레
 // 화면 프리뷰는 비디오 직접 표시로 전환 — livePreviewLoop(캔버스 미러)은 iOS 합성 실패로 폐기.
 async function liveStart(){
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    $("status").innerHTML=`<div class="warn">이 브라우저에선 카메라를 쓸 수 없어요 — 사진 선택으로 진단해주세요</div>`; return;
+    $("status").innerHTML=`<div class="warn">이 브라우저에선 카메라를 쓸 수 없어요 — 사파리·크롬 최신 버전으로 열어주세요</div>`; return;
   }
   try{
-    liveStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user", width:{ideal:1280}, height:{ideal:1280}}, audio:false});
+    liveStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:LIVE_FACING, width:{ideal:4096}, height:{ideal:4096}}, audio:false});
+    // 고정 가능한 변수는 전부 고정 (대표 확정 2026-07-31) — 기기·브라우저가 지원하는 범위 안에서.
+    // 목적은 사진마다 색이 흔들리는 적응형(오토) 동작 차단. 지원·적용 내역은 payload에 기록(기기군 분석용).
+    LIVE_LOCK={facing:LIVE_FACING, res:null, applied:{}, supported:[]};
+    try{
+      const track=liveStream.getVideoTracks()[0];
+      const caps=track.getCapabilities ? track.getCapabilities() : {};
+      const want={};
+      if(Array.isArray(caps.whiteBalanceMode) && caps.whiteBalanceMode.includes("manual") && caps.colorTemperature){
+        const ct=Math.min(Math.max(5500, caps.colorTemperature.min||5500), caps.colorTemperature.max||5500);
+        want.whiteBalanceMode="manual"; want.colorTemperature=ct;          // 백색광 기준 고정
+      }
+      if(Array.isArray(caps.focusMode) && caps.focusMode.includes("continuous")) want.focusMode="continuous";
+      if(caps.exposureCompensation) want.exposureCompensation=Math.min(Math.max(0, caps.exposureCompensation.min||0), caps.exposureCompensation.max||0);
+      if(LIVE_FACING==="environment" && caps.zoom && caps.zoom.max>=2) want.zoom=2;   // 후면일 때만 2배율 (권장안 — 대표 검토 중)
+      LIVE_LOCK.supported=["whiteBalanceMode","colorTemperature","focusMode","exposureCompensation","zoom","exposureMode"].filter(k=>k in caps);
+      if(Object.keys(want).length){ try{ await track.applyConstraints({advanced:[want]}); LIVE_LOCK.applied=want; }catch(e){} }
+      const st=track.getSettings ? track.getSettings() : {};
+      LIVE_LOCK.res=(st.width||0)+"x"+(st.height||0);
+    }catch(e){}
   }catch(e){
     $("status").innerHTML=`<div class="warn">카메라를 열지 못했어요 — 브라우저의 카메라 권한을 확인해주세요. 사진 선택으로도 진단할 수 있어요</div>`; return;
   }
@@ -1056,10 +1081,11 @@ function shotRetry(){
   liveStart();
 }
 $("liveBtn").addEventListener("click", liveStart);
+$("camSwitchBtn").addEventListener("click", liveSwitchCam);
 $("shotBtn").addEventListener("click", liveCapture);
 $("shotUseBtn").addEventListener("click", shotUse);
 $("shotRetryBtn").addEventListener("click", shotRetry);
-$("liveCloseBtn").addEventListener("click", ()=>{ liveStop(); $("status").textContent="구미가 준비됐어요 — 사진을 선택하거나 바로 촬영해주세요"; });
+$("liveCloseBtn").addEventListener("click", ()=>{ liveStop(); $("status").textContent="구미가 준비됐어요 — 촬영 시작을 눌러주세요"; });
 
 // 통과한 항목도 함께 알려 진행감을 줍니다. 예) "밝기·정면 좋아요. 딱 하나만 더요."
 function gateMsg(gates){
@@ -1075,7 +1101,7 @@ function gateFail(msg){
   $("resultCard").style.display="none";
   $("drapeCard").style.display="none";
   $("status").innerHTML=`<div class="warn">🫧 ${msg}<button class="btn" id="retakeBtn">📷 다시 찍기</button></div>`;
-  $("retakeBtn").addEventListener("click", ()=>$("file").click());
+  $("retakeBtn").addEventListener("click", ()=>{ DEV&&confirm("검수: 파일 업로드로 재시도할까요? (취소=카메라)") ? $("file").click() : liveStart(); });
 }
 function render(o){
   goStep(4);
@@ -1240,7 +1266,7 @@ function render(o){
     html:`🔍 두 판정이 서로 다른 쪽을 가리켜요 — 사진 조건에 따라 갈릴 수 있는 구간이라 다른 사진으로 한 번 더 보면 좋겠어요`});
   $("warnBox").innerHTML = warns.length ? `<div class="warn" style="margin-bottom:10px">${warns[0].html}</div>` : "";
   const eyeBtn=document.getElementById("eyeRetakeBtn");
-  if(eyeBtn) eyeBtn.addEventListener("click", ()=>$("file").click());
+  if(eyeBtn) eyeBtn.addEventListener("click", ()=>liveStart());
   $("warnRest").innerHTML = warns.length>1
     ? `<div style="margin-top:10px;opacity:.75">참고: ${warns.slice(1).map(x=>x.label).join(" · ")} ${warns.length-1}건이 더 있어요</div>` : "";
   // 신뢰도는 항상 정직하게 표기(헌법 신뢰보호). 이유는 신뢰도가 낮을 때만 — 고칠 게 있을 때만 알려드립니다.
