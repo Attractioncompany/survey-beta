@@ -98,7 +98,13 @@ h1{font-size:var(--fs-title);line-height:1.3;} h2{font-size:var(--fs-h);line-hei
 .carousel::-webkit-scrollbar{display:none;}
 .cpage{flex:0 0 100%;min-width:100%;scroll-snap-align:start;box-sizing:border-box;padding:0 2px;}
 .cp-inner{border-radius:20px;padding:22px 20px 24px;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:0 4px 16px rgba(58,43,69,.10);box-sizing:border-box;}
-.cp-inner.info{justify-content:flex-start;border-radius:22px;}
+/* 본문이 들어가는 페이지는 좌측정렬. 중앙정렬은 줄 끝이 들쭉날쭉해서
+   문장이 길수록 읽기 힘들고, 마지막 한 줄이 가운데 떠서 어색해진다(대표 지적 2026-08-09).
+   캐릭터 페이지(.char)는 타입명 한 덩어리라 중앙 유지. */
+.cp-inner.info{justify-content:flex-start;border-radius:22px;text-align:left;align-items:stretch;}
+.cp-inner.info .sec{margin-top:14px;}
+.cp-inner.info .sec p{line-height:1.75;}
+.cp-inner.info .cp-title{margin-bottom:10px;}
 .cp-inner.char{justify-content:center;border-radius:22px;}
 .cp-inner.char .cp-label{color:#9C4680;}.cp-inner.char .cp-type{color:#221A2B;}.cp-inner.char .cp-pc{color:#B76BA3;}.cp-inner.char .cp-note{color:#6E6478;}.cp-inner.char .cp-desc{color:#3A3340;}
 /* 투명 캐릭터: 프레임 없이 r1 배경 위에 바로 (배경 투명화 후) */
@@ -124,6 +130,8 @@ body.result-mode .progress{display:none;}
 .result-stage .cpage{padding:0;}
 .result-stage .cp-inner{border-radius:0;padding-bottom:74px;}
 .result-stage .cpage.char-page{background-size:cover;background-position:center;display:flex;align-items:center;padding:calc(var(--safe-t) + 26px) 18px calc(var(--safe-b) + 26px);}
+/* 카드는 콘텐츠 높이. stretch로 늘려봤지만 빈 공간이 카드 안으로 들어와 더 나빴다.
+   짧은 페이지가 허전한 건 레이아웃이 아니라 콘텐츠 문제다(2026-08-09). */
 .result-stage .cpage.info-page{display:flex;align-items:center;padding:calc(var(--safe-t) + 22px) 16px calc(var(--safe-b) + 22px);}
 .result-stage .cp-inner.char,.result-stage .cp-inner.info{height:auto;width:100%;max-height:calc(100% - 24px);overflow-y:auto;border-radius:22px;padding:26px 22px 30px;box-shadow:0 10px 30px rgba(60,40,90,.2);}
 .result-stage .dots{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--sp-4) + var(--safe-b));z-index:20;margin:0;background:rgba(43,34,51,.52);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:9px 15px;border-radius:22px;box-shadow:0 2px 12px rgba(0,0,0,.28);}
@@ -818,7 +826,7 @@ function photoBornPage(d, Hv, W){
          <span style="opacity:.85">${eun(Hv.name)} 지금 하고 있는 <b>스타일</b>이라 내일도 바꿀 수 있고,
          ${eun(d.pc.primary)} 타고난 <b>색</b>이라 그대로 가져가는 쪽이에요.</span></p>
        </div>
-       <p class="small" style="margin-top:10px;opacity:.6">측정 신뢰도 ${conf}%</p>
+       <p class="small" style="margin-top:14px;opacity:.55">측정 신뢰도 ${conf}%</p>
      </div></div>`;
 }
 // 4절 「추구미와의 거리」 — 타고난 색 · 지금 스타일 · 추구미 셋을 한 문장으로 잇는다
