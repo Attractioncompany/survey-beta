@@ -742,9 +742,50 @@ function gapSection(sw, sh, W, Hv){
   return `<div class="sec" style="width:100%"><p>${dir}<br>닮은 데도 있고 다른 데도 있어요 — 다른 쪽이 바로 <b>변주 포인트</b>예요.</p></div>`;
 }
 
+// ── 통합 리포트: 사진(HAVE-1) × 설문(HAVE-2·WANT) ──────────────────────
+// 헌법 §3 구조가 통합의 뼈대다:
+//   HAVE-1 타고난 것(얼굴·색, 사진) = 고정 → **활용** 전략
+//   HAVE-2 지금 선택(옷·머리·메이크업, 설문) = 가변 → **변경** 추천
+//   WANT 추구미(설문) / BRIDGE = WANT − HAVE
+// v1까지는 사진 결과를 캐러셀 **밖에** 덧붙여 "두 결과를 나란히" 보여줬다(코드가 스스로 그렇게 적어뒀다).
+// 그건 통합이 아니라 나열이고, 풀스크린 캐러셀 아래라 스크롤해야 보였다 — 리포트 밖에 있던 셈이다.
+// 받침 판정 — 타입 이름이 변수라 조사를 고정하면 "카리스마이에요" 같은 오류가 난다.
+// 한글 음절 = 0xAC00 + (초성×588) + (중성×28) + 종성. (코드−0xAC00)%28 이 0이면 받침 없음.
+function jong(w){ const c=(w||"").trim().slice(-1).charCodeAt(0);
+  return (c>=0xAC00 && c<=0xD7A3) ? ((c-0xAC00)%28)!==0 : false; }
+const ieyo = w => w + (jong(w) ? "이에요" : "예요");
+
+function loadPhoto(){
+  try{ const d=JSON.parse(localStorage.getItem("chugu_photo_result")||"null");
+       return (d && d.pc) ? d : null; }catch(e){ return null; }
+}
+// 1절 「내 매력」 — 타고난 색을 지금 스타일과 **같은 화면**에 놓는다
+function photoBornBlock(d){
+  if(!d) return "";
+  const wc = d.warm_cool && !d.warm_cool.borderline ? (d.warm_cool.v>0?"따뜻한 쪽":"차가운 쪽") : null;
+  const conf = Math.round((d.confidence||0)*100);
+  return `<div style="margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.5);text-align:left">
+    <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">📷 타고난 색</div>
+    <div style="font-size:13.5px;line-height:1.7">
+      사진으로 보니 <b>${ieyo(d.pc.primary)}</b>${wc?` — ${wc}이고요`:""}.
+      ${d.pc.borderline&&d.pc.secondary?`<span style="opacity:.7">${d.pc.secondary} 매력도 살짝 있어요.</span>`:""}<br>
+      <span style="opacity:.8">이건 잘 안 바뀌는 부분이라, 바꾸기보다 <b>살리는 쪽</b>으로 쓰면 돼요.</span>
+      <span style="opacity:.55;font-size:12px">(측정 신뢰도 ${conf}%)</span>
+    </div></div>`;
+}
+// 4절 「추구미와의 거리」 — 타고난 색 · 지금 스타일 · 추구미 셋을 한 문장으로 잇는다
+function photoGapLine(d, W, Hv){
+  if(!d) return "";
+  return `<div class="sec" style="width:100%"><p>
+    타고난 색은 <b>${d.pc.primary}</b>, 지금 하고 있는 스타일은 <b>${Hv.name}</b>, 되고 싶은 모습은 <b>${ieyo(W.name)}</b>.<br>
+    <span style="opacity:.85">타고난 색은 그대로 살리고, <b>바꿀 수 있는 건 지금 스타일</b>이에요 — 여기서부터 움직이면 돼요.</span>
+    </p></div>`;
+}
+
 function renderResult(){
   $("prog").classList.add("hidden");
   const wr=topTwo(scoreWant), hr=topTwo(scoreHave);
+  const PHOTO = FLOW_FULL ? loadPhoto() : null;   // 통합 흐름일 때만 사진 측정을 리포트에 병합
   // ---- 진단 스냅샷 저장 (1회) ----
   if(!window.__diagSaved){
     window.__diagSaved = true;
@@ -800,6 +841,7 @@ function renderResult(){
        <div class="cp-type">${Hv.name}</div>
        <div class="cp-note">옷·머리·메이크업으로 본 요즘 모습이에요</div>
        <div class="cp-desc">${g_plain(Hv.desc||Hv.one||"")}</div>
+       ${photoBornBlock(PHOTO)}
      </div></div>
      <div class="cpage char-page" style="${charBg(wKey,W.color)}"><div class="cp-inner char glass">
        <div class="cp-label">내가 되고 싶은 모습은</div>
@@ -819,6 +861,7 @@ function renderResult(){
      <!-- 4절 「추구미와의 거리」 — 정본 §3-4. gap_axis 축 방향 + 결핍 화법 금지 -->
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
        <div class="cp-title">🌉 추구미와의 거리</div>
+       ${photoGapLine(PHOTO, W, Hv)}
        ${gapSection(scoreWant, scoreHave, W, Hv)}
        <div class="sec" style="width:100%">${bridge}</div>
        ${gapNote}
@@ -853,7 +896,9 @@ function renderResult(){
    <div class="dots" id="rdots"></div>
    </div>`;
   carDot(); fitCarousel();
-  if(FLOW_FULL) renderPhotoBridge();
+  // 사진 측정은 1절·4절에 병합됐다(photoBornBlock·photoGapLine). 캐러셀 밖 별도 블록은 폐지.
+  // 단 측정 기록이 없을 때의 '촬영부터 시작하기' 안내는 남긴다.
+  if(FLOW_FULL && !PHOTO) renderPhotoMissing();
   window._result={gender:GENDER,want:wr[0][0],wantRank:wr.slice(0,3),have:hr[0][0],extraUsed:extraQ.length};
 }
 function isLectureCohort(){ // 강의 링크(?src=lec…)로 들어온 경우만 강의 안내 노출 — 일반/공유(card)·인스타 유입 제외
@@ -862,20 +907,11 @@ function isLectureCohort(){ // 강의 링크(?src=lec…)로 들어온 경우만
 }
 // 통합 흐름: photo.html(1단계) 측정 결과를 결과 화면 하단에 병기 — 테스트 버전.
 // 사진 8타입은 여기서 노출하지 않는다(설문 8타입과 이중 표기 혼란 방지 — 고객팀 우려 반영). 퍼스널컬러·웜쿨·신뢰도만.
-function renderPhotoBridge(){
-  let d=null; try{ d=JSON.parse(localStorage.getItem("chugu_photo_result")||"null"); }catch(e){}
+// 통합 흐름인데 측정 기록이 없을 때만 뜬다. 측정이 있으면 1절·4절에 병합되므로 이 함수는 안 불린다.
+function renderPhotoMissing(){
   const host=document.querySelector(".result-stage")||app;
-  if(!d){
-    host.insertAdjacentHTML("beforeend",
-      `<div class="sec glass" style="width:100%"><h3>📷 사진 측정 (1단계)</h3><p>측정 기록이 없어요 — <a href="photo.html?flow=full">촬영부터 시작하기</a></p></div>`);
-    return;
-  }
-  const wcTxt = d.warm_cool && !d.warm_cool.borderline ? (d.warm_cool.v>0?"따뜻한 쪽(웜)":"차가운 쪽(쿨)") : "경계 — 확정 전";
   host.insertAdjacentHTML("beforeend",
-    `<div class="sec glass" style="width:100%"><h3>📷 사진 측정 결과 (1단계)</h3>
-      <p><b>퍼스널컬러 추정: ${d.pc.primary}</b>${d.pc.borderline&&d.pc.secondary?` <span style="opacity:.75">— ${d.pc.secondary} 매력도 살짝 있어요</span>`:""}<br>
-      웜쿨: ${wcTxt} · 측정 신뢰도 ${Math.round((d.confidence||0)*100)}%</p>
-      <p class="small" style="opacity:.8">위 추구미(설문)와 이 측정(지금 모습)을 잇는 해설은 준비 중이에요 — 지금은 두 결과를 나란히 보여드려요.</p></div>`);
+    `<div class="sec glass" style="width:100%"><h3>📷 사진 측정 (1단계)</h3><p>측정 기록이 없어요 — <a href="photo.html?flow=full">촬영부터 시작하기</a></p></div>`);
 }
 function carDot(){ // 결과 캐러셀 현재 페이지 → 도트 표시 동기화
   const c=$("rcar"); if(!c) return;

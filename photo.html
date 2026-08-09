@@ -1556,10 +1556,18 @@ function render(o){
   if(DEV) $("json").textContent=JSON.stringify(o,null,2);
   // 통합 흐름: 측정 요약을 저장하고 2단계(설문)로 — 같은 오리진(survey-beta)에서 index.html이 읽는다
   if(FLOW_FULL && !document.getElementById("toSurveyBtn")){
-    try{ localStorage.setItem("chugu_photo_result", JSON.stringify({v:1, ts:Date.now(), engine_ver:o.engine_ver,
+    // 설문 화면으로 넘길 측정 결과. v2에서 **형태 지표를 추가**한다 —
+    // v1은 색(pc12·웜쿨)만 넘겨서 통합 리포트가 "색 결과 한 줄"에 머물렀다.
+    // 부위별 판정(정본 3절)은 ratio·line 없이는 원리적으로 불가하다.
+    try{ localStorage.setItem("chugu_photo_result", JSON.stringify({v:2, ts:Date.now(), engine_ver:o.engine_ver,
       pc:{primary:o.pc12.primary, secondary:o.pc12.secondary, borderline:o.pc12.borderline},
       warm_cool:{v:o.axes.warm_cool, borderline:o.pc12.wc_borderline},
-      mute:o.mute_display?o.mute_display.label:null, confidence:o.axes.confidence})); }catch(e){}
+      mute:o.mute_display?o.mute_display.label:null, confidence:o.axes.confidence,
+      axes:{line_score:o.axes.line_score, soft_deep:o.axes.soft_deep, warm_cool:o.axes.warm_cool},
+      ratio:o.ratio, line:o.line,
+      color:{skinL:o.color.skin_L, hue:o.color.hue_angle, chroma:o.color.chroma, contrast:o.color.contrast_overall},
+      quality:{gaze_h:o.quality.gaze_h, dev_tilt:o.quality.dev_tilt, hazy:o.quality.hazy,
+               L_corrected:o.quality.L_corrected, forehead_used:o.quality.forehead_used}})); }catch(e){}
     $("restartBtn").insertAdjacentHTML("beforebegin",
       `<a class="btn stepnav" id="toSurveyBtn" style="display:block;text-align:center;text-decoration:none" href="index.html?flow=full">다음 단계 — 추구미 설문 (2/2) →</a>`);
   }
