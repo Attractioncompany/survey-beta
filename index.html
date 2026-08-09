@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>추구미즘 — 나의 추구미 찾기</title>
+<meta name="theme-color" content="#FAF7FB">
+<link rel="manifest" href="manifest.json">
 <!-- Pretendard 실로드 (photo-module과 동일 · 고객팀 검수 P0-1 2026-07-25): 미로드 시 명조 폴백되던 것 보완 -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -25,11 +27,16 @@ body{color:var(--ink);min-height:100vh;word-break:keep-all;overflow-wrap:break-w
 /* 프리즘·글라스 유틸 (2026-07-30 UI 개편) */
 .glass{background:var(--glass-bg);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.3);backdrop-filter:blur(var(--glass-blur)) saturate(1.3);border:1px solid var(--glass-brd);}
 @supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){.glass{background:rgba(255,255,255,.92);}}
+/* 당겨서 새로고침 = 35문항 응답 전체 유실. 안드로이드에서 실제로 일어난다 (고객팀 G2) */
+html,body{overscroll-behavior-y:none;}
 .wrap{max-width:480px;margin:0 auto;padding:20px 16px 40px;}
 /* 풀스크린 셸 (2026-07-31) : 밖 여백 0(100dvh)·안 여백 확보·세이프에어리어 */
 .screen{height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
 .screen-top{flex-shrink:0;padding:calc(var(--safe-t) + var(--sp-4)) var(--sp-4) var(--sp-2);}
-.screen-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--sp-2) var(--sp-4) var(--sp-3);display:flex;flex-direction:column;}
+.screen-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--sp-2) var(--sp-4) var(--sp-3);display:flex;flex-direction:column;scroll-snap-type:y proximity;scroll-padding-top:var(--sp-2);}
+/* 손을 떼는 위치에 반쯤 잘린 카드가 남지 않게 (고객팀 G5). 큰 블록에만 건다 —
+   48px짜리 텍스트 선택지까지 스냅하면 스크롤이 끊겨서 오히려 답답하다. */
+.sec,.mood{scroll-snap-align:start;}
 .screen-btm{flex-shrink:0;padding:var(--sp-3) var(--sp-4) calc(var(--safe-b) + var(--sp-4));}
 body.screen-mode .wrap{max-width:none;padding:0;}
 .progress{position:sticky;top:0;background:var(--bg);padding:12px 0 8px;z-index:10;}
@@ -151,6 +158,12 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 .navrow{padding-bottom:calc(8px + env(safe-area-inset-bottom));}
 @media (prefers-reduced-motion: no-preference){ .opt.sel{animation:selpop .18s ease;} }
 @keyframes selpop{50%{transform:scale(1.02);}}
+/* 화면 전환 (고객팀 G1) — 통일 페이드-업 하나로 체감 대부분을 가져간다.
+   transform은 0.2s 뒤 사라지므로 안쪽 sticky/fixed에 남는 영향은 없다. */
+@media (prefers-reduced-motion: no-preference){
+  .screen.enter, .result-stage.enter{animation:screenIn .2s ease-out;}
+}
+@keyframes screenIn{from{opacity:0;transform:translateX(12px);}to{opacity:1;transform:none;}}
 </style>
 </head>
 <body>
@@ -459,10 +472,12 @@ function qTxt(q){ return (GENDER==="m"&&q.txtm)?q.txtm:q.txt; }
 function render(){
   window.scrollTo({top:0,behavior:"instant"});
   document.body.classList.toggle("result-mode", phase==="result");
-  if(phase==="start") return renderStart();
-  if(phase==="survey") return renderQ();
-  if(phase==="extra") return renderExtra();
-  if(phase==="result") return renderResult();
+  if(phase==="start") renderStart();
+  else if(phase==="survey") renderQ();
+  else if(phase==="extra") renderExtra();
+  else if(phase==="result") renderResult();
+  const el=app.querySelector(".screen,.result-stage");
+  if(el) el.classList.add("enter");
 }
 function preloadMoods(){
   const T=["romantic","pure","elegant","energetic","gorgeous","classic","charisma","chic"];
@@ -516,7 +531,7 @@ function deviceFamily(){
   return d;
 }
 function start(){
-  phase="survey"; idx=0; startTs=Date.now();
+  phase="survey"; idx=0; startTs=Date.now(); pushNav();
   if(!USER_ROW_SENT){ USER_ROW_SENT=true;
     const di=deviceFamily();
     const compact=di.os==="ios"?("ios_"+di.model):di.os==="android"?("android_"+di.brand):di.os==="desktop"?("desktop_"+di.brand):"unknown";
@@ -547,7 +562,7 @@ function goBack(){
   for(let i=idx-1;i>=0;i--){ if(Q[i]&&Q[i].id){ idx=i; render(); return; } }
 }
 function navRow(nextDisabled,nextLabel){
-  const back=canGoBack()?`<button class="btn back" onclick="goBack()">← 이전</button>`:"";
+  const back=canGoBack()?`<button class="btn back" onclick="history.back()">← 이전</button>`:"";
   return `<div class="nav-row">${back}<button class="btn" id="nextBtn" ${nextDisabled?"disabled":""} onclick="next()">${nextLabel||"다음"}</button></div>`;
 }
 function renderQ(){
@@ -651,11 +666,31 @@ function pick(id,i){
     renderQ(); // 선택 표시 → '다음' 버튼으로 직접 진행 (자동 넘김 삭제, 대표 요청 2026-07-25)
   }
 }
+// '처음부터 다시' — reload는 앱에서 화면이 통째로 깜빡인다 (고객팀 G4).
+// UID는 유지한다. 같은 사람의 재진단이므로 app_users를 다시 넣을 이유가 없다.
+// 다만 __diagSaved는 풀어야 새 진단이 저장된다 — 안 풀면 두 번째 결과가 조용히 사라진다.
+function restart(){
+  track("restart_clicked", {});
+  answers={}; extraQ=[]; extraIdx=0; idx=-1; startTs=0; GENDER=""; phase="start";
+  window.__diagSaved=false;
+  document.body.classList.remove("result-mode");
+  history.pushState({idx:-1}, "");
+  render();
+}
 function next(){
   const q=Q[idx];
   if(q && q.id && answers[q.id]!==undefined) trackAnswer(q.id);
-  idx++; render();
+  pushNav(); idx++; render();
 }
+// 브라우저 뒤로가기 = 이전 문항 (고객팀 G2-2)
+// 히스토리는 **전진할 때만** 쌓는다. pick()이 renderQ()를 다시 부르므로
+// 렌더 시점에 쌓으면 선택 한 번에 히스토리가 한 칸씩 늘어난다.
+function pushNav(){ history.pushState({idx}, ""); }
+window.addEventListener("popstate", () => {
+  if(phase!=="survey") return;                  // 결과·시작 화면은 브라우저 기본 동작
+  if(canGoBack()){ goBack(); return; }
+  phase="start"; idx=-1; render();              // 첫 문항에서 뒤로 = 시작 화면
+});
 function scoreAll(){
   TKEYS.forEach(k=>{scoreWant[k]=0;scoreHave[k]=0;});
   Object.keys(axisWant).forEach(k=>axisWant[k]=0);
@@ -782,6 +817,45 @@ function photoGapLine(d, W, Hv){
     </p></div>`;
 }
 
+// 3절 「파트별 나」 — 정본 §3-3. 사진 측정 + 엔진 모듈 + 분포 스냅샷이 모두 있을 때만 렌더한다.
+// 하나라도 없으면 빈 문자열을 돌려주고 3절 자리는 분포 화면이 대신한다(강등 ③ — 포토 미수행).
+function partSection(d, surveyHaveType){
+  const P = window.__PART;
+  if(!d || !d.ratio || !P || !P.SNAP) return "";
+  try{
+    // index는 타입을 영문 키로, 엔진은 한글 이름으로 다룬다. 변환 없이 넘기면
+    // 화면에 "romantic 매력에 가까워요"가 그대로 나가고, 채널 대조도 전부 불일치가 된다.
+    const surveyName = (TYPES[surveyHaveType] && TYPES[surveyHaveType].name) || null;
+    const m = {...d.ratio, ...d.line, ...(d.color||{})};
+    const { ref, dist } = P.SNAP;
+    const one = P.AS.scoreOne(m, ref, dist);
+    // 표현은 설문에서 온다(정본). 단 아래 채널 수렴에는 넣지 않는다 —
+    // 설문과 같은 출처라 둘 다 세면 한 채널을 두 번 센 게 된다.
+    const rows = P.PR.buildPartRows(one, { n: dist.n, expressionType: surveyName });
+    const overall = one.overallType && one.overallType.type;
+    // 채널 수렴(정본 v1.4) — 색·형태·설문 3채널. 표현은 아직 매핑 전이라 null
+    const conv = P.PR.channelConvergence({
+      colorType: d.pc && d.pc.primary ? null : null,   // 퍼스널컬러는 8타입이 아니라 계절명 — 직접 대조 불가
+      shapeType: overall, surveyType: surveyName, expressionType: null,
+      overallType: overall,
+      adjacentOf: one.overallType && one.overallType.adjacent ? [one.overallType.second] : [],
+    });
+    const narr = P.PR.summaryNarrative(rows, overall, !!one.energeticSignal, conv);
+    const list = rows.map(r=>`
+      <div style="padding:9px 0;border-top:1px solid rgba(0,0,0,.06)">
+        <b style="font-size:13.5px">${r.part}</b>
+        <div style="font-size:12px;opacity:.7;margin-top:1px">${r.label}</div>
+        ${r.line?`<div style="font-size:12.5px;opacity:.85;line-height:1.6;margin-top:3px">${r.line}</div>`:""}
+        <div style="font-size:11px;opacity:.5;letter-spacing:2px;margin-top:3px">${r.dots}</div>
+      </div>`).join("");
+    return `<div class="sec" style="width:100%;text-align:left">
+      ${narr?`<p style="margin-bottom:6px">${narr}</p>`:""}
+      ${list}
+      <p class="small" style="opacity:.6;margin-top:10px">${P.PR.CAPTION}</p>
+    </div>`;
+  }catch(e){ console.warn("3절 렌더 실패", e); return ""; }
+}
+
 function renderResult(){
   $("prog").classList.add("hidden");
   const wr=topTwo(scoreWant), hr=topTwo(scoreHave);
@@ -853,14 +927,17 @@ function renderResult(){
      <!-- 3절 「파트별 나」 — 사진 측정이 있어야 성립한다. 설문만으로는 부위 좌표가 없다.
           정본 §3-3 강등 ③("포토 전체 미수행 → 3절 축소")에 해당. 부위 8행은 판정 A·B 대기(회신 0808). -->
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
-       <div class="cp-title">🔍 추구미 분포</div>
+       <div class="cp-title">🔍 파트별 나</div>
+       <div id="partSec" style="width:100%">${partSection(PHOTO, hKey)}</div>
        <div style="width:100%">${bars}</div>
        <div class="sec" style="width:100%"><h3>💛 지금의 나</h3><p>지금 스타일은 <b style="color:${Hv.color==='#3E3A45'?'#2B2233':Hv.color}">${Hv.name}</b>에 가까워요. ${g(Hv.desc)}</p></div>
        ${lectureNote}
      </div></div>
-     <!-- 4절 「추구미와의 거리」 — 정본 §3-4. gap_axis 축 방향 + 결핍 화법 금지 -->
+     <!-- 4절 「추구미와의 거리」 — 정본 §3-4. gap_axis 축 방향 + 결핍 화법 금지
+          화면 제목은 대표 결정(2026-08-09)으로 "추구미에 가까워지고 싶다면".
+          정본 절 이름은 그대로라 주석과 화면이 다르다 — 의도된 차이다. -->
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
-       <div class="cp-title">🌉 추구미와의 거리</div>
+       <div class="cp-title">🌉 추구미에 가까워지고 싶다면</div>
        ${photoGapLine(PHOTO, W, Hv)}
        ${gapSection(scoreWant, scoreHave, W, Hv)}
        <div class="sec" style="width:100%">${bridge}</div>
@@ -868,7 +945,7 @@ function renderResult(){
      </div></div>
      <!-- 5절 「첫 시도」 — 정본 §3-5 -->
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
-       <div class="cp-title">✨ ${W.name}에 다가가는 첫 시도</div>
+       <div class="cp-title">✨ ${W.name}에 다가가는 첫걸음</div>
        <div class="sec" style="width:100%"><p><b>유지·강화:</b> ${wKeep}<br><b>스타일:</b> ${wStyle}</p></div>
        <p class="small" style="margin-top:14px">사진 진단을 더하면 <b>부위별로</b> 어디를 어떻게 바꿀지까지 볼 수 있어요</p>
      </div></div>
@@ -884,7 +961,7 @@ function renderResult(){
          </div>
          <textarea id="fbTxt" placeholder="추가하고 싶은 질문이나, 이상했던 문항이 있다면 알려주세요! (선택)"></textarea>
          <button class="btn" onclick="saveLog()">다음 — 피드백 남기기</button>
-         <button class="btn ghost" onclick="location.reload()">처음부터 다시</button></div>
+         <button class="btn ghost" onclick="restart()">처음부터 다시</button></div>
        <details class="sec coach-fold" id="waitSec" style="width:100%"><summary>🫧 내 추구미로 가는 4주 코칭 <span class="coach-cue">알림 신청 ▾</span></summary>
          <p class="small" style="margin:4px 0 10px;text-align:left">구미가 매주 딱 하나씩, 나에게 맞는 변화 미션을 처방해드려요. 곧 열려요 — 가장 먼저 알림 받기:</p>
          <input id="wlContact" placeholder="이메일 또는 인스타 아이디" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--line);font-size:16px;box-sizing:border-box"/>
@@ -896,6 +973,12 @@ function renderResult(){
    <div class="dots" id="rdots"></div>
    </div>`;
   carDot(); fitCarousel();
+  // 엔진 모듈은 비동기 로드다 — 결과가 먼저 그려지면 3절이 빈 채로 남는다. 로드 완료 시 그 칸만 다시 채운다.
+  window.__onPartEngineReady = () => {
+    const el = document.getElementById("partSec");
+    if (el) el.innerHTML = partSection(PHOTO, hKey);
+  };
+  if (window.__PART) window.__onPartEngineReady();
   // 사진 측정은 1절·4절에 병합됐다(photoBornBlock·photoGapLine). 캐러셀 밖 별도 블록은 폐지.
   // 단 측정 기록이 없을 때의 '촬영부터 시작하기' 안내는 남긴다.
   if(FLOW_FULL && !PHOTO) renderPhotoMissing();
@@ -968,7 +1051,7 @@ function saveLog(){
   app.innerHTML=`<div class="card break-card"><div class="em">💌</div><h2>고마워요!</h2>
    <p style="color:var(--sub);font-size:14px;margin:10px 0;line-height:1.7">마지막으로 <b>피드백 1분</b>만 부탁해요.<br>결과는 자동으로 담겨 있어서, 세 가지만 답하면 끝나요.</p>
    <button class="btn" onclick="track('form_opened',{}); window.open('${formUrl}','_blank')">피드백 남기기 (1분)</button>
-   <button class="btn ghost" onclick="location.reload()">처음부터 다시</button>
+   <button class="btn ghost" onclick="restart()">처음부터 다시</button>
    <button class="btn ghost" onclick="adminExport()" style="margin-top:20px;opacity:.4">· · ·</button></div>`;
 }
 // 젤리 blob (구미) — 캔버스 재사용
@@ -1164,5 +1247,21 @@ function adminExport(){ // 관리자: 이 기기의 누적 로그를 CSV로 다�
 }
 render();
 </script>
+
+<!-- 3절 「파트별 나」 엔진 — 기존 스크립트는 일반 스크립트라 import를 못 쓴다.
+     type="module" 블록을 따로 두고 window에 얹는다(기존 onclick 핸들러 전부 보존).
+     로드 실패해도 리포트 나머지는 그대로 뜬다 — 3절만 빠진다. -->
+<script type="module">
+  try{
+    const [AS, PR, snapRes] = await Promise.all([
+      import("./modules/asset-score.js"),
+      import("./modules/part-report.js"),
+      fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
+    ]);
+    window.__PART = { AS, PR, SNAP: snapRes };
+    if (typeof window.__onPartEngineReady === "function") window.__onPartEngineReady();
+  }catch(e){ console.warn("3절 엔진 로드 실패 — 3절 생략", e); }
+</script>
+<script>
 </body>
 </html>

@@ -1,0 +1,12 @@
+{
+  "name": "추구미즘 — 나의 추구미 찾기",
+  "short_name": "추구미즘",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF7FB",
+  "theme_color": "#FAF7FB",
+  "icons": [
+    { "src": "bg/char_romantic.png", "sizes": "900x900", "type": "image/png", "purpose": "any" }
+  ]
+}

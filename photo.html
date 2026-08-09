@@ -595,7 +595,7 @@ function analyze(img){
     // 근거: pitch 1도당 chin_len +0.00273(R²=0.982), 개인 간 SD 0.0280 → 10.3°에서 개인차가 삼켜진다.
     // 실측 이탈 4장(28.8~44.4°)에서 chin_len이 +47~63% 왜곡됐다 — 개인차보다 큰 왜곡이라 통과시킬 수 없다.
     {label:"기기각도", ok: !(DEV_TILT && DEV_TILT.supported && DEV_TILT.pitch_off > PITCH_MAX),
-      tip:"휴대폰이 뒤로 누워서 찍혔어요 — 화면을 세워서 한 번만 더요"}   // 문구 마케팅 검수 대기
+      tip:"얼굴을 아래에서 올려 찍었어요 — 휴대폰을 눈높이로 세워서 한 번만 더요"}   // 마케팅 검수 완료 0809
   ];
   if(gates.some(g=>!g.ok)) return gateFail(gateMsg(gates));
   // 헤이즈(뿌연 사진) 검사: 얼굴 영역 평균 채도 — cal#2: 겨울클리어 오판 사례 앵커(2026-07-11, 선명44 vs 흐림21)
