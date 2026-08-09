@@ -106,8 +106,8 @@ h1{font-size:var(--fs-title);line-height:1.3;} h2{font-size:var(--fs-h);line-hei
 .cp-inner.info .sec p{line-height:1.75;}
 .cp-inner.info .cp-title{margin-bottom:10px;}
 /* 퍼스널컬러 스와치 — 색이 주인공인 페이지라 칩을 크게 잡는다 */
-.pal{display:flex;gap:6px;margin-top:9px;}
-.pal-c{flex:1;height:52px;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07);}
+.pal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:9px;}
+.pal-c{aspect-ratio:1;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07);}
 .pal-lab{font-size:12.5px;font-weight:700;color:var(--accent);letter-spacing:-0.01em;}
 .cp-inner.info .small{text-align:left;}
 .cp-inner.char{justify-content:center;border-radius:22px;}
@@ -803,22 +803,27 @@ function jong(w){ const c=(w||"").trim().slice(-1).charCodeAt(0);
 const ieyo = w => w + (jong(w) ? "이에요" : "예요");
 
 const MPAL={romantic:["#FFF1DC","#FFDAB9","#FFC4C4","#F49FA4","#E0918F"],pure:["#F4F9FC","#C9E4F5","#A8D8EA","#BFE6D8","#D8CFE8"],elegant:["#EDE7E3","#D9CDD3","#C8A2A6","#B8AFC4","#9A8FA6"],energetic:["#FFD34E","#FF8C42","#FF6F61","#2FC4B2","#A8D65C"],gorgeous:["#D4AF37","#7B1E3B","#5B2A86","#0E7C61","#1A1A2E"],classic:["#F1E8D8","#C19A6B","#6B7C3F","#5D4037","#1F3A5F"],charisma:["#FBFBFB","#C21833","#1F4FBF","#37404A","#0F0F0F"],chic:["#F5F6F8","#D7E3EE","#9FA6AD","#4A5568","#2B2F36"]}; // 퍼스널컬러 시즌 베스트컬러 (봄웜/여름쿨/가을웜/겨울쿨 매핑, 2026-07-15)
-// 퍼스널컬러 팔레트 — 색값은 창작하지 않는다. 위 MPAL(이론 유래 시즌 베스트컬러)을 그대로 쓴다.
-// PC12 → 8타입 매핑은 photo-module T8의 pc 목록을 뒤집은 것. 원본이 바뀌면 여기도 같이 고쳐야 한다.
-const PC2TYPE = {
-  "봄 라이트":"romantic",
-  "여름 라이트":"pure",   "여름 클리어":"pure",
-  "여름 뮤트":"elegant",
-  "봄 스트롱":"energetic","봄 클리어":"energetic",
-  "가을 딥":"gorgeous",   "가을 스트롱":"gorgeous",
-  "가을 뮤트":"classic",
-  "겨울 딥":"charisma",   "겨울 스트롱":"charisma",
-  "겨울 클리어":"chic"
+// 퍼스널컬러 팔레트 — 강사 교구 PDF 원본값이다. 색은 창작하지 않는다.
+// 이전에는 MPAL(8타입 팔레트)을 빌려 썼는데, PC12를 8벌에 욱여넣는 구조라
+// 12개 중 4쌍이 같은 색을 쓰고 보조 컬러도 표현할 수 없었다.
+// b=베스트 14색 / s=보조 14색. 워스트도 pc-palette.json에는 있지만 화면에는 쓰지 않는다
+// ('피해야 할 색'은 판정 화법이라 마케팅 판단이 먼저다).
+const PC_PAL={  // 퍼스널컬러 교구 PDF(여성판) 4쪽에서 추출 — tools/extract-pc-palette.py
+  "봄 라이트":{b:["#E4949A","#F8A88C","#F8D38A","#D0E39A","#87D3E0","#CDA1CA","#C3B683","#FABEB0","#F4CAAC","#F9D8A8","#BFDD93","#8CCEAB","#E3ACCE","#EDEFC4"],s:["#AB585E","#AE817C","#B78D6E","#BCBD74","#759697","#756778","#B8BA82","#C06767","#A98E60","#C79E7C","#7DB47A","#88B679","#9FBE7A","#977250"]},
+  "겨울 클리어":{b:["#ECDAEB","#EAE9CF","#DAE7E2","#D5E8F3","#D5DEF1","#E9E1F0","#F6F4F9","#EE2C2D","#D5267F","#6650A1","#2C5DAB","#2AA086","#F2E742","#010202"],s:["#8F292B","#742349","#442E63","#233153","#1E3B3C","#D2C844","#222423","#B5292F","#B62476","#752B87","#262347","#276041","#256768","#010202"]},
+  "겨울 스트롱":{b:["#B5292F","#B62476","#752B87","#262347","#276041","#256768","#010202","#EE2B2F","#EB3393","#6650A1","#2C5DAB","#56BF99","#F2DE42","#242629"],s:["#8F292B","#742349","#442E63","#233153","#1E3B3C","#D2C844","#222423","#4B0F20","#582734","#220D2C","#0C0B26","#0F2223","#FFFFFF","#010202"]},
+  "겨울 딥":{b:["#8F292B","#742349","#442E63","#233153","#1E3B3C","#D2C844","#222423","#4B0F20","#582734","#220D2C","#0C0B26","#0F2223","#FFFFFF","#010202"],s:["#B5292F","#B62576","#752B87","#272347","#276041","#256768","#010202","#EE2C30","#EB3494","#6750A1","#2C5DAB","#58C099","#F2DE42","#24272A"]},
+  "봄 클리어":{b:["#FABEB0","#F4CAAC","#F9D8A8","#BFDD93","#87D3E0","#E3ACCE","#EDEFC4","#EF422E","#E15C63","#F9A133","#ECE94F","#ACD259","#1FB0E6","#432914"],s:["#731F25","#5D1818","#955530","#584F29","#333F22","#124963","#44183C","#B8282E","#BD3F2E","#C98E2E","#3C3B1E","#123830","#612323","#481E11"]},
+  "봄 스트롱":{b:["#EA2725","#F26A2D","#F0EA49","#4FB853","#2B8998","#A54198","#EDEFC4","#EF422E","#E15C63","#F9A133","#ECE94F","#ACD259","#1FB0E6","#000000"],s:["#731F25","#5D1818","#955530","#584F29","#333F22","#124963","#44183C","#B8282E","#BD3F2E","#C98E2E","#3C3B1E","#123830","#612323","#481E11"]},
+  "여름 라이트":{b:["#E6CADF","#E4DE9F","#C8DECE","#C0D7E8","#C5CDE5","#DACBDE","#F5F2F8","#D2AFC6","#E6DE9E","#A0C6D9","#BCC0DB","#C8B9D0","#D2B8CE","#C3B9BD"],s:["#AD8A97","#D3CF9C","#98B4B0","#7F86AE","#9786AF","#A083A2","#686176","#987078","#B97F82","#D1C36B","#86AAA8","#7395BB","#70789D","#9E9599"]},
+  "여름 클리어":{b:["#EE2F65","#DC92BF","#50BE94","#56C6D6","#446CB4","#6463AD","#F6F3F9","#ED1C24","#EC0181","#672D89","#2B3C85","#0D7A51","#DCD33D","#010202"],s:["#ECCAE0","#E4E6A8","#C4E0CD","#BBD8EA","#C3CDE7","#DDCBE1","#F6F3F9","#D9AEC8","#E7DF97","#97C7DB","#BBC0DF","#CBB8D3","#D8B7D0","#C6B9BC"]},
+  "여름 뮤트":{b:["#AD8A97","#D3CF9C","#98B4B0","#7F86AE","#9786AF","#A083A2","#686176","#987078","#B97F82","#D1C36B","#86AAA8","#7395BB","#70789D","#9E9599"],s:["#E6CADF","#E4DE9F","#C8DECE","#C0D7E8","#C5CDE5","#DACBDE","#F5F2F8","#D2AFC6","#E6DE9E","#A0C6D9","#BCC0DB","#C8B9D0","#D2B8CE","#C3B9BD"]},
+  "가을 뮤트":{b:["#AB585E","#AE817C","#B78D6E","#BCBD74","#759697","#756778","#B8BA82","#C06767","#A98E60","#C79E7C","#7DB47A","#88B679","#9FBE7A","#977250"],s:["#E4949A","#F8A88C","#F8D38A","#D0E39A","#87D3E0","#CDA1CA","#C3B683","#FABEB0","#F4CAAC","#F9D8A8","#BFDD93","#8CCEAB","#E3ACCE","#EDEFC4"]},
+  "가을 스트롱":{b:["#A8292F","#C55A2E","#CE9032","#467941","#243A5F","#6B2D84","#3A2410","#6A1B26","#561F1B","#8D582F","#57502A","#353F22","#193545","#2B1909"],s:["#C7342C","#F26A2E","#F0EA49","#50B853","#2C8998","#A54198","#824A2B","#EF432F","#E25D63","#F9A133","#ECE950","#ACD25A","#20B1E6","#000000"]},
+  "가을 딥":{b:["#691B25","#561E1B","#8D582F","#574F2A","#353F22","#214761","#401739","#A82B2F","#AE4630","#C1903A","#3C3B1F","#1C3731","#5A2726","#432011"],s:["#B36C6A","#C78679","#C3876F","#D8A97A","#B6AA7D","#86A19C","#C09973","#C62B2C","#CB602D","#CCA740","#449146","#2E89AE","#A73E7B","#552418"]},
 };
-function palette(pcName){
-  const k = PC2TYPE[pcName];
-  return (k && MPAL[k]) ? MPAL[k] : null;
-}
+const palette  = pc => (PC_PAL[pc] || {}).b || null;
+const palette2 = pc => (PC_PAL[pc] || {}).s || null;
 function swatchRow(cols){
   return `<div class="pal">${cols.map(c=>`<span class="pal-c" style="background:${c}"></span>`).join("")}</div>`;
 }
@@ -836,12 +841,9 @@ function photoBornPage(d, Hv, W){
   if(!d) return "";
   const wc = d.warm_cool && !d.warm_cool.borderline ? (d.warm_cool.v>0?"따뜻한":"차가운") : null;
   const conf = Math.round((d.confidence||0)*100);
-  const best = palette(d.pc.primary);
-  // PC12를 8타입 팔레트에 매핑하는 구조라 4쌍(여름 라이트=여름 클리어 등)이 같은 색을 쓴다.
-  // 그 경우 세컨드를 그리면 똑같은 줄이 두 번 나온다 — 차라리 안 보여준다.
-  // 근본 해결은 PC12별 고유 팔레트다(이론팀 요청 대상).
-  const second = (d.pc.secondary && PC2TYPE[d.pc.secondary] !== PC2TYPE[d.pc.primary])
-    ? palette(d.pc.secondary) : null;
+  // 세컨드 = 2순위 퍼스널컬러가 아니라 **같은 타입의 보조 컬러**다(대표 정정 2026-08-09).
+  const best   = palette(d.pc.primary);
+  const second = palette2(d.pc.primary);
   const prismBg=(col)=>`background:radial-gradient(115% 75% at 18% 8%,${col}5C,transparent 58%),radial-gradient(115% 75% at 85% 18%,${col}33,transparent 55%),linear-gradient(160deg,#F5F1FA,#ECEFF6)`;
   return `
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
@@ -853,12 +855,12 @@ function photoBornPage(d, Hv, W){
        ${best?`<div class="sec" style="width:100%">
          <div class="pal-lab">베스트 컬러</div>
          ${swatchRow(best)}
-         <p class="small" style="margin-top:7px;opacity:.7">${eun(d.pc.primary)} 이 색들을 만나면 얼굴이 살아나요</p>
+         <p class="small" style="margin-top:7px;opacity:.7">이 색들을 입으면 얼굴이 살아나요</p>
        </div>`:""}
        ${second?`<div class="sec" style="width:100%">
          <div class="pal-lab">세컨드 컬러</div>
          ${swatchRow(second)}
-         <p class="small" style="margin-top:7px;opacity:.7">베스트가 질릴 때 여기서 골라도 잘 받아요</p>
+         <p class="small" style="margin-top:7px;opacity:.7">베스트 컬러보다 살짝 가라앉은 색이에요 — 아우터나 팬츠로 섞어 쓰면 잘 맞아요</p>
        </div>`:""}
        <div class="sec" style="width:100%">
          <p>타고난 색은 <b>잘 안 바뀌는 부분</b>이에요. 바꾸기보다 <b>살리는 쪽</b>으로 쓰면 돼요.</p>
