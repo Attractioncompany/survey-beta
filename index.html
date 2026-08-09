@@ -789,24 +789,37 @@ function gapSection(sw, sh, W, Hv){
 function jong(w){ const c=(w||"").trim().slice(-1).charCodeAt(0);
   return (c>=0xAC00 && c<=0xD7A3) ? ((c-0xAC00)%28)!==0 : false; }
 const ieyo = w => w + (jong(w) ? "이에요" : "예요");
+const eun = w => w + (jong(w) ? "은" : "는");
+const gwa = w => w + (jong(w) ? "과" : "와");
 
 function loadPhoto(){
   try{ const d=JSON.parse(localStorage.getItem("chugu_photo_result")||"null");
        return (d && d.pc) ? d : null; }catch(e){ return null; }
 }
-// 1절 「내 매력」 — 타고난 색을 지금 스타일과 **같은 화면**에 놓는다
-function photoBornBlock(d){
+// 「타고난 색」 — **독립 페이지**. 지금 스타일과 한 카드에 두면 둘이 같은 말로 읽힌다.
+// v1은 1절 카드 안에 넣었는데, 만든 사람도 "로맨틱인데 왜 여름 뮤트?"로 헷갈렸다(대표 지적 2026-08-09).
+// 같은 카드 = 같은 축. 다른 축이면 카드를 나눠야 한다.
+function photoBornPage(d, Hv, W){
   if(!d) return "";
-  const wc = d.warm_cool && !d.warm_cool.borderline ? (d.warm_cool.v>0?"따뜻한 쪽":"차가운 쪽") : null;
+  const wc = d.warm_cool && !d.warm_cool.borderline ? (d.warm_cool.v>0?"따뜻한":"차가운") : null;
   const conf = Math.round((d.confidence||0)*100);
-  return `<div style="margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.5);text-align:left">
-    <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">📷 타고난 색</div>
-    <div style="font-size:13.5px;line-height:1.7">
-      사진으로 보니 <b>${ieyo(d.pc.primary)}</b>${wc?` — ${wc}이고요`:""}.
-      ${d.pc.borderline&&d.pc.secondary?`<span style="opacity:.7">${d.pc.secondary} 매력도 살짝 있어요.</span>`:""}<br>
-      <span style="opacity:.8">이건 잘 안 바뀌는 부분이라, 바꾸기보다 <b>살리는 쪽</b>으로 쓰면 돼요.</span>
-      <span style="opacity:.55;font-size:12px">(측정 신뢰도 ${conf}%)</span>
-    </div></div>`;
+  const prismBg=(col)=>`background:radial-gradient(115% 75% at 18% 8%,${col}5C,transparent 58%),radial-gradient(115% 75% at 85% 18%,${col}33,transparent 55%),linear-gradient(160deg,#F5F1FA,#ECEFF6)`;
+  return `
+     <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
+       <div class="cp-title">📷 타고난 색</div>
+       <div class="sec" style="width:100%">
+         <p>사진으로 보니 <b>${ieyo(d.pc.primary)}</b>${wc?` — ${wc} 쪽이고요`:""}.
+         ${d.pc.borderline&&d.pc.secondary?`<span style="opacity:.75">${d.pc.secondary}도 살짝 걸쳐 있어요.</span>`:""}</p>
+         <p style="margin-top:10px">이건 <b>잘 안 바뀌는 부분</b>이에요. 바꾸기보다 <b>살리는 쪽</b>으로 쓰면 돼요.</p>
+       </div>
+       <div class="sec" style="width:100%;background:rgba(255,255,255,.45);border-radius:12px;padding:12px 14px">
+         <p style="font-size:13.5px;line-height:1.75">앞에서 본 <b>${Hv.name}</b>${jong(Hv.name)?"과":"와"} 여기 <b>${d.pc.primary}</b>${jong(d.pc.primary)?"은":"는"}
+         <b>서로 다른 이야기</b>예요.<br>
+         <span style="opacity:.85">${eun(Hv.name)} 지금 하고 있는 <b>스타일</b>이라 내일도 바꿀 수 있고,
+         ${eun(d.pc.primary)} 타고난 <b>색</b>이라 그대로 가져가는 쪽이에요.</span></p>
+       </div>
+       <p class="small" style="margin-top:10px;opacity:.6">측정 신뢰도 ${conf}%</p>
+     </div></div>`;
 }
 // 4절 「추구미와의 거리」 — 타고난 색 · 지금 스타일 · 추구미 셋을 한 문장으로 잇는다
 function photoGapLine(d, W, Hv){
@@ -915,8 +928,8 @@ function renderResult(){
        <div class="cp-type">${Hv.name}</div>
        <div class="cp-note">옷·머리·메이크업으로 본 요즘 모습이에요</div>
        <div class="cp-desc">${g_plain(Hv.desc||Hv.one||"")}</div>
-       ${photoBornBlock(PHOTO)}
      </div></div>
+     ${photoBornPage(PHOTO, Hv, W)}
      <div class="cpage char-page" style="${charBg(wKey,W.color)}"><div class="cp-inner char glass">
        <div class="cp-label">내가 되고 싶은 모습은</div>
        <img class="cp-char" src="bg/char_${wKey}.png" alt="" onerror="this.style.display='none'">
@@ -979,7 +992,8 @@ function renderResult(){
     if (el) el.innerHTML = partSection(PHOTO, hKey);
   };
   if (window.__PART) window.__onPartEngineReady();
-  // 사진 측정은 1절·4절에 병합됐다(photoBornBlock·photoGapLine). 캐러셀 밖 별도 블록은 폐지.
+  // 사진 측정: 타고난 색은 독립 페이지(photoBornPage), 격차 문장은 4절(photoGapLine).
+  // 캐러셀 밖 별도 블록은 폐지.
   // 단 측정 기록이 없을 때의 '촬영부터 시작하기' 안내는 남긴다.
   if(FLOW_FULL && !PHOTO) renderPhotoMissing();
   window._result={gender:GENDER,want:wr[0][0],wantRank:wr.slice(0,3),have:hr[0][0],extraUsed:extraQ.length};
