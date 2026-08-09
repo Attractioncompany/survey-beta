@@ -841,7 +841,7 @@ function loadPhoto(){
 // 같은 카드 = 같은 축. 다른 축이면 카드를 나눠야 한다.
 function photoBornPage(d, W){
   if(!d) return "";
-  const wc = d.warm_cool && !d.warm_cool.borderline ? (d.warm_cool.v>0?"따뜻한":"차가운") : null;
+  const wc = d.warm_cool && !d.warm_cool.borderline ? (d.warm_cool.v>0?"웜톤":"쿨톤") : null;
   const conf = Math.round((d.confidence||0)*100);
   // 세컨드 = 2순위 퍼스널컬러가 아니라 **같은 타입의 보조 컬러**다(대표 정정 2026-08-09).
   const best   = palette(d.pc.primary);
@@ -849,9 +849,9 @@ function photoBornPage(d, W){
   const prismBg=(col)=>`background:radial-gradient(115% 75% at 18% 8%,${col}5C,transparent 58%),radial-gradient(115% 75% at 85% 18%,${col}33,transparent 55%),linear-gradient(160deg,#F5F1FA,#ECEFF6)`;
   return `
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
-       <div class="cp-title">📷 타고난 색</div>
+       <div class="cp-title">📷 퍼스널컬러</div>
        <div class="sec" style="width:100%">
-         <p>사진으로 보니 <b>${ieyo(d.pc.primary)}</b>${wc?` — ${wc} 쪽이고요`:""}.
+         <p>촬영된 사진으로 진단해볼 때, 퍼스널컬러는 <b>${wc?wc+" · ":""}${ieyo(d.pc.primary)}</b>
          ${d.pc.borderline&&d.pc.secondary?`<span style="opacity:.75">${d.pc.secondary}도 살짝 걸쳐 있어요.</span>`:""}</p>
        </div>
        ${best?`<div class="sec" style="width:100%">
@@ -862,10 +862,9 @@ function photoBornPage(d, W){
          <div class="pal-lab">세컨드 컬러</div>
          ${swatchRow(second)}
        </div>`:""}
-       <div class="sec" style="width:100%">
-         <p>타고난 색은 <b>잘 안 바뀌는 부분</b>이에요. 바꾸기보다 <b>살리는 쪽</b>으로 쓰면 돼요.</p>
-       </div>
-       <p class="small" style="margin-top:14px;opacity:.55">측정 신뢰도 ${conf}%</p>
+       <p class="small" style="margin-top:16px;opacity:.6;line-height:1.65">
+         * 사진 촬영 환경에 따라 오진단이 있을 수 있어요. 정확한 진단은 컨설턴트 진단을 권장해요.
+         <span style="opacity:.75">(측정 신뢰도 ${conf}%)</span></p>
      </div></div>`;
 }
 // 4절 「추구미와의 거리」 — 타고난 색 · 지금 스타일 · 추구미 셋을 한 문장으로 잇는다
