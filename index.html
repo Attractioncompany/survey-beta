@@ -848,18 +848,24 @@ function renderStep(){
    </div></div>`;
   if(!window.__stepIssued){        // 같은 걸음을 다시 그릴 때 중복 발행하지 않는다
     window.__stepIssued = true;
-    sbInsert("prescriptions", {user_id:UID, week_no:STEP.week_no, category:STEP.category,
+    /* id를 **클라에서 만들어 실어 보낸다.** 서버가 만들게 두면 그 값을 되받을 수 없다 —
+       anon은 SELECT 정책이 없어 INSERT ... RETURNING이 42501로 막히고, SELECT를 열면
+       남의 처방까지 보인다(백엔드팀 회신 2026-08-12).
+       나중에 셀카 검증을 붙일 때 verifications.prescription_id에 이 값을 그대로 쓴다.
+       지금 안 심어두면 지금 쌓이는 처방은 검증과 영영 이어붙일 수 없다. */
+    STEP._id = (crypto.randomUUID ? crypto.randomUUID() : 'p'+Date.now()+Math.random().toString(36).slice(2));
+    sbInsert("prescriptions", {id:STEP._id, user_id:UID, week_no:STEP.week_no, category:STEP.category,
       direction:STEP.direction, target_delta:STEP.target_delta, status:"issued"});
-    track("prescription_issued", {category:STEP.category, axis:STEP.direction.axis+STEP.direction.sign, week_no:STEP.week_no});
+    track("prescription_issued", {category:STEP.category, axis:STEP.direction.axis+STEP.direction.sign, week_no:STEP.week_no, pid:STEP._id});
   }
 }
 
 function stepDone(){
   if(!STEP) return;
   const done=doneSteps();
-  done.push({category:STEP.category, ts:Date.now(), week_no:STEP.week_no});
+  done.push({category:STEP.category, ts:Date.now(), week_no:STEP.week_no, id:STEP._id});  // id는 검증 연결용
   try{ localStorage.setItem("chugu_steps", JSON.stringify(done)); }catch(e){}
-  track("prescription_done", {category:STEP.category, axis:STEP.direction.axis+STEP.direction.sign, week_no:STEP.week_no});
+  track("prescription_done", {category:STEP.category, axis:STEP.direction.axis+STEP.direction.sign, week_no:STEP.week_no, pid:STEP._id});
   window.__stepIssued = false;
   render();                        // 다음 걸음
 }
