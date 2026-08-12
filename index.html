@@ -120,6 +120,9 @@ h1{font-size:var(--fs-title);line-height:1.3;} h2{font-size:var(--fs-h);line-hei
 /* 걸음 화면의 주인공 색 — 말로 설명하면 사람마다 다른 색을 떠올린다 */
 .step-chip{width:100%;height:120px;border-radius:16px;margin-top:18px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),0 4px 16px rgba(58,43,69,.10);}
 .cp-inner.info .small{text-align:left;}
+/* 결과 카드의 위계 (고객팀 L3) — 결론과 근거가 같은 크기라 뭐가 답인지 안 보였다.
+   숨기지 않는다. 크기만 가른다("수치+해설 병기"는 대표 확정 사항이라 유지). */
+.verdict-line{font-size:16.5px !important;font-weight:700;line-height:1.6 !important;letter-spacing:-0.01em;margin-bottom:10px;}
 .cp-inner.char{justify-content:center;border-radius:22px;}
 .cp-inner.char .cp-label{color:#9C4680;}.cp-inner.char .cp-type{color:#221A2B;}.cp-inner.char .cp-pc{color:#B76BA3;}.cp-inner.char .cp-note{color:#6E6478;}.cp-inner.char .cp-desc{color:#3A3340;}
 /* 투명 캐릭터: 프레임 없이 r1 배경 위에 바로 (배경 투명화 후) */
@@ -964,13 +967,14 @@ function gapSection(sw, sh, W, Hv){
   if(!w||!h) return "";
   const top=sc=>TKEYS.map(k=>[k,sc[k]]).sort((a,b)=>b[1]-a[1])[0][0];
   if(top(sw)===top(sh))
-    return `<div class="sec" style="width:100%"><p>이미 <b>같은 방향</b>이에요 — 지금 매력을 그대로 살리면 돼요.</p></div>`;
+    return `<div class="sec" style="width:100%"><p class="verdict-line">이미 <b>같은 방향</b>이에요 — 지금 매력을 그대로 살리면 돼요.</p></div>`;
   const dT=w[0]-h[0], dD=w[1]-h[1];   // WANT − HAVE. dT>0=추구미가 더 시원 / dD>0=추구미가 더 또렷
   const parts=[];
   if(dD!==0) parts.push(dD>0?"부드러운":"또렷한");
   if(dT!==0) parts.push(dT>0?"따뜻한":"시원한");
   const dir = parts.length ? `지금은 <b>${W.name}</b>보다 ${parts.join(" 쪽, ")} 쪽에 있어요.` : "";
-  return `<div class="sec" style="width:100%"><p>${dir}<br>닮은 데도 있고 다른 데도 있어요 — 다른 쪽이 바로 <b>변주 포인트</b>예요.</p></div>`;
+  return `<div class="sec" style="width:100%"><p class="verdict-line">${dir}</p>
+    <p style="margin-top:8px">닮은 데도 있고 다른 데도 있어요 — 다른 쪽이 바로 <b>변주 포인트</b>예요.</p></div>`;
 }
 
 // ── 통합 리포트: 사진(HAVE-1) × 설문(HAVE-2·WANT) ──────────────────────
@@ -1092,7 +1096,7 @@ function partSection(d, surveyHaveType){
         <div style="font-size:11px;opacity:.5;letter-spacing:2px;margin-top:3px">${r.dots}</div>
       </div>`).join("");
     return `<div class="sec" style="width:100%;text-align:left">
-      ${narr?`<p style="margin-bottom:6px">${narr}</p>`:""}
+      ${narr?`<p class="verdict-line">${narr}</p>`:""}
       ${list}
       <p class="small" style="opacity:.6;margin-top:10px">${P.PR.CAPTION}</p>
     </div>`;
