@@ -354,6 +354,12 @@ const FLOW_FULL = new URLSearchParams(location.search).get("flow")==="full";
 // rgb2lab(판정블록) 앞에 둬서 drift-hash 무영향. 배포는 photo 재현성 T2 이후(현재 dev 테스트분만).
 const PM_SB_URL="https://qngylynylgqlbidvtbci.supabase.co";
 const PM_SB_KEY="sb_publishable_bGVbZ31O7OX_rnkLVb0i5Q_SDa8JEri";
+// 퍼널 계측 (events 테이블 — 설문 track()과 동일 스키마, insert-only RLS)
+// 최소 6종: enter / consent / shot / gate_fail / draping / result — 촬영 구간 이탈률 측정용 (오너: 고객팀)
+function pmTrack(event, props={}){
+  try{ fetch(`${PM_SB_URL}/rest/v1/events`,{method:"POST",headers:{"Content-Type":"application/json","apikey":PM_SB_KEY,"Authorization":`Bearer ${PM_SB_KEY}`},
+    body:JSON.stringify({user_id:PM_UID, event, props:Object.assign({src:new URLSearchParams(location.search).get("src")||null}, props)})}); }catch(e){}
+}
 let PM_UID=null; try{ PM_UID=localStorage.getItem("czm_uid"); if(!PM_UID){ PM_UID=(crypto.randomUUID?crypto.randomUUID():'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid",PM_UID);} }catch(e){ PM_UID='u'+Date.now(); }
 async function sendMeasurement(out){
   try{
@@ -392,6 +398,7 @@ async function init(){
     });
     $("pickBtn").disabled=false;
     $("liveBtn").disabled=false;
+    pmTrack("photo_enter",{flow:FLOW_FULL?"full":"solo"});
     $("liveBtn").textContent="📸 촬영 시작";
     $("status").textContent="구미가 준비됐어요 — 촬영 시작을 눌러주세요";
   }catch(e){
@@ -410,6 +417,7 @@ const CONSENT_VER="v1.2";
 let CONSENT=null;   // {at, ver} — 체크한 순간 고정. 해제하면 null로 되돌린다.
 $("consentChk").addEventListener("change", e=>{
   CONSENT = e.target.checked ? {at:new Date().toISOString(), ver:CONSENT_VER} : null;
+  if(CONSENT) pmTrack("photo_consent",{ver:CONSENT_VER});
   $("toStep2Btn").disabled = !CONSENT;
 });
 $("toStep2Btn").addEventListener("click", ()=>{ if(!CONSENT) return; goStep(2); });
@@ -993,6 +1001,7 @@ function askDraping(id){
   $("drapeCard").scrollIntoView({behavior:"smooth", block:"center"});
 }
 function answerDraping(id, v){
+  pmTrack("photo_draping",{round:id, v});
   STATE.draping[id]=v;
   if(id==="r1") return askDraping("r2");   // r2 이후는 finalize()가 필요 라운드(r3/r4)를 판단해 되부른다
   $("drapeCard").style.display="none";
@@ -1278,6 +1287,7 @@ function liveCheck(){
 // 촬영 → 즉시 분석이 아니라 확인 단계를 거친다 (대표 피드백 2026-07-22: "어떤 상태로 찍혔는지 확인이 안 되면 불쾌")
 let shotPending=null;   // 확인 대기 중인 촬영본 dataURL — 메모리만, 저장·전송 없음
 function liveCapture(){
+  pmTrack("photo_shot",{facing:LIVE_FACING});
   const v=$("liveVideo");
   if(!v.videoWidth) return;
   const c=document.createElement("canvas"); c.width=v.videoWidth; c.height=v.videoHeight;
@@ -1323,6 +1333,7 @@ function gateMsg(gates){
   return head ? `${head}<br>${list}` : list;
 }
 function gateFail(msg){
+  pmTrack("photo_gate_fail",{reason:String(msg).slice(0,40)});
   goStep(2);
   $("resultCard").style.display="none";
   $("drapeCard").style.display="none";
@@ -1331,6 +1342,7 @@ function gateFail(msg){
 }
 function render(o){
   goStep(4);
+  pmTrack("photo_result",{pc:o.pc12&&o.pc12.primary, conf:o.axes&&o.axes.confidence});
   // 셀카 측정 오버레이(VLAS #2) — STATE 메모리 값만 읽음, out(o)엔 없음. 계산 실패 시 블록 숨김.
   if(STATE && STATE.overlay){
     $("overlayImg").src=STATE.overlay;
