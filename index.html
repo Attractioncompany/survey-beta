@@ -40,6 +40,11 @@ html,body{overscroll-behavior-y:none;}
 .screen-btm{flex-shrink:0;padding:var(--sp-3) var(--sp-4) calc(var(--safe-b) + var(--sp-4));}
 body.screen-mode .wrap{max-width:none;padding:0;}
 .progress{position:sticky;top:0;background:var(--bg);padding:12px 0 8px;z-index:10;}
+/* 구미 상주 (고객팀 L1) — 스펙까지 확정해 두고 화면에서 안 쓰고 있었다.
+   상태를 가진 동반자가 있는 것과 없는 것의 차이가 어워드 수상작들의 공통 승부수다. */
+.prog-row{display:flex;align-items:center;gap:10px;}
+.gumi-sm{width:34px;height:34px;object-fit:contain;flex-shrink:0;}
+.gumi-lg{width:150px;height:150px;object-fit:contain;}
 .prog-shell{position:static;background:transparent;padding:0;}
 .pbar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;}
 .pfill{height:100%;background:linear-gradient(90deg,#F2A9C4,#B76BA3,#4A2B5C);border-radius:3px;transition:width .3s;}
@@ -174,7 +179,14 @@ button,.opt,.chip-item,.mood-item{touch-action:manipulation;}
 textarea{font-size:16px !important;}
 body{padding-bottom:env(safe-area-inset-bottom);}
 .navrow{padding-bottom:calc(8px + env(safe-area-inset-bottom));}
-@media (prefers-reduced-motion: no-preference){ .opt.sel{animation:selpop .18s ease;} }
+@media (prefers-reduced-motion: no-preference){
+  .opt.sel{animation:selpop .18s ease;}
+  /* 탭 마이크로 피드백 (고객팀 L2) — 선택한 순간 그 타입의 색이 카드에 번진다.
+     --tc는 렌더 시 선택지별로 심는다. 색은 보조 신호이고 테두리·배지가 주 신호다. */
+  .opt{transition:background-color .2s ease, border-color .15s ease, transform .15s ease;}
+  .opt.sel[style*="--tc"]{background:color-mix(in srgb, var(--tc) 14%, var(--bg));border-color:var(--tc);}
+  .chip-item.sel[style*="--tc"]{background:color-mix(in srgb, var(--tc) 16%, var(--bg));border-color:var(--tc);}
+}
 @keyframes selpop{50%{transform:scale(1.02);}}
 /* 화면 전환 (고객팀 G1) — 통일 페이드-업 하나로 체감 대부분을 가져간다.
    transform은 0.2s 뒤 사라지므로 안쪽 sticky/fixed에 남는 영향은 없다. */
@@ -594,7 +606,7 @@ function renderQ(){
   if(q.intro){
     document.body.classList.add("screen-mode");
     $("prog").classList.add("hidden");
-    app.innerHTML=`<div class="screen"><div class="screen-body" style="justify-content:center;text-align:center;gap:var(--sp-4)"><div class="em" style="font-size:44px">${q.part==="A"?"💫":q.part==="B"?"👀":"🙌"}</div>
+    app.innerHTML=`<div class="screen"><div class="screen-body" style="justify-content:center;text-align:center;gap:var(--sp-4)"><img class="gumi-lg" src="bg/gumi_base.png" alt="">
      <p style="font-size:var(--fs-body);line-height:1.8">${q.intro}</p></div>
      <div class="screen-btm"><button class="btn" onclick="next()">계속하기</button></div></div>`;
     return;
@@ -606,7 +618,7 @@ function renderQ(){
   const answered=Q.filter((qq,i)=>qq.id&&i<idx&&answers[qq.id]!==undefined).length;
   const total=totalQ+(phase==="extra"?extraQ.length:0);
   const pct=Math.min(100,Math.round(answered/total*100)), pnum=`${Math.min(answered+1,total)} / ${total}`;
-  let html=`<div class="screen"><div class="screen-top"><div class="progress prog-shell"><div class="pbar"><div class="pfill" style="width:${pct}%"></div></div><div class="pnum">${pnum}</div></div></div><div class="screen-body"><div class="q-part">${q.part==="A"?"PART A · 되고 싶은 나":q.part==="B"?"PART B · 지금의 나":q.part==="C"?"PART C · 나의 표현":"PART D · 마무리"}</div>
+  let html=`<div class="screen"><div class="screen-top"><div class="prog-row"><img class="gumi-sm" src="bg/gumi_base.png" alt=""><div class="progress prog-shell" style="flex:1"><div class="pbar"><div class="pfill" style="width:${pct}%"></div></div><div class="pnum">${pnum}</div></div></div></div><div class="screen-body"><div class="q-part">${q.part==="A"?"PART A · 되고 싶은 나":q.part==="B"?"PART B · 지금의 나":q.part==="C"?"PART C · 나의 표현":"PART D · 마무리"}</div>
   <h2>${g(qTxt(q))}</h2>`;
   if(q.multi){ const cnt=(answers[q.id]||[]).length; html+=`<div class="q-sub">${q.max?`최대 ${q.max}개까지 골라요 <b style="color:var(--accent)">(${cnt}/${q.max})</b>`:"여러 개 골라도 좋아요"}</div>`; }
   const hasSel = q.multi ? (answers[q.id]||[]).length>0 : answers[q.id]!==undefined;
@@ -634,7 +646,9 @@ function renderQ(){
     html+=`<div class="chipgrid">`;
     opts.forEach((o,i)=>{
       const sel=(answers[q.id]||[]).includes(i)?" sel":"";
-      html+=`<div class="chip-item${sel}" onclick="pick('${q.id}',${i})">${o.t}</div>`;
+      const tk2 = o.w ? Object.entries(o.w).sort((a,b)=>b[1]-a[1])[0][0] : null;
+      const tc2 = tk2 && TYPES[tk2] ? ` style="--tc:${TYPES[tk2].color}"` : "";
+      html+=`<div class="chip-item${sel}"${tc2} onclick="pick('${q.id}',${i})">${o.t}</div>`;
     });
     html+=`</div>`;
   } else {
@@ -642,7 +656,10 @@ function renderQ(){
       const sel=q.multi ? (answers[q.id]||[]).includes(i) : answers[q.id]===i;
       const eyeVis=o.svg?(EYEIMG[(GENDER==="m"?"m_":"f_")+o.svg]?`<img class="eye-img" src="${EYEIMG[(GENDER==="m"?"m_":"f_")+o.svg]}" alt="">`:SVGEYES[o.svg]):"";
       const sw=o.chip?`<span class="swatch" style="${chipStyle(o.chip)}"></span>`:"";
-      html+=`<button class="opt${sel?" sel":""}${o.chip?" opt-chip":""}" onclick="pick('${q.id}',${i})">${eyeVis}${sw}${g(o.t)}</button>`;
+      // 이 선택지가 가장 크게 가리키는 타입의 색 — 없으면(축 문항 등) 심지 않는다
+      const tk = o.w ? Object.entries(o.w).sort((a,b)=>b[1]-a[1])[0][0] : null;
+      const tc = tk && TYPES[tk] ? ` style="--tc:${TYPES[tk].color}"` : "";
+      html+=`<button class="opt${sel?" sel":""}${o.chip?" opt-chip":""}"${tc} onclick="pick('${q.id}',${i})">${eyeVis}${sw}${g(o.t)}</button>`;
     });
     // 단일·복수 모두 '다음' 버튼 통일 (자동 넘김 삭제) — navRow는 screen-btm 공통 처리
   }
@@ -919,6 +936,7 @@ function renderExtraIntro(){
   $("prog").classList.add("hidden");
   app.innerHTML=`<div class="card break-card glass"><div class="em">✨</div>
    <h2>결과가 거의 나왔어요!</h2>
+   <img class="gumi-lg" src="bg/gumi_think.png" alt="" style="margin:0 auto 6px">
    <p style="color:var(--sub);font-size:14px;margin:10px 0">더 정확한 분석을 위해<br><b>${extraQ.length}가지만</b> 더 여쭤볼게요</p>
    <button class="btn" onclick="extraIdx=0;render()">좋아요</button></div>`;
 }
