@@ -209,7 +209,7 @@ try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID 
 let USER_ROW_SENT = false;
 async function sbInsert(table, row){
   if(/^(localhost|127\.|$)/.test(location.hostname)) return; // 로컬 테스트 계측 오염 방지 (2026-08-05)
-  // app_version 컬럼이 없는 테이블에 그걸 실어 보내면 PostgREST가 400을 내고
+  // userwords:ok — app_version 컬럼이 없는 테이블에 그걸 실어 보내면 PostgREST가 400을 내고
   // **insert 전체가 죽는다.** prescriptions·verifications에는 이 컬럼이 없다.
   // 버전 정보는 같은 시점의 prescription_issued 이벤트(events, app_version 있음)로 조인해 얻는다.
   const NO_VER = ["prescriptions", "verifications"];
