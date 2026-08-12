@@ -112,6 +112,8 @@ h1{font-size:var(--fs-title);line-height:1.3;} h2{font-size:var(--fs-h);line-hei
 .pal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:9px;}
 .pal-c{aspect-ratio:1;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07);}
 .pal-lab{font-size:12.5px;font-weight:700;color:var(--accent);letter-spacing:-0.01em;}
+/* 걸음 화면의 주인공 색 — 말로 설명하면 사람마다 다른 색을 떠올린다 */
+.step-chip{width:100%;height:120px;border-radius:16px;margin-top:18px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),0 4px 16px rgba(58,43,69,.10);}
 .cp-inner.info .small{text-align:left;}
 .cp-inner.char{justify-content:center;border-radius:22px;}
 .cp-inner.char .cp-label{color:#9C4680;}.cp-inner.char .cp-type{color:#221A2B;}.cp-inner.char .cp-pc{color:#B76BA3;}.cp-inner.char .cp-note{color:#6E6478;}.cp-inner.char .cp-desc{color:#3A3340;}
@@ -207,7 +209,11 @@ try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID 
 let USER_ROW_SENT = false;
 async function sbInsert(table, row){
   if(/^(localhost|127\.|$)/.test(location.hostname)) return; // 로컬 테스트 계측 오염 방지 (2026-08-05)
-  const withVer = Object.assign({app_version: APP_VERSION}, row);
+  // app_version 컬럼이 없는 테이블에 그걸 실어 보내면 PostgREST가 400을 내고
+  // **insert 전체가 죽는다.** prescriptions·verifications에는 이 컬럼이 없다.
+  // 버전 정보는 같은 시점의 prescription_issued 이벤트(events, app_version 있음)로 조인해 얻는다.
+  const NO_VER = ["prescriptions", "verifications"];
+  const withVer = NO_VER.includes(table) ? row : Object.assign({app_version: APP_VERSION}, row);
   try { await fetch(`${SB_URL}/rest/v1/${table}`, {method:"POST", headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":`Bearer ${SB_KEY}`}, body:JSON.stringify(withVer)}); } catch(e){}
 }
 function track(event, props={}){ sbInsert("events", {user_id:UID, event, props}); }
@@ -488,7 +494,8 @@ function qTxt(q){ return (GENDER==="m"&&q.txtm)?q.txtm:q.txt; }
 function render(){
   window.scrollTo({top:0,behavior:"instant"});
   document.body.classList.toggle("result-mode", phase==="result");
-  if(phase==="start") renderStart();
+  if(phase==="step") renderStep();
+  else if(phase==="start") renderStart();
   else if(phase==="survey") renderQ();
   else if(phase==="extra") renderExtra();
   else if(phase==="result") renderResult();
@@ -681,6 +688,162 @@ function pick(id,i){
     renderQ(); // 선택 표시 → '다음' 버튼으로 직접 진행 (자동 넘김 삭제, 대표 요청 2026-07-25)
   }
 }
+/* ── 오늘의 한 걸음 (전략팀 요청 0809 · 이론 이동처방규칙 v1 [가설]) ──────────
+   진단을 마친 사람이 앱을 다시 열면 결과표가 아니라 **지금 할 것 하나**가 먼저 온다.
+   VOC ② "뭐부터 해야 할지 모르겠다"는 정보가 없어서가 아니라 순서가 없어서였다.
+
+   ⚠ 문구는 [마케팅 검수 전]이다. 이론팀 P5 템플릿을 그대로 옮겼고 확정본이 오면
+     STEP_LINE 표만 교체한다 — 로직은 건드리지 않는다. */
+let STEP = null;              // 지금 발행된 걸음
+let STEP_ENGINE = null;       // modules/step-engine.js (비동기 로드)
+
+/* 항목 × 축방향 → **구체적인 미션**.
+   "시원한 색 하나만 걸쳐보세요"는 방향이지 미션이 아니다 — 유저가 "뭘?"이라고 묻는다
+   (대표 지적 2026-08-12). 무엇을(상의·립·눈썹) 어떻게(색은 칩으로 보여준다)까지 말한다.
+   ⚠ [마케팅 검수 전] — 확정본이 오면 이 표만 교체한다. */
+const STEP_LINE = {
+  "눈썹":    {"T+":"눈썹 산을 아주 조금만 낮춰보세요",  "T-":"눈썹을 아주 살짝만 둥글려보세요",
+              "D+":"눈썹을 조금만 또렷하게 그려보세요", "D-":"눈썹 끝을 살짝만 흐려보세요"},
+  "색·대비": {"T+":"상의를 이 색으로 입어보세요", "T-":"상의를 이 색으로 입어보세요",
+              "D+":"상의를 이 색으로 입어보세요", "D-":"상의를 이 색으로 입어보세요"},
+  "입술":    {"T+":"립을 이 색으로 발라보세요", "T-":"립을 이 색으로 발라보세요",
+              "D+":"립을 이 색으로 발라보세요", "D-":"립을 이 색으로 발라보세요"},
+  "눈":      {"T+":"아이라인 꼬리를 아주 살짝만 올려보세요", "T-":"아이라인 꼬리를 아주 살짝만 내려보세요",
+              "D+":"아이라인을 조금만 또렷하게 그려보세요", "D-":"아이라인을 조금만 흐리게 그려보세요"},
+  "헤어":    {"T+":"가르마를 조금만 옆으로 타보세요", "T-":"앞머리를 조금만 내려보세요",
+              "D+":"기장 끝을 조금만 정리해보세요",   "D-":"머리를 조금만 풀어보세요"},
+};
+const stepLine = st => (STEP_LINE[st.category]||{})[st.direction.axis + st.direction.sign]
+                    || `${st.category}에서 아주 조금만 변화를 줘보세요`;
+
+// 색을 말로 설명하면 사람마다 다른 색을 떠올린다. 칩으로 보여준다.
+const COLOR_STEPS = ["색·대비", "입술"];
+
+/* 립 전용 팔레트. **MPAL을 립에 쓰면 안 된다** — 의류 팔레트라 세련된 타입에
+   짙은 회색을 립 색으로 추천하게 된다(실제로 그렇게 나왔다).
+   이론 색표 §2-2도 "MPAL 재사용이 부적절, 립은 별도 채도"라고 못 박았다.
+   아래는 B6 「자주 쓰는 립 컬러」 선택지의 확정 HEX를 그 문항의 w 값 그대로 타입에
+   되붙인 것이다 — 새로 만든 색이 0개다. */
+const LIP_PAL = {
+  romantic:  ["#F5836F","#FBBF9E"],              // 코랄·피치
+  energetic: ["#F5836F","#FBBF9E"],
+  pure:      ["#C98B87"],                        // 은은한 핑크
+  classic:   ["#C98B87"],
+  elegant:   ["#B67B84","#A2726A"],              // 말린장미·로즈브라운
+  gorgeous:  ["#7B1E3B","#9E4638","#A8172B"],    // 버건디·브릭·딥레드
+  charisma:  ["#7B1E3B","#9E4638","#A8172B"],
+  chic:      ["#C21833","#D9A398"],              // 맑은 레드·핑크베이지
+};
+const palOf = (step, wantKey) => (step.category === "입술" ? LIP_PAL : MPAL)[wantKey] || [];
+
+// Lab 변환 — 색의 방향(따뜻함·밝기)은 RGB가 아니라 Lab에서 재야 사람 눈과 맞는다.
+// photo-module.html·cloth-check.html과 같은 식.
+function _lab(hex){
+  const n=parseInt(hex.slice(1),16);
+  let [R,G,B]=[(n>>16)&255,(n>>8)&255,n&255].map(v=>{v/=255; return v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92;});
+  const X=(R*0.4124+G*0.3576+B*0.1805)/0.95047, Y=R*0.2126+G*0.7152+B*0.0722, Z=(R*0.0193+G*0.1192+B*0.9505)/1.08883;
+  const f=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);
+  return {L:116*f(Y)-16, a:500*(f(X)-f(Y)), b:200*(f(Y)-f(Z))};
+}
+
+/* 이번 걸음에 쓸 색 하나. 추구미 타입의 팔레트(MPAL)에서 주축 방향 극단을 고른다.
+   MPAL은 이론 유래 시즌 베스트컬러이고, 걸음의 목적이 추구미 방향 이동이므로
+   '내 얼굴이 사는 색'(퍼스널컬러)이 아니라 '추구미 타입의 색'을 쓴다.
+   **색을 새로 만들지 않는다** — 팔레트 안에서 고르기만 한다. */
+function stepColor(step, wantKey){
+  if(!COLOR_STEPS.includes(step.category)) return null;
+  const pal = palOf(step, wantKey);
+  if(!pal.length) return null;
+  const dir = step.direction;
+  const score = hex => {
+    const c=_lab(hex);
+    if(dir.axis==="T") return dir.sign==="+" ? -c.b : c.b;   // T+ = 시원한 쪽 = 노란기가 적은
+    return dir.sign==="+" ? -c.L : c.L;                       // D+ = 또렷·묵직 = 어두운 쪽
+  };
+  return pal.slice().sort((x,y)=>score(y)-score(x))[0];
+}
+
+function loadDiag(){
+  try{ const d=JSON.parse(localStorage.getItem("chugu_diag")||"null");
+       return (d && d.want && d.gap_axis) ? d : null; }catch(e){ return null; }
+}
+function doneSteps(){
+  try{ return JSON.parse(localStorage.getItem("chugu_steps")||"[]"); }catch(e){ return []; }
+}
+
+function renderStep(){
+  document.body.classList.add("screen-mode");
+  const el=$("prog"); if(el) el.classList.add("hidden");
+  const d=loadDiag();
+  if(!d || !STEP_ENGINE){ phase="start"; return renderStart(); }
+  const done=doneSteps();
+  STEP = STEP_ENGINE.buildStep({
+    gapAxis:d.gap_axis, wantName:TYPES[d.want].name, haveName:TYPES[d.have].name,
+    weekNo: done.length + 1, done: done.map(x=>x.category)
+  });
+  const W=TYPES[d.want], Hv=TYPES[d.have];
+  if(d.want === d.have){   // 추구미와 지금 스타일이 같은 타입 — 갈 곳을 지어내지 않는다
+    app.innerHTML=`<div class="screen"><div class="screen-body" style="justify-content:center;text-align:center">
+      <div class="em" style="font-size:44px">✨</div>
+      <h2 style="margin-top:14px">이미 같은 방향이에요</h2>
+      <p class="small" style="margin-top:10px">${W.name} 매력을 이미 하고 있어요. 지금 걸 그대로 살리면 돼요.</p>
+      </div><div class="screen-btm">
+      <button class="btn" onclick="phase='result';render()">내 결과 보기</button>
+      <button class="btn ghost" onclick="restart()">다시 진단하기</button></div></div>`;
+    return;
+  }
+  if(!STEP){   // 서열을 다 돌았다 — 없는 걸음을 지어내지 않는다
+    app.innerHTML=`<div class="screen"><div class="screen-body" style="justify-content:center;text-align:center">
+      <div class="em" style="font-size:44px">🎉</div>
+      <h2 style="margin-top:14px">한 바퀴 다 돌았어요</h2>
+      <p class="small" style="margin-top:10px">다시 진단해서 지금 좌표를 새로 재보면 다음 걸음이 나와요.</p>
+      </div><div class="screen-btm">
+      <button class="btn" onclick="phase='result';render()">내 결과 보기</button>
+      <button class="btn ghost" onclick="restart()">다시 진단하기</button></div></div>`;
+    return;
+  }
+  const col = stepColor(STEP, d.want);
+  const pal = palOf(STEP, d.want);
+  const nth = done.length + 1;
+  app.innerHTML=`
+   <div class="screen"><div class="screen-body">
+     <div class="q-part">오늘의 한 걸음 · ${nth}번째</div>
+     <h2 style="margin-top:6px">${stepLine(STEP)}</h2>
+     ${col ? `<div class="step-chip" style="background:${col}"></div>
+       <p class="small" style="margin-top:10px;color:var(--sub)">${W.name} 매력이 자주 쓰는 색이에요</p>
+       <div class="pal" style="margin-top:14px">${pal.map(c=>`<span class="pal-c" style="background:${c}"></span>`).join("")}</div>
+       <p class="small" style="margin-top:6px;opacity:.7">이 중 아무거나 골라도 같은 방향이에요</p>`
+      : `<p class="small" style="margin-top:12px;color:var(--sub)"><b>${W.name}</b>에 한 걸음 가까워져요.</p>`}
+     <div class="sec" style="width:100%;margin-top:22px">
+       <h3 style="font-size:13px">왜 이걸 먼저 하냐면</h3>
+       <p style="font-size:13.5px">지금 ${STEP.category}${jong(STEP.category)?"은":"는"} <b>${Hv.name}</b> 쪽이에요.
+       ${STEP.category}${jong(STEP.category)?"은":"는"} <b>${STEP._how}</b>로 바꿀 수 있어서, 오늘 당장 해볼 수 있는 것 중
+       ${W.name} 쪽으로 가장 크게 움직여요.</p>
+       <p style="font-size:13px;opacity:.75;margin-top:10px">한 번에 다 바꾸지 않아요. 한 칸씩만 옮겨도 충분해요.</p>
+     </div>
+   </div>
+   <div class="screen-btm">
+     <button class="btn" onclick="stepDone()">해봤어요</button>
+     <button class="btn ghost" onclick="phase='result';render()">내 좌표 · 결과 보기 ▾</button>
+   </div></div>`;
+  if(!window.__stepIssued){        // 같은 걸음을 다시 그릴 때 중복 발행하지 않는다
+    window.__stepIssued = true;
+    sbInsert("prescriptions", {user_id:UID, week_no:STEP.week_no, category:STEP.category,
+      direction:STEP.direction, target_delta:STEP.target_delta, status:"issued"});
+    track("prescription_issued", {category:STEP.category, axis:STEP.direction.axis+STEP.direction.sign, week_no:STEP.week_no});
+  }
+}
+
+function stepDone(){
+  if(!STEP) return;
+  const done=doneSteps();
+  done.push({category:STEP.category, ts:Date.now(), week_no:STEP.week_no});
+  try{ localStorage.setItem("chugu_steps", JSON.stringify(done)); }catch(e){}
+  track("prescription_done", {category:STEP.category, axis:STEP.direction.axis+STEP.direction.sign, week_no:STEP.week_no});
+  window.__stepIssued = false;
+  render();                        // 다음 걸음
+}
+
 // '처음부터 다시' — reload는 앱에서 화면이 통째로 깜빡인다 (고객팀 G4).
 // UID는 유지한다. 같은 사람의 재진단이므로 app_users를 다시 넣을 이유가 없다.
 // 다만 __diagSaved는 풀어야 새 진단이 저장된다 — 안 풀면 두 번째 결과가 조용히 사라진다.
@@ -944,6 +1107,15 @@ function renderResult(){
       extra_used:extraQ.length, duration_sec:durS, answers:answers});
     track("diagnosis_completed",{want:wr[0][0], have:hr[0][0], extra:extraQ.length, dur:durS, gender:GENDER});
   }
+  // 재방문 때 '오늘의 한 걸음'을 내려면 진단 결과가 기기에 남아 있어야 한다.
+  // 서버는 RLS가 insert_only라 조회가 안 되고, 조회되더라도 첫 화면이 네트워크에 묶인다.
+  try{
+    const w0=coordOf(scoreWant), h0=coordOf(scoreHave);
+    localStorage.setItem("chugu_diag", JSON.stringify({
+      v:1, ts:Date.now(), want:wr[0][0], have:hr[0][0], gender:GENDER,
+      gap_axis: (w0&&h0) ? {T:+(w0[0]-h0[0]).toFixed(4), D:+(w0[1]-h0[1]).toFixed(4)} : null
+    }));
+  }catch(e){}
   const W=TYPES[wr[0][0]], Hv=TYPES[hr[0][0]];
   const wTotal=wr.reduce((s,x)=>s+x[1],0)||1;
   const same=wr[0][0]===hr[0][0];
@@ -1308,6 +1480,13 @@ function adminExport(){ // 관리자: 이 기기의 누적 로그를 CSV로 다�
   a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
   a.download="추구미진단_응답로그.csv"; a.click();
 }
+/* 진단을 마친 사람이 다시 열면 첫 화면은 '오늘의 한 걸음'이다(전략팀 요청 §2).
+   엔진은 모듈이라 늦게 온다. 그동안 빈 화면을 두지 않고 기존 시작 화면을 띄운 뒤,
+   엔진이 도착하면 그때 걸음으로 바꾼다. 진단 이력이 없으면 아무것도 바뀌지 않는다. */
+window.__onStepEngineReady = (SE) => {
+  STEP_ENGINE = SE;
+  if(phase==="start" && loadDiag()){ phase="step"; render(); }
+};
 render();
 </script>
 
@@ -1316,14 +1495,17 @@ render();
      로드 실패해도 리포트 나머지는 그대로 뜬다 — 3절만 빠진다. -->
 <script type="module">
   try{
-    const [AS, PR, snapRes] = await Promise.all([
+    const [AS, PR, SE, snapRes] = await Promise.all([
       import("./modules/asset-score.js"),
       import("./modules/part-report.js"),
+      import("./modules/step-engine.js"),
       fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
     ]);
     window.__PART = { AS, PR, SNAP: snapRes };
     if (typeof window.__onPartEngineReady === "function") window.__onPartEngineReady();
-  }catch(e){ console.warn("3절 엔진 로드 실패 — 3절 생략", e); }
+    // 오늘의 한 걸음 — 엔진이 늦게 와도 첫 화면이 비지 않게, 도착하면 그때 바꾼다
+    window.__onStepEngineReady(SE);
+  }catch(e){ console.warn("엔진 로드 실패 — 3절·한 걸음 생략", e); }
 </script>
 <script>
 </body>
