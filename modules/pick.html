@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>타입별 추천 — 추구미즘</title>
+<meta name="theme-color" content="#FAF7FB">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{--bg:#FAF7FB;--ink:#2B2233;--sub:#6E6478;--accent:#B76BA3;--line:#E8E0EC;
+      --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Pretendard Variable','Pretendard',-apple-system,'Malgun Gothic',sans-serif;}
+body{background:var(--bg);color:var(--ink);word-break:keep-all;overflow-wrap:break-word;-webkit-tap-highlight-color:transparent;}
+.screen{min-height:100dvh;max-width:480px;margin:0 auto;padding:calc(var(--safe-t) + 20px) 18px calc(var(--safe-b) + 28px);}
+h1{font-size:20px;font-weight:800;letter-spacing:-0.02em;}
+.lead{font-size:14px;color:var(--sub);margin-top:8px;line-height:1.7;}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px;}
+.chip{border:1.5px solid var(--line);background:#fff;color:var(--sub);border-radius:20px;padding:8px 13px;
+      font-size:13px;font-weight:600;cursor:pointer;}
+.chip.on{border-color:var(--accent);color:var(--accent);background:#F9F1F7;}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:12px;display:flex;gap:13px;}
+.card img{width:84px;height:84px;object-fit:cover;border-radius:11px;flex:none;background:#EFE9F2;}
+.nm{font-size:15px;font-weight:700;line-height:1.4;}
+.pr{font-size:14px;font-weight:700;color:var(--accent);margin-top:4px;}
+.why{font-size:13px;color:var(--sub);line-height:1.6;margin-top:6px;}
+.tg{display:inline-block;font-size:11px;font-weight:700;color:var(--accent);background:#F5EBF2;border-radius:6px;padding:2px 7px;margin-top:7px;}
+.go{display:block;background:var(--accent);color:#fff;text-decoration:none;text-align:center;border-radius:10px;
+    padding:11px;font-size:14px;font-weight:700;margin-top:10px;}
+.disc{font-size:12px;color:var(--sub);line-height:1.65;background:#F2EDF5;border-radius:10px;padding:11px 13px;margin-top:16px;}
+.empty{font-size:14px;color:var(--sub);text-align:center;padding:40px 0;line-height:1.7;}
+/* 관리자 (?admin=1) */
+.adm{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:16px;}
+.adm label{display:block;font-size:12.5px;font-weight:700;color:var(--sub);margin-top:11px;}
+.adm input,.adm textarea{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:10px;font-size:14px;margin-top:5px;}
+.adm textarea{height:62px;resize:vertical;}
+.btn{display:block;width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;
+     padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px;}
+.btn.sub{background:#EFE7F2;color:var(--ink);}
+pre{background:#2B2233;color:#E9E2F0;border-radius:10px;padding:12px;font-size:11px;overflow-x:auto;margin-top:12px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="screen" id="app"></div>
+
+<script>
+// 강의용 타입별 제품 추천 (백그라운드 애드온 — 홈페이지 완성 시 임베드 예정)
+// 공개: 수강생이 QR로 접속해 보는 목록 / 관리자(?admin=1): 제품 등록 → picks.json 붙여넣기용 JSON 생성
+// 링크는 그대로 내보낸다 — 파트너스 딥링크에 임의 파라미터를 붙이면 추적이 깨질 수 있어, 코호트는 우리 쪽 클릭 로그로 잡는다
+const SB="https://qngylynylgqlbidvtbci.supabase.co", KEY="sb_publishable_bGVbZ31O7OX_rnkLVb0i5Q_SDa8JEri";
+const SRC=new URLSearchParams(location.search).get("src")||null;   // 강의 코호트 (lecture_cohorts 규칙 재사용)
+const ADMIN=new URLSearchParams(location.search).get("admin")==="1";
+let UID=null; try{ UID=localStorage.getItem("czm_uid"); if(!UID){ UID=(crypto.randomUUID?crypto.randomUUID():'u'+Date.now()); localStorage.setItem("czm_uid",UID);} }catch(e){}
+function track(event, props={}){
+  try{ fetch(`${SB}/rest/v1/events`,{method:"POST",headers:{"Content-Type":"application/json","apikey":KEY,"Authorization":`Bearer ${KEY}`},
+    body:JSON.stringify({user_id:UID, event, props:Object.assign({src:SRC}, props)})}); }catch(e){}
+}
+const TYPES=[["romantic","로맨틱"],["pure","청순청량"],["elegant","우아한"],["energetic","에너제틱"],
+             ["gorgeous","화려함"],["classic","클래식"],["charisma","카리스마"],["chic","세련된"]];
+const NAME=Object.fromEntries(TYPES);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s||"").replace(/[<>&"]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
+let PICKS=[], FILTER=null;
+
+// ── 공개 화면 ──
+function renderPublic(){
+  const list = FILTER ? PICKS.filter(p=>(p.types||[]).includes(FILTER)) : PICKS;
+  $("app").innerHTML = `
+    <h1>타입별 추천</h1>
+    <p class="lead">강의에서 소개한 제품이에요. 내 타입을 눌러 보세요.</p>
+    <div class="chips">
+      <button class="chip${FILTER?"":" on"}" data-t="">전체</button>
+      ${TYPES.map(([k,n])=>`<button class="chip${FILTER===k?" on":""}" data-t="${k}">${n}</button>`).join("")}
+    </div>
+    ${list.length ? list.map(p=>`
+      <div class="card">
+        ${p.img?`<img src="${esc(p.img)}" alt="" onerror="this.style.visibility='hidden'">`:""}
+        <div style="flex:1;min-width:0">
+          <div class="nm">${esc(p.name)}</div>
+          ${p.price?`<div class="pr">${esc(p.price)}</div>`:""}
+          ${p.why?`<div class="why">${esc(p.why)}</div>`:""}
+          ${(p.types||[]).map(t=>`<span class="tg">${NAME[t]||t}</span>`).join(" ")}
+          <a class="go" href="${esc(p.url)}" target="_blank" rel="noopener"
+             data-id="${esc(p.id)}" data-nm="${esc(p.name)}">보러 가기</a>
+        </div>
+      </div>`).join("")
+      : `<div class="empty">아직 등록된 제품이 없어요.<br>강의에서 소개하면 여기 올라와요.</div>`}
+    <div class="disc">이 페이지의 링크는 제휴 링크예요. 이 링크로 구매하시면 추구미즘이 일정액의 수수료를 받아요 —
+      제품은 <b>수수료가 아니라 타입 적합도</b>를 기준으로 고릅니다.</div>`;
+  $("app").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ FILTER=b.dataset.t||null; renderPublic();
+    track("pick_filter",{type:FILTER}); });
+  $("app").querySelectorAll(".go").forEach(a=>a.onclick=()=>track("pick_click",{id:a.dataset.id, name:a.dataset.nm, type:FILTER}));
+  track("pick_view",{n:list.length, filter:FILTER});
+}
+
+// ── 관리자 화면: 제품 등록 → picks.json 에 붙여넣을 JSON 출력 ──
+// ponytail: 가격 자동조회(네이버 쇼핑 API)는 CORS 때문에 서버 프록시가 필요해 보류.
+//           파트너스에서 링크 뽑을 때 제품 페이지를 이미 보고 있으므로 복사·붙여넣기가 더 짧다.
+function renderAdmin(){
+  $("app").innerHTML = `
+    <h1>제품 등록 (관리자)</h1>
+    <p class="lead">쿠팡 파트너스에서 링크를 뽑은 뒤, 그 화면의 제품명·가격·이미지 주소를 옮겨 담으면 돼요.</p>
+    <div class="adm">
+      <label>제품명</label><input id="f_name" placeholder="예: OO 립 틴트 03호">
+      <label>가격 (표시용 그대로)</label><input id="f_price" placeholder="예: 12,900원">
+      <label>이미지 주소 (선택)</label><input id="f_img" placeholder="https://...jpg">
+      <label>제휴 링크</label><input id="f_url" placeholder="https://link.coupang.com/...">
+      <label>어울리는 타입 (복수 선택)</label>
+      <div class="chips" id="f_types">${TYPES.map(([k,n])=>`<button class="chip" data-t="${k}">${n}</button>`).join("")}</div>
+      <label>추천 이유 (수강생에게 보일 한 줄)</label><textarea id="f_why" placeholder="예: 푸른기 도는 로즈라 쿨톤 피부에서 얼굴이 화사해져요"></textarea>
+      <button class="btn" id="add">목록에 추가</button>
+    </div>
+    <div class="adm">
+      <b style="font-size:14px">현재 목록 (${PICKS.length}개)</b>
+      <pre id="out">${esc(JSON.stringify(PICKS,null,1))}</pre>
+      <button class="btn sub" id="copy">JSON 복사 — modules/picks.json 에 붙여넣기</button>
+      <button class="btn sub" id="undo">마지막 항목 취소</button>
+      <a class="go" style="background:#EFE7F2;color:var(--ink)" href="?">공개 화면 미리보기</a>
+    </div>`;
+  const sel=new Set();
+  $("f_types").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
+    b.classList.toggle("on"); sel.has(b.dataset.t)?sel.delete(b.dataset.t):sel.add(b.dataset.t);
+  });
+  $("add").onclick=()=>{
+    const name=$("f_name").value.trim(), url=$("f_url").value.trim();
+    if(!name||!url) return alert("제품명과 제휴 링크는 꼭 넣어주세요.");
+    PICKS.push({id:"p"+Date.now().toString(36), name, price:$("f_price").value.trim(),
+      img:$("f_img").value.trim(), url, types:[...sel], why:$("f_why").value.trim()});
+    renderAdmin();
+  };
+  $("copy").onclick=()=>navigator.clipboard.writeText(JSON.stringify(PICKS,null,1)).then(()=>alert("복사했어요. modules/picks.json 에 붙여넣고 배포하면 반영돼요."));
+  $("undo").onclick=()=>{ PICKS.pop(); renderAdmin(); };
+}
+
+fetch("picks.json").then(r=>r.json()).then(d=>{ PICKS=Array.isArray(d)?d:[]; })
+  .catch(()=>{ PICKS=[]; })
+  .finally(()=> ADMIN ? renderAdmin() : renderPublic());
+</script>
+</body>
+</html>
