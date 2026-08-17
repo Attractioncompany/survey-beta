@@ -57,11 +57,11 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=364070c"></script>
+<script src="czm-core.js?v=bf3bbcc"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
-const LKEY="chugu_lecture";            // {pc8:"romantic", at:"..."}
+const LKEY="chugu_lecture";            // {pc8:"romantic", age:"20-39", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 
@@ -100,15 +100,15 @@ function colorSection(wantKey, myPC){
   </div>`;
 }
 
-function normLines(r,l){
+function normLines(r,l,age){
   if(!NORMS) return [];
   const F=k=>NORMS.fields.find(f=>f.field===k);
   const out=[];
 
-  // ① 눈 사이 — 유일한 직접 대응. 참석자 연령대(30~50대)에 맞춰 40-59 행을 쓴다.
+  // ① 눈 사이 — 유일한 직접 대응. 유저가 고른 연령대 행을 쓴다.
   const io=F("interocular");
   if(io && r.interocular!=null){
-    const m=io.norm_mean[io.recommended_row];
+    const m=io.norm_mean[age] ?? io.norm_mean[io.recommended_row];
     const d=r.interocular-m;
     out.push({t:"눈 사이", v:`${r.interocular.toFixed(2)}`,
       s:`같은 또래 평균 ${m} — ${Math.abs(d)<0.05?"거의 같아요":d>0?"조금 넓은 쪽이에요":"조금 좁은 쪽이에요"}`});
@@ -160,6 +160,26 @@ function renderPC(){
   });
 }
 
+// ── ①-2 연령대 ────────────────────────────────────────────
+// 규준이 나이대로 갈린다(눈 사이 20-39세 1.38 / 40-59세 1.33). 안 물으면 틀린 값과 견주게 된다.
+// 화면에는 나이대를 적지 않는다 — "40~59세 평균"이라고 쓰면 듣기 좋을 리가 없다.
+const AGES=[["20-39","20~30대"],["40-59","40~50대"],["60-79","60대 이상"]];
+function renderAge(){
+  const cur=(state().pc||{}).age;
+  app.innerHTML = head("2 / 3") + `<div class="card">
+    <p class="lead">연령대만 알려주세요.</p>
+    <p class="note">또래 평균과 견주려고요. 나이대마다 평균이 달라서요.</p>
+    <div class="pcgrid" style="grid-template-columns:1fr">${AGES.map(([k,lbl])=>
+      `<button class="pc${cur===k?" sel":""}" data-a="${k}">${lbl}</button>`).join("")}</div>
+    </div>`;
+  app.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{
+    const cur=state().pc||{};
+    LS.set(LKEY,{...cur, age:b.dataset.a});
+    app.querySelectorAll("[data-a]").forEach(x=>x.classList.toggle("sel", x===b));
+    setTimeout(route, 420);
+  });
+}
+
 // ── 순차 라우터 ─────────────────────────────────────────────
 // 대표 지적 2026-08-17: 허브로 두면 매번 돌아와서 다음 걸 눌러야 해 불편하다.
 // 안 끝난 단계로 **알아서 넘어간다.** 유저가 고를 것은 퍼스널컬러 하나뿐이다.
@@ -171,7 +191,8 @@ const mark=k=>{ try{ sessionStorage.setItem("czm_lec_sent_"+k,"1"); }catch(e){} 
 
 function route(){
   const s=state();
-  if(!s.pc)   return renderPC();
+  if(!s.pc)        return renderPC();
+  if(!s.pc.age)    return renderAge();
   if(!s.face){ if(!sent("face")){ mark("face"); location.href="../photo.html?flow=lecture"; return; } return renderStuck("얼굴 촬영","photo-module.html?flow=lecture"); }
   if(!s.diag){ if(!sent("diag")){ mark("diag"); location.href="../index.html?flow=lecture"; return; } return renderStuck("설문","../index.html?flow=lecture"); }
   renderReport();
@@ -210,13 +231,16 @@ function partSection(face){
     const rows=P.PR.buildPartRows(one, {n:dist.n});
     const overall=one.overallType && one.overallType.type;
     const narr=P.PR.summaryNarrative(rows, overall, !!one.energeticSignal, null);
-    const list=rows.map(r=>`
+    // 대표 지적 2026-08-17: "이번엔 흐리게 보였어요"는 측정 실패인지 안 잰 건지 구분이 안 된다.
+    // 강의 흐름은 색을 **일부러** 안 잰다. 못 읽은 칸은 문장을 지어내지 말고 그냥 빼고,
+    // 몇 군데를 봤는지만 밝힌다. 안 보여주는 것이 모르는 말을 하는 것보다 낫다.
+    const shown=rows.filter(r=>r.line);
+    const list=shown.map(r=>`
       <div class="prow">
-        <b>${r.part}</b><span class="plabel">${r.label}</span>
-        ${r.line?`<div class="pline">${r.line}</div>`:""}
-        <div class="pdots">${r.dots}</div>
+        <b>${r.part}</b>
+        <div class="pline">${r.line}</div>
       </div>`).join("");
-    return {html:list, narr:narr||"", caption:P.PR.CAPTION};
+    return {html:list, narr:narr||"", seen:shown.length};
   }catch(e){ console.warn("부위 리포트 실패", e); return {html:"", narr:""}; }
 }
 
@@ -224,12 +248,19 @@ function renderReport(){
   const s=state();
   const pcLabel=(CZM.PC8.find(t=>t.key===s.pc.pc8)||{}).label;
   const N=CZM.TYPE_NAMES, r=s.face.ratio, l=s.face.line;
+  // 격차는 축 이름을 던지지 않고 문장으로 말한다(대표 지적 2026-08-17: "벌어진 쪽 · 강함"은 뜻이 안 통한다).
+  // 화법은 설문 리포트 4절(정본 §3-4)에서 그대로 가져온다 — 두 화면의 말이 갈리면 안 된다.
+  // gap_axis = 추구미 − 지금. 그러므로 부호가 가리키는 것은 **지금 내가 어느 쪽에 있는가**다.
   const g=s.diag.gap_axis||{};
-  const AX={T:["웜·곡선","쿨·직선"],D:["순함","강함"],M:["동안","성숙"]};
-  const top=Object.entries(g).filter(([k,v])=>AX[k]&&Number.isFinite(v))
-              .sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]))[0];
+  const wantName=CZM.TYPE_NAMES[s.diag.want]??s.diag.want;
+  const parts=[];
+  if(Number.isFinite(g.D)&&g.D!==0) parts.push(g.D>0?"부드러운":"또렷한");
+  if(Number.isFinite(g.T)&&g.T!==0) parts.push(g.T>0?"따뜻한":"시원한");
+  if(Number.isFinite(g.M)&&g.M!==0) parts.push(g.M>0?"어려 보이는":"차분한");
+  const gapLine = parts.length
+    ? `지금은 <b>${esc(wantName)}</b>보다 ${parts.join(" 쪽, ")} 쪽에 있어요.` : "";
   const part=partSection(s.face);
-  const norms=normLines(r,l);
+  const norms=normLines(r,l,(s.pc||{}).age);
 
   app.innerHTML = head("결과") + `
     <div class="card hero">
@@ -237,17 +268,17 @@ function renderReport(){
       <p class="big">${esc(pcLabel)}</p>
       <p class="note">서로 봐준 퍼스널컬러예요.</p>
       <div class="obs" style="margin-top:14px">
-        <div class="obs-l">되고 싶은 모습</div><div class="obs-v">${esc(N[s.diag.want]??s.diag.want)}</div>
-        <div class="obs-l">지금 하고 있는 것</div><div class="obs-v">${esc(N[s.diag.have]??s.diag.have)}</div>
-        ${top?`<div class="obs-l">벌어진 쪽</div><div class="obs-v">${AX[top[0]][top[1]>0?1:0]}</div>`:``}
+        <div class="obs-l">추구미</div><div class="obs-v">${esc(N[s.diag.want]??s.diag.want)}</div>
+        <div class="obs-l">지금 나의 매력</div><div class="obs-v">${esc(N[s.diag.have]??s.diag.have)}</div>
       </div>
+      ${gapLine?`<p class="note" style="margin-top:12px;font-size:14px;color:var(--ink)">${gapLine}</p>`:``}
     </div>
 
     ${norms.length?`<div class="card"><h2>또래 평균과 견주면</h2>
       <div class="obs">${norms.map(x=>
         `<div class="obs-l">${x.t}</div><div class="obs-v">${x.v}<br><span class="sub13">${x.s}</span></div>`).join("")}</div>
-      <p class="note">한국 여성 계측 연구(40~59세) 기준이에요.
-         <b>얼굴형·코·입·턱은 견주지 않았어요</b> — 연구마다 재는 방법이 달라 곧바로 비교하면 틀린 말이 됩니다.</p>
+      <p class="note">한국 여성 계측 연구 기준이에요. 눈 쪽만 견줄 수 있어요 —
+         얼굴형·코·입·턱은 연구마다 재는 방법이 달라서, 지금 비교하면 정확하지 않아요.</p>
     </div>`:``}
 
     ${colorSection(s.diag.want, pcLabel)}
@@ -255,23 +286,17 @@ function renderReport(){
     ${part.html?`<div class="card"><h2>부위별로 보면</h2>
       ${part.narr?`<p class="lead">${part.narr}</p>`:``}
       ${part.html}
-      <p class="note">${part.caption||""}</p>
+      <p class="note">사진에서 또렷하게 읽힌 ${part.seen}군데예요.</p>
     </div>`:``}
 
-    <div class="card"><h2>알아두면 좋은 것</h2>
-      <p class="lead">"눈 사이는 눈 하나 길이"라는 말, 들어보셨죠.</p>
-      <p class="note">서양에서 온 기준이에요. 동아시아 얼굴을 잰 연구에서는 이 기준을 만족하는 사람이
-         <b>사실상 없었습니다.</b> 눈 사이가 넓은 게 아니라, <b>그게 우리 평균</b>이에요.</p>
-    </div>
-
-    <div class="card"><h2>잰 값</h2>
+    <div class="card"><h2>측정값</h2>
       <div class="obs">
         <div class="obs-l">얼굴 세로:가로</div><div class="obs-v">${(+r.face_HW).toFixed(2)}</div>
         <div class="obs-l">3분할</div><div class="obs-v">${(+r.upper).toFixed(3)} · ${(+r.mid).toFixed(3)} · ${(+r.lower).toFixed(3)}</div>
         <div class="obs-l">턱선 각도</div><div class="obs-v">${(+l.jaw_angular_deg).toFixed(1)}°</div>
         <div class="obs-l">턱끝 각도</div><div class="obs-v">${(+l.chin_angle_deg).toFixed(1)}°</div>
       </div>
-      <p class="note">이 값들은 아직 평균과 견줄 기준이 없어서 <b>잰 값만</b> 보여드려요.</p>
+      <p class="note">비교할 기준이 아직 없는 값들이에요. 측정한 그대로 보여드려요.</p>
     </div>
 
     <button class="btn quiet" id="back">처음부터 다시</button>`;
