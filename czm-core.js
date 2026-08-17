@@ -56,7 +56,8 @@
   //
   // ⚠ 두 칸의 명칭이 아직 안 굳었다(대표 2026-08-17). 마스터 표기 → 잠정 채택:
   //     에너제틱: 마스터 "봄 스트롱" → **봄 클리어** (대표 추정)
-  //     카리스마: 마스터 "겨울 딥"   → **겨울 스트롱** (대표 추정)
+  //     세련된:   마스터 "겨울 클리어" → **겨울 스트롱** (대표 추정 · 2026-08-17 시정)
+  //   ⚠ 처음에 겨울 스트롱을 카리스마에 붙였는데 틀렸다. 대체 후보로 지목된 칸은 세련된이다.
   //   이론팀 확정이 오면 **이 표만** 고친다. 다른 파일에 라벨을 복사하지 말 것.
   var PC8 = [
     { key:"romantic",  label:"봄 라이트",   master:"봄 라이트",  provisional:false },
@@ -65,8 +66,8 @@
     { key:"elegant",   label:"여름 뮤트",   master:"여름 뮤트",  provisional:false },
     { key:"gorgeous",  label:"가을 딥",     master:"가을 딥",    provisional:false },
     { key:"classic",   label:"가을 뮤트",   master:"가을 뮤트",  provisional:false },
-    { key:"charisma",  label:"겨울 스트롱", master:"겨울 딥",    provisional:true  },
-    { key:"chic",      label:"겨울 클리어", master:"겨울 클리어",provisional:false }
+    { key:"charisma",  label:"겨울 딥",     master:"겨울 딥",    provisional:false },
+    { key:"chic",      label:"겨울 스트롱", master:"겨울 클리어",provisional:true  }
   ];
 
   // ── 좌표 (이론 값 — 개발팀이 고치지 않는다) ─────────────────

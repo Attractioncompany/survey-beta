@@ -57,7 +57,7 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=2dbd6c8"></script>
+<script src="czm-core.js?v=0b59aeb"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
@@ -76,28 +76,24 @@ let NORMS=null, PRESC=null, PALETTE=null;
 // ① 추구미가 그 색을 쓰는 이유 → ② 오늘 진단받은 내 색 → ③ 오늘 해볼 것, 순으로 잇는다.
 // 색 이름·색칩은 전부 기존 자산에서 온다(처방DB·교구 팔레트). 여기서 색을 만들지 않는다.
 function colorSection(wantKey, myPC){
-  if(!PRESC) return "";
+  if(!PRESC) return null;
   const wantPC=(CZM.PC8.find(t=>t.key===wantKey)||{});
-  const nameOf=lbl=>PRESC.types[lbl] || PRESC.types[(CZM.PC8.find(t=>t.label===lbl)||{}).master] || null;
-  const mine=nameOf(myPC), want=nameOf(wantPC.label);
+  // 처방DB에 아직 안 채워진 칸이 있다("(아래 12번 추출분 반영)"·"(동)").
+  // 자리표시자를 그대로 화면에 내보내면 유저는 그걸 색 이름으로 읽는다. 없는 것은 없다고 다룬다.
+  const real=v=>v && !/^\(.*\)$/.test(v.trim()) ? v : null;
+  const nameOf=lbl=>{
+    const row=PRESC.types[lbl] || PRESC.types[(CZM.PC8.find(t=>t.label===lbl)||{}).master];
+    if(!row) return null;
+    const b=real(row.best); if(!b) return null;
+    return {best:b, second:real(row.second), accessory:real(row.accessory)};
+  };
   const chips=lbl=>{
     const pal=PALETTE && PALETTE.palettes && (PALETTE.palettes[lbl] ||
               PALETTE.palettes[(CZM.PC8.find(t=>t.label===lbl)||{}).master]);
     return pal && pal.best ? `<div class="chips">${pal.best.slice(0,10).map(h=>`<i style="background:${h}"></i>`).join("")}</div>` : "";
   };
-  if(!mine && !want) return "";
-  return `<div class="card"><h2>색 이야기</h2>
-    ${want?`<p class="lead">${esc(CZM.TYPE_NAMES[wantKey]||"")} 매력은 이런 색으로 만들어져요.</p>
-      ${chips(wantPC.label)}
-      <p class="note">${esc(want.best)}</p>`:``}
-    ${mine?`<p class="lead" style="margin-top:18px">그런데 오늘 진단받으신 색은 <b>${esc(myPC)}</b>이에요.</p>
-      ${chips(myPC)}
-      <p class="note">잘 받는 색: ${esc(mine.best)}<br>
-         곁들이면 좋은 색: ${esc(mine.second)}<br>
-         소품: ${esc(mine.accessory)}</p>`:``}
-    <p class="note" style="margin-top:14px"><b>오늘 해볼 것</b> — 옷을 다 바꾸지 않아도 돼요.
-       얼굴 가까이 오는 것 하나만(스카프·상의·립) 위 색으로 바꿔보시면 차이가 보여요.</p>
-  </div>`;
+  return { mine:nameOf(myPC), want:nameOf(wantPC.label),
+           mineChips:chips(myPC), wantChips:chips(wantPC.label), wantLabel:wantPC.label };
 }
 
 function normLines(r,l,age){
@@ -248,46 +244,65 @@ function renderReport(){
   const s=state();
   const pcLabel=(CZM.PC8.find(t=>t.key===s.pc.pc8)||{}).label;
   const N=CZM.TYPE_NAMES, r=s.face.ratio, l=s.face.line;
-  // 격차는 축 이름을 던지지 않고 문장으로 말한다(대표 지적 2026-08-17: "벌어진 쪽 · 강함"은 뜻이 안 통한다).
-  // 화법은 설문 리포트 4절(정본 §3-4)에서 그대로 가져온다 — 두 화면의 말이 갈리면 안 된다.
-  // gap_axis = 추구미 − 지금. 그러므로 부호가 가리키는 것은 **지금 내가 어느 쪽에 있는가**다.
-  const g=s.diag.gap_axis||{};
-  const wantName=CZM.TYPE_NAMES[s.diag.want]??s.diag.want;
-  const parts=[];
+  const wantName=N[s.diag.want]??s.diag.want, haveName=N[s.diag.have]??s.diag.have;
+
+  // 격차는 축 이름을 던지지 않고 문장으로 말한다. 화법은 설문 리포트 4절(정본 §3-4)에서 가져온다.
+  // gap_axis = 추구미 − 지금 → 부호가 가리키는 것은 **지금 내가 어느 쪽에 있는가**다.
+  const g=s.diag.gap_axis||{}, parts=[];
   if(Number.isFinite(g.D)&&g.D!==0) parts.push(g.D>0?"부드러운":"또렷한");
   if(Number.isFinite(g.T)&&g.T!==0) parts.push(g.T>0?"따뜻한":"시원한");
   if(Number.isFinite(g.M)&&g.M!==0) parts.push(g.M>0?"어려 보이는":"차분한");
-  const gapLine = parts.length
-    ? `지금은 <b>${esc(wantName)}</b>보다 ${parts.join(" 쪽, ")} 쪽에 있어요.` : "";
-  const part=partSection(s.face);
-  const norms=normLines(r,l,(s.pc||{}).age);
 
+  const part=partSection(s.face), norms=normLines(r,l,(s.pc||{}).age), col=colorSection(s.diag.want, pcLabel);
+
+  // 해설 골격 (대표 확정 2026-08-17): 가진 것 → 가고 싶은 방향 → 시도 → 주의.
+  // "그런데 당신 색은 ~"처럼 대립시키면 유저가 자기가 잘못된 줄 안다(결핍 화법 금지·헌법 §4).
   app.innerHTML = head("결과") + `
     <div class="card hero">
       <p class="note" style="margin:0">오늘의 진단</p>
       <p class="big">${esc(pcLabel)}</p>
-      <p class="note">서로 봐준 퍼스널컬러예요.</p>
       <div class="obs" style="margin-top:14px">
-        <div class="obs-l">추구미</div><div class="obs-v">${esc(N[s.diag.want]??s.diag.want)}</div>
-        <div class="obs-l">지금 나의 매력</div><div class="obs-v">${esc(N[s.diag.have]??s.diag.have)}</div>
+        <div class="obs-l">지금 나의 매력</div><div class="obs-v">${esc(haveName)}</div>
+        <div class="obs-l">추구미</div><div class="obs-v">${esc(wantName)}</div>
       </div>
-      ${gapLine?`<p class="note" style="margin-top:12px;font-size:14px;color:var(--ink)">${gapLine}</p>`:``}
+    </div>
+
+    <div class="card"><h2>지금 내가 가진 것</h2>
+      ${part.narr?`<p class="lead">${part.narr}</p>`:``}
+      ${part.html||""}
+      ${part.seen?`<p class="note">사진에서 또렷하게 읽힌 ${part.seen}군데예요.</p>`:``}
+      ${col&&col.mine?`
+        <p class="lead" style="margin-top:18px">${esc(pcLabel)}에 잘 받는 색이에요.</p>
+        ${col.mineChips}
+        <p class="note">${esc(col.mine.best)}${col.mine.second?`<br>곁들이면 좋은 색: ${esc(col.mine.second)}`:``}${col.mine.accessory?`<br>소품: ${esc(col.mine.accessory)}`:``}</p>`:``}
+    </div>
+
+    <div class="card"><h2>만들어가고 싶은 방향</h2>
+      <p class="lead">${esc(wantName)}</p>
+      ${parts.length?`<p class="note" style="font-size:14px;color:var(--ink)">지금은 ${esc(wantName)}보다 ${parts.join(" 쪽, ")} 쪽에 있어요.</p>`:``}
+      ${col&&col.want?`
+        ${col.wantChips}
+        <p class="note">${esc(wantName)} 매력은 이런 색으로 만들어져요 — ${esc(col.want.best)}</p>`:``}
+    </div>
+
+    <div class="card"><h2>시도해보면 좋은 것</h2>
+      <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.75">
+        ${col&&col.mine?`· <b>얼굴 가까이</b>(립·스카프·상의 목선)엔 잘 받는 색을 두세요. 얼굴이 사는 자리예요.<br>`:``}
+        ${col&&col.want?`· <b>얼굴에서 먼 곳</b>(하의·가방·신발)엔 ${esc(wantName)} 색을 써보세요. 인상은 그쪽이 만들어요.<br>`:``}
+        · 한 번에 하나만 바꿔보세요. 무엇이 달라졌는지 알 수 있어요.</p>
+    </div>
+
+    <div class="card"><h2>다만 이건 주의하세요</h2>
+      <p class="note" style="font-size:14px;line-height:1.75">
+        · 한꺼번에 다 바꾸면 어색해져요. 오늘은 하나만으로 충분해요.<br>
+        ${norms.length?`· 아래 견줌은 <b>눈 쪽만</b> 가능해요. 얼굴형·코·입·턱은 연구마다 재는 방법이 달라서 지금 비교하면 정확하지 않아요.<br>`:``}
+        · 사진은 조명과 각도에 따라 값이 조금씩 달라져요. 오늘 한 장의 결과예요.</p>
     </div>
 
     ${norms.length?`<div class="card"><h2>또래 평균과 견주면</h2>
       <div class="obs">${norms.map(x=>
         `<div class="obs-l">${x.t}</div><div class="obs-v">${x.v}<br><span class="sub13">${x.s}</span></div>`).join("")}</div>
-      <p class="note">한국 여성 계측 연구 기준이에요. 눈 쪽만 견줄 수 있어요 —
-         얼굴형·코·입·턱은 연구마다 재는 방법이 달라서, 지금 비교하면 정확하지 않아요.</p>
-    </div>`:``}
-
-    ${colorSection(s.diag.want, pcLabel)}
-
-    ${part.html?`<div class="card"><h2>부위별로 보면</h2>
-      ${part.narr?`<p class="lead">${part.narr}</p>`:``}
-      ${part.html}
-      <p class="note">사진에서 또렷하게 읽힌 ${part.seen}군데예요.</p>
-    </div>`:``}
+      <p class="note">한국 여성 계측 연구 기준이에요.</p></div>`:``}
 
     <div class="card"><h2>측정값</h2>
       <div class="obs">
