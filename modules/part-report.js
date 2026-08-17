@@ -88,7 +88,7 @@ export function partRow({ part, type, second, adjacent, obs, n, missing, flagged
   const row = { part, type, gauge: g, dots: dots(g) };
 
   if (missing) {                       // 강등 ① — 라벨 교체 + 이유 문장 생략(정본 §3-3 강등)
-    row.label = "이번엔 흐리게 보였어요";
+    row.label = "사진에서 잘 안 잡혔어요";   // "흐리게 보였어요"는 측정 실패인지 안 잰 건지 구분이 안 된다(대표 지적)
     row.line = "";
     return row;
   }
@@ -99,12 +99,20 @@ export function partRow({ part, type, second, adjacent, obs, n, missing, flagged
     row.line = (NOSE_LINE[type] || NOSE_LINE._default).replace("{T}", type);
     return row;
   }
-  // 정본 템플릿: "[관찰1]하고, [관찰2]해서요" — 마지막 관찰만 종결형(e), 앞은 연결형(c)
+  // 정본 템플릿은 "[관찰1]하고, [관찰2]해서요"였다. 그대로 붙이면
+  //   "눈썹은 우아한 매력에 가까워요 — 눈썹이 눈에 가깝게 붙어서요."
+  // 가 되는데, 뒷문장이 이유형(-서요)이라 **문장이 닫히지 않는다**(대표 지적 2026-08-17).
+  // 관찰을 이유절이 아니라 **평서문**으로 세워 두 문장으로 끊는다.
+  //   → "눈썹은 우아한 매력에 가까워요. 눈썹이 눈에 가깝게 붙어요."
+  // 어형은 새로 쓰지 않고 종결형(e)에서 기계적으로 얻는다: "-서요" → "-요".
+  //   올라가서요→올라가요 · 트여서요→트여요 · 아담해서요→아담해요 · 정돈돼서요→정돈돼요
+  // ⚠ 문구 변경이므로 마케팅 검수 대상. 뜻은 그대로이고 어미만 닫았다.
+  const decl = e => e.replace(/서요$/, "요");
   const ws = (obs || []).map(o => OBS[o.field] && OBS[o.field][o.dir]).filter(Boolean).slice(0, 2);
   const tail = ws.length === 0 ? ""
-    : ws.length === 1 ? ` — ${ws[0].e}`
-    : ` — ${ws.slice(0, -1).map(w => w.c).join(", ")}, ${ws[ws.length - 1].e}`;
-  row.line = `${eun(part)} ${type} 매력에 가까워요${tail}.`;
+    : ws.length === 1 ? ` ${decl(ws[0].e)}.`
+    : ` ${ws.slice(0, -1).map(w => w.c).join(", ")}, ${decl(ws[ws.length - 1].e)}.`;
+  row.line = `${eun(part)} ${type} 매력에 가까워요.${tail}`;
   if (g <= 2 && !missing)              // 강등 ② — 저신뢰 병기
     row.note = "사진 한 장으론 확신이 낮은 부위예요 — 방향만 참고해 주세요.";
   return row;
