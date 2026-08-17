@@ -43,18 +43,95 @@ button{font:inherit;cursor:pointer}
 .obs{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;background:var(--soft);border-radius:12px;padding:14px 15px;align-items:baseline}
 .obs-l{font-size:12.5px;color:var(--sub)} .obs-v{font-size:15px;font-weight:600}
 .tag{border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-size:11px;color:var(--sub)}
+.hero{background:linear-gradient(160deg,#FDF6F3,#F6F1F5);border-color:#EFE3E0}
+.big{font-size:30px;font-weight:800;letter-spacing:-.03em;margin:2px 0 0}
+.sub13{font-weight:400;font-size:13px;color:var(--sub)}
+.prow{padding:11px 0;border-top:1px solid rgba(0,0,0,.06)}
+.prow b{font-size:14px} .plabel{font-size:12px;color:var(--sub);margin-left:7px}
+.pline{font-size:13px;color:var(--ink);opacity:.85;line-height:1.65;margin-top:4px}
+.pdots{font-size:11px;color:var(--sub);letter-spacing:2px;margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.chips i{width:30px;height:30px;border-radius:8px;border:1px solid rgba(0,0,0,.07)}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=af69a3c"></script>
+<script src="czm-core.js?v=364070c"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
 const LKEY="chugu_lecture";            // {pc8:"romantic", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
+
+// 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
+// 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
+//       "어느 쪽"까지만 말하고 **"상위 몇 %"는 말하지 않는다.**
+// 19개 필드 중 15개는 대응 불가로 판정됐다 — 그건 실패가 아니라 정확한 결과다.
+// 억지로 붙이면 강의 현장에서 참석자에게 틀린 말을 하게 된다.
+let NORMS=null, PRESC=null, PALETTE=null;
+// 색 섹션 — 대표 지적 2026-08-17:
+// "겨울 스트롱"이라고만 쓰면 유저는 그게 뭔지 모른다. 이름은 정보가 아니다.
+// ① 추구미가 그 색을 쓰는 이유 → ② 오늘 진단받은 내 색 → ③ 오늘 해볼 것, 순으로 잇는다.
+// 색 이름·색칩은 전부 기존 자산에서 온다(처방DB·교구 팔레트). 여기서 색을 만들지 않는다.
+function colorSection(wantKey, myPC){
+  if(!PRESC) return "";
+  const wantPC=(CZM.PC8.find(t=>t.key===wantKey)||{});
+  const nameOf=lbl=>PRESC.types[lbl] || PRESC.types[(CZM.PC8.find(t=>t.label===lbl)||{}).master] || null;
+  const mine=nameOf(myPC), want=nameOf(wantPC.label);
+  const chips=lbl=>{
+    const pal=PALETTE && PALETTE.palettes && (PALETTE.palettes[lbl] ||
+              PALETTE.palettes[(CZM.PC8.find(t=>t.label===lbl)||{}).master]);
+    return pal && pal.best ? `<div class="chips">${pal.best.slice(0,10).map(h=>`<i style="background:${h}"></i>`).join("")}</div>` : "";
+  };
+  if(!mine && !want) return "";
+  return `<div class="card"><h2>색 이야기</h2>
+    ${want?`<p class="lead">${esc(CZM.TYPE_NAMES[wantKey]||"")} 매력은 이런 색으로 만들어져요.</p>
+      ${chips(wantPC.label)}
+      <p class="note">${esc(want.best)}</p>`:``}
+    ${mine?`<p class="lead" style="margin-top:18px">그런데 오늘 진단받으신 색은 <b>${esc(myPC)}</b>이에요.</p>
+      ${chips(myPC)}
+      <p class="note">잘 받는 색: ${esc(mine.best)}<br>
+         곁들이면 좋은 색: ${esc(mine.second)}<br>
+         소품: ${esc(mine.accessory)}</p>`:``}
+    <p class="note" style="margin-top:14px"><b>오늘 해볼 것</b> — 옷을 다 바꾸지 않아도 돼요.
+       얼굴 가까이 오는 것 하나만(스카프·상의·립) 위 색으로 바꿔보시면 차이가 보여요.</p>
+  </div>`;
+}
+
+function normLines(r,l){
+  if(!NORMS) return [];
+  const F=k=>NORMS.fields.find(f=>f.field===k);
+  const out=[];
+
+  // ① 눈 사이 — 유일한 직접 대응. 참석자 연령대(30~50대)에 맞춰 40-59 행을 쓴다.
+  const io=F("interocular");
+  if(io && r.interocular!=null){
+    const m=io.norm_mean[io.recommended_row];
+    const d=r.interocular-m;
+    out.push({t:"눈 사이", v:`${r.interocular.toFixed(2)}`,
+      s:`같은 또래 평균 ${m} — ${Math.abs(d)<0.05?"거의 같아요":d>0?"조금 넓은 쪽이에요":"조금 좁은 쪽이에요"}`});
+  }
+
+  // ② 눈꼬리 — 변환 필요. 유일하게 SD가 있어 "평균 범위"를 말할 수 있다.
+  const ea=F("eye_angle");
+  if(ea && l.eye_angle!=null && r.eye_len){
+    const deg=Math.asin((l.eye_angle/100)/r.eye_len)*180/Math.PI;
+    const within=Math.abs(deg-ea.norm_mean)<=ea.norm_sd;
+    out.push({t:"눈꼬리 기울기", v:`${deg.toFixed(1)}°`,
+      s:`평균 ${ea.norm_mean}° — ${within?"평균 범위 안이에요":deg>ea.norm_mean?"조금 더 올라간 쪽이에요":"조금 더 내려간 쪽이에요"}`});
+  }
+
+  // ③ 눈 길이 — 변환값, SD 없음. "비슷한 수준"까지만.
+  const el=F("eye_len");
+  if(el && r.eye_len!=null){
+    const d=r.eye_len-el.norm_mean;
+    out.push({t:"눈 길이", v:`${r.eye_len.toFixed(3)}`,
+      s:`평균 ${el.norm_mean} — ${Math.abs(d)<0.01?"비슷한 수준이에요":d>0?"긴 쪽이에요":"짧은 쪽이에요"}`});
+  }
+  return out;
+}
 
 const state=()=>({
   pc:   LS.get(LKEY,null),
@@ -71,90 +148,150 @@ function renderPC(){
   const cur=(state().pc||{}).pc8;
   app.innerHTML = head("1 / 3") + `<div class="card">
     <p class="lead">진단받은 퍼스널컬러를 골라주세요.</p>
-    <p class="note">서로 봐준 결과 그대로 넣으시면 돼요.</p>
+    <p class="note">서로 봐준 결과 그대로 눌러주시면 바로 다음으로 넘어가요.</p>
     <div class="pcgrid">${CZM.PC8.map(t=>
       `<button class="pc${cur===t.key?" sel":""}" data-k="${t.key}">${esc(t.label)}</button>`).join("")}</div>
-    <button class="btn" id="next" ${cur?"":"disabled"}>다음</button>
-    <button class="btn quiet" id="back">처음으로</button></div>`;
+    </div>`;
   app.querySelectorAll(".pc").forEach(b=>b.onclick=()=>{
     LS.set(LKEY,{pc8:b.dataset.k, at:new Date().toISOString()});
-    renderPC();
+    // 고른 게 눈에 보이게 잠깐 두고 넘어간다 — 바로 화면이 바뀌면 뭘 눌렀는지 모른다
+    app.querySelectorAll(".pc").forEach(x=>x.classList.toggle("sel", x===b));
+    setTimeout(route, 420);
   });
-  $("next").onclick=renderHome;
-  $("back").onclick=renderHome;
 }
 
-// ── 진행 화면 ───────────────────────────────────────────────
-function renderHome(){
+// ── 순차 라우터 ─────────────────────────────────────────────
+// 대표 지적 2026-08-17: 허브로 두면 매번 돌아와서 다음 걸 눌러야 해 불편하다.
+// 안 끝난 단계로 **알아서 넘어간다.** 유저가 고를 것은 퍼스널컬러 하나뿐이다.
+//
+// ⚠ 되돌아오기 함정: 촬영이 실패해 데이터가 안 남으면 다시 촬영으로 보내고,
+//   또 실패하면 무한히 오간다. 세션당 한 번만 자동으로 보내고, 그다음엔 손으로 고르게 한다.
+const sent=k=>{ try{ return sessionStorage.getItem("czm_lec_sent_"+k)==="1"; }catch(e){ return false; } };
+const mark=k=>{ try{ sessionStorage.setItem("czm_lec_sent_"+k,"1"); }catch(e){} };
+
+function route(){
   const s=state();
-  const row=(n,done,title,sub,href,onclick)=>
-    `<a class="step${done?" done":""}" ${href?`href="${href}"`:`id="${onclick}"`}>
-       <span class="n">${done?"✓":n}</span>
-       <span><span class="t">${title}</span><span class="m">${sub}</span></span></a>`;
-  const pcLabel = s.pc ? (CZM.PC8.find(t=>t.key===s.pc.pc8)||{}).label : null;
-  const ready = s.pc && s.face && s.diag;
-
-  app.innerHTML = head("진단 진행") + `<div class="card">
-      <p class="lead">세 가지만 하면 리포트가 나와요.</p>
-      <p class="note">중간에 멈춰도 한 것까지는 남아요.</p></div>
-    <div class="steps">
-      ${row(1, !!s.pc,   "퍼스널컬러 입력", pcLabel ? esc(pcLabel)+" 입력됨" : "서로 봐준 결과를 넣어주세요", null, "goPC")}
-      ${row(2, !!s.face, "얼굴 촬영",       s.face ? "측정 완료" : "정면 한 장 · 이목구비와 얼굴형을 재요", "../photo.html?flow=lecture")}
-      ${row(3, !!s.diag, "설문",           s.diag ? "완료" : "35문항 · 3~4분", "../index.html?flow=lecture")}
-    </div>
-    <button class="btn" id="report" ${ready?"":"disabled"}>${ready?"결과 리포트 보기":"셋 다 마치면 열려요"}</button>
-    <button class="btn quiet" id="reset">처음부터 다시</button>`;
-  $("goPC").onclick=renderPC;
-  $("report").onclick=renderReport;
-  $("reset").onclick=()=>{ [LKEY,FKEY,K.diag].forEach(k=>LS.del(k)); renderHome(); };
+  if(!s.pc)   return renderPC();
+  if(!s.face){ if(!sent("face")){ mark("face"); location.href="../photo.html?flow=lecture"; return; } return renderStuck("얼굴 촬영","photo-module.html?flow=lecture"); }
+  if(!s.diag){ if(!sent("diag")){ mark("diag"); location.href="../index.html?flow=lecture"; return; } return renderStuck("설문","../index.html?flow=lecture"); }
+  renderReport();
 }
 
-// ── ④ 리포트 ────────────────────────────────────────────────
-// 관찰 서술만 한다. 등급("성숙형입니다")은 밴드 기준선이 없어 지어내야 하므로 쓰지 않는다.
-// 평균 대비 서술은 규준 자료(조사 중)가 붙으면 여기서 채운다.
+// 자동 이동이 한 번 실패한 뒤의 화면 — 사람이 직접 고르게 한다
+function renderStuck(what, href){
+  app.innerHTML = head("이어서") + `<div class="card">
+    <p class="lead">${esc(what)}이(가) 아직 안 끝났어요.</p>
+    <p class="note">중간에 끊겼을 수 있어요. 다시 해볼까요?</p>
+    <a class="btn" href="${href}">${esc(what)} 하러 가기</a>
+    <button class="btn quiet" id="reset">처음부터 다시</button></div>`;
+  $("reset").onclick=resetAll;
+}
+
+function resetAll(){
+  [LKEY,FKEY,K.diag].forEach(k=>LS.del(k));
+  try{ ["face","diag"].forEach(k=>sessionStorage.removeItem("czm_lec_sent_"+k)); }catch(e){}
+  route();
+}
+
+// ── ④ 통합 리포트 ──────────────────────────────────────────
+// 대표 지시 2026-08-17: 설문 리포트처럼 **한 장으로** 나오고,
+//   "평균 대비 어떤가 → 나는 어디가 어떤 편인가 → 그래서 어떤 인상인가"까지 이어져야 한다.
+//
+// ⚠ "어떤 인상"은 해석이다. 개발팀이 지어내지 않는다 —
+//   이론팀의 부위 리포트 엔진(part-report.js + asset-score.js)이 그 일을 한다.
+//   설문 리포트 3절이 쓰는 바로 그 엔진이라, 두 화면의 말이 갈리지 않는다.
+function partSection(face){
+  const P=window.__PART;
+  if(!P||!P.SNAP||!face) return {html:"", narr:""};
+  try{
+    const m={...face.ratio, ...face.line};   // 강의 흐름은 색을 재지 않는다 → 색 지표는 결측으로 간다
+    const {ref,dist}=P.SNAP;
+    const one=P.AS.scoreOne(m, ref, dist);
+    const rows=P.PR.buildPartRows(one, {n:dist.n});
+    const overall=one.overallType && one.overallType.type;
+    const narr=P.PR.summaryNarrative(rows, overall, !!one.energeticSignal, null);
+    const list=rows.map(r=>`
+      <div class="prow">
+        <b>${r.part}</b><span class="plabel">${r.label}</span>
+        ${r.line?`<div class="pline">${r.line}</div>`:""}
+        <div class="pdots">${r.dots}</div>
+      </div>`).join("");
+    return {html:list, narr:narr||"", caption:P.PR.CAPTION};
+  }catch(e){ console.warn("부위 리포트 실패", e); return {html:"", narr:""}; }
+}
+
 function renderReport(){
   const s=state();
   const pcLabel=(CZM.PC8.find(t=>t.key===s.pc.pc8)||{}).label;
   const N=CZM.TYPE_NAMES, r=s.face.ratio, l=s.face.line;
-  const n=(v,d=2)=>v==null?"—":(+v).toFixed(d);
   const g=s.diag.gap_axis||{};
   const AX={T:["웜·곡선","쿨·직선"],D:["순함","강함"],M:["동안","성숙"]};
   const top=Object.entries(g).filter(([k,v])=>AX[k]&&Number.isFinite(v))
               .sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]))[0];
+  const part=partSection(s.face);
+  const norms=normLines(r,l);
 
   app.innerHTML = head("결과") + `
-    <div class="card"><h2>퍼스널컬러</h2>
-      <p class="lead">${esc(pcLabel)}</p>
-      <p class="note">현장에서 서로 봐준 결과예요.</p></div>
-
-    <div class="card"><h2>얼굴에서 읽은 것</h2>
-      <div class="obs">
-        <div class="obs-l">얼굴 세로:가로</div><div class="obs-v">${n(r.face_HW)}</div>
-        <div class="obs-l">3분할</div><div class="obs-v">${n(r.upper,3)} · ${n(r.mid,3)} · ${n(r.lower,3)}</div>
-        <div class="obs-l">눈 길이</div><div class="obs-v">${n(r.eye_len,3)}</div>
-        <div class="obs-l">눈 사이</div><div class="obs-v">${n(r.interocular)}</div>
-        <div class="obs-l">눈꼬리</div><div class="obs-v">${n(l.eye_angle)}</div>
-        <div class="obs-l">눈-눈썹 간격</div><div class="obs-v">${n(r.brow_eye_gap,3)}</div>
-        <div class="obs-l">입술 두께</div><div class="obs-v">${n(r.lip_upper,3)} / ${n(r.lip_lower,3)}</div>
-        <div class="obs-l">턱선 각도</div><div class="obs-v">${n(l.jaw_angular_deg,1)}°</div>
-        <div class="obs-l">턱끝 각도</div><div class="obs-v">${n(l.chin_angle_deg,1)}°</div>
+    <div class="card hero">
+      <p class="note" style="margin:0">오늘의 진단</p>
+      <p class="big">${esc(pcLabel)}</p>
+      <p class="note">서로 봐준 퍼스널컬러예요.</p>
+      <div class="obs" style="margin-top:14px">
+        <div class="obs-l">되고 싶은 모습</div><div class="obs-v">${esc(N[s.diag.want]??s.diag.want)}</div>
+        <div class="obs-l">지금 하고 있는 것</div><div class="obs-v">${esc(N[s.diag.have]??s.diag.have)}</div>
+        ${top?`<div class="obs-l">벌어진 쪽</div><div class="obs-v">${AX[top[0]][top[1]>0?1:0]}</div>`:``}
       </div>
-      <p class="note" id="normNote">※ 평균과 견주는 서술은 규준 자료가 붙는 대로 여기에 들어갑니다.
-         지금은 <b>잰 값만</b> 보여드려요 — 기준선 없이 "넓은 편"이라고 말하지 않습니다.</p>
     </div>
 
-    <div class="card"><h2>설문에서 나온 것</h2>
-      <div class="obs">
-        <div class="obs-l">추구미</div><div class="obs-v">${esc(N[s.diag.want]??s.diag.want)}</div>
-        <div class="obs-l">지금</div><div class="obs-v">${esc(N[s.diag.have]??s.diag.have)}</div>
-        ${top?`<div class="obs-l">벌어진 쪽</div><div class="obs-v">${AX[top[0]][top[1]>0?1:0]}</div>`:``}
-      </div></div>
+    ${norms.length?`<div class="card"><h2>또래 평균과 견주면</h2>
+      <div class="obs">${norms.map(x=>
+        `<div class="obs-l">${x.t}</div><div class="obs-v">${x.v}<br><span class="sub13">${x.s}</span></div>`).join("")}</div>
+      <p class="note">한국 여성 계측 연구(40~59세) 기준이에요.
+         <b>얼굴형·코·입·턱은 견주지 않았어요</b> — 연구마다 재는 방법이 달라 곧바로 비교하면 틀린 말이 됩니다.</p>
+    </div>`:``}
 
-    <button class="btn ghost" id="back">진행 화면으로</button>`;
-  $("back").onclick=renderHome;
+    ${colorSection(s.diag.want, pcLabel)}
+
+    ${part.html?`<div class="card"><h2>부위별로 보면</h2>
+      ${part.narr?`<p class="lead">${part.narr}</p>`:``}
+      ${part.html}
+      <p class="note">${part.caption||""}</p>
+    </div>`:``}
+
+    <div class="card"><h2>알아두면 좋은 것</h2>
+      <p class="lead">"눈 사이는 눈 하나 길이"라는 말, 들어보셨죠.</p>
+      <p class="note">서양에서 온 기준이에요. 동아시아 얼굴을 잰 연구에서는 이 기준을 만족하는 사람이
+         <b>사실상 없었습니다.</b> 눈 사이가 넓은 게 아니라, <b>그게 우리 평균</b>이에요.</p>
+    </div>
+
+    <div class="card"><h2>잰 값</h2>
+      <div class="obs">
+        <div class="obs-l">얼굴 세로:가로</div><div class="obs-v">${(+r.face_HW).toFixed(2)}</div>
+        <div class="obs-l">3분할</div><div class="obs-v">${(+r.upper).toFixed(3)} · ${(+r.mid).toFixed(3)} · ${(+r.lower).toFixed(3)}</div>
+        <div class="obs-l">턱선 각도</div><div class="obs-v">${(+l.jaw_angular_deg).toFixed(1)}°</div>
+        <div class="obs-l">턱끝 각도</div><div class="obs-v">${(+l.chin_angle_deg).toFixed(1)}°</div>
+      </div>
+      <p class="note">이 값들은 아직 평균과 견줄 기준이 없어서 <b>잰 값만</b> 보여드려요.</p>
+    </div>
+
+    <button class="btn quiet" id="back">처음부터 다시</button>`;
+  $("back").onclick=resetAll;
 }
 
-renderHome();
+// 규준 자료는 조사 산출물이 원천이다. 여기 숫자를 복사하지 않는다 —
+// 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
+Promise.all([
+  import("./asset-score.js"), import("./part-report.js"),
+  fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
+]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
+ .finally(()=>{
+Promise.all([
+  fetch("face-norms.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
+  fetch("pc-prescription.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
+  fetch("pc-palette.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
+]).then(([a,b,c])=>{ NORMS=a; PRESC=b; PALETTE=c; })
+  .catch(()=>{})
+  .finally(route); });
 </script>
 </body>
 </html>

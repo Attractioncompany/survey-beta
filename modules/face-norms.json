@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "built": "2026-08-17",
+  "owner": "data-analyst",
+  "doc": "docs/규준대조_얼굴계측_norms_v1_2026-08-17.md",
+  "population_default": "Korean adult female",
+  "usage_rule": "mapping=direct 또는 converted 인 필드만 '평균 대비' 서술에 쓴다. 비율의 SD는 어떤 필드에도 없다 — '어느 쪽'까지만 말하고 '상위 몇 %'는 말하지 않는다.",
+
+  "sources": {
+    "S1": {
+      "cite": "Kim H, Han DH, Roh YM, Kim K, Park YG. Facial Anthropometric Dimensions of Koreans and Their Associations with Fit of Quarter-Mask Respirators. Industrial Health 2003;41:8-18",
+      "url": "https://www.jstage.jst.go.jp/article/indhealth1963/41/1/41_1_8/_article",
+      "n_female": 40, "age": "대학생(18-25 추정)", "method": "direct caliper",
+      "raw_mm_female": {
+        "zy_zy": {"mean": 136.6, "sd": 4.9},
+        "go_go": {"mean": 106.1, "sd": 5.2},
+        "n_gn":  {"mean": 109.6, "sd": 4.2},
+        "sn_gn": {"mean": 63.9,  "sd": 3.7},
+        "n_sn":  {"mean": 45.5,  "sd": 3.4},
+        "nose_width": {"mean": 33.2, "sd": 1.9},
+        "ch_ch": {"mean": 44.1, "sd": 3.2}
+      }
+    },
+    "S2": {
+      "cite": "Three-Dimensional Photogrammetric Study on Age-Related Facial Characteristics in Korean Females. Ann Dermatol 2021;33(1):52",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7875215/",
+      "n_female": 192, "groups": {"20-39": 48, "40-59": 56, "60-79": 88},
+      "method": "3D scanner (Morpheus 3D)",
+      "raw_mm_female": {
+        "ex_en": {"20-39": [26.26, 1.58], "40-59": [25.56, 1.48], "60-79": [23.46, 1.67]},
+        "en_en": {"20-39": [36.29, 3.17], "40-59": [34.03, 2.68], "60-79": [35.71, 3.41]},
+        "ex_ex": {"20-39": [88.81, 4.11], "40-59": [85.15, 4.14], "60-79": [82.29, 5.81]},
+        "al_al": {"20-39": [39.59, 2.30], "40-59": [40.52, 2.57], "60-79": [43.83, 2.78]},
+        "ch_ch": {"20-39": [44.45, 2.87], "40-59": [45.87, 3.20], "60-79": [47.77, 3.51]},
+        "lower_vermilion": {"20-39": [9.58, 1.41], "40-59": [9.11, 1.55], "60-79": [8.32, 1.68]}
+      },
+      "integrity_check": "en_en + 2*ex_en = 88.81 = ex_ex ✓ 정의가 우리 랜드마크와 일치함을 확증"
+    },
+    "S3": {
+      "cite": "Diagnostic analysis of vertical orbital dystopia and canthal tilt for surgical correction. Arch Craniofac Surg 2020",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7783177/",
+      "n_female": 31, "age": "13-38 (mean 23.1)", "method": "2D frontal photo @1.5m",
+      "canthal_tilt_deg_female": {"right": [8.86, 3.32], "left": [8.89, 4.10]},
+      "caveat": "안면비대칭 주소 환자군. 건강인 규준 아님 → 참고용"
+    },
+    "S4": {
+      "cite": "Lim YC et al. Reliability and Accuracy of 2D Photogrammetry: A Comparison With Direct Measurement. Front Public Health 2022;9:813058",
+      "url": "https://www.frontiersin.org/journals/public-health/articles/10.3389/fpubh.2021.813058/full",
+      "n": 96, "population": "Malaysian",
+      "finding": "2D 사진 vs 직접 계측 유의차: bizygomatic 3.3mm, bigonial 9.3mm (p<0.005)"
+    },
+    "S6": {
+      "cite": "Are Neoclassical Canons Valid for Southern Chinese Faces? PLOS ONE 2013;8(1):e52593",
+      "url": "https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0052593",
+      "n": 103, "population": "Hong Kong Chinese", "method": "3D photo",
+      "finding": "3등분 규범 충족 0%, 눈 규범(en-en=ex-en) 충족 0%"
+    }
+  },
+
+  "fields": [
+    {
+      "field": "interocular",
+      "mapping": "direct",
+      "norm_mean": {"20-39": 1.38, "40-59": 1.33, "60-79": 1.52},
+      "norm_sd": null,
+      "unit": "ratio (en-en / ex-en)",
+      "population": "Korean female",
+      "n": {"20-39": 48, "40-59": 56, "60-79": 88},
+      "method": "3D scanner",
+      "source": "S2",
+      "conversion": null,
+      "our_sample_median": 1.43,
+      "our_sample_n": 12,
+      "caveat": "정의 완전 일치. 비율의 SD는 공분산 미제공으로 계산 불가 → '평균보다 넓다/좁다'까지만. 강의 메시지: 서양 고전 규범 1.00은 동아시아 표본 충족률 0%(S6).",
+      "recommended_row": "40-59"
+    },
+    {
+      "field": "eye_angle",
+      "mapping": "converted",
+      "norm_mean": 8.86,
+      "norm_sd": 3.32,
+      "unit": "degree (canthal tilt)",
+      "population": "Korean female",
+      "n": 31,
+      "method": "2D frontal photo (우리와 동일 방식)",
+      "source": "S3",
+      "conversion": "tilt_deg = Math.asin((eye_angle/100)/eye_len) * 180/Math.PI",
+      "our_sample_median": 7.9,
+      "our_sample_n": 12,
+      "caveat": "환자군 표본 → 참고용. 산식이 좌우 눈 Δy를 평균해 머리 roll이 1차항에서 상쇄된다(yaw는 상쇄 안 됨). 규준은 정중선 수직 기준, 우리는 이미지 수평 기준."
+    },
+    {
+      "field": "eye_len",
+      "mapping": "converted",
+      "norm_mean": 0.192,
+      "norm_sd": null,
+      "unit": "ratio (ex-en / zy-zy)",
+      "population": "Korean female",
+      "n": null,
+      "method": "cross-study: S2 3D scanner ÷ S1 caliper",
+      "source": "S2 + S1",
+      "conversion": "26.26 (S2 ex-en, 20-39) ÷ 136.6 (S1 zy-zy) = 0.192",
+      "our_sample_median": 0.193,
+      "our_sample_n": 12,
+      "caveat": "서로 다른 표본·방법을 나눈 값. SD 없음. 일치가 우연일 가능성 배제 못 함(mouth_w는 같은 방식으로 17% 어긋남). '평균과 비슷한 수준' 정도까지만."
+    },
+    {
+      "field": "mid_lower_ratio",
+      "mapping": "converted",
+      "norm_mean": {"mid_pct": 41.6, "lower_pct": 58.4},
+      "norm_sd": null,
+      "unit": "percent of (n-sn + sn-gn)",
+      "population": "Korean female",
+      "n": 40,
+      "method": "direct caliper",
+      "source": "S1",
+      "conversion": "45.5 / (45.5 + 63.9)",
+      "blocked": true,
+      "caveat": "조건부. 우리 분할점은 눈썹(105/334), 규준은 nasion → 우리 mid가 체계적으로 부풀고 upper가 줄어든다(편향 크기 미측정). 현 상태로 숫자 대조 금지. '3등분이 같다는 통념은 실제와 다르다'는 정성 메시지로만 사용. landmark 168로 바꾸면 direct 전환."
+    },
+
+    {"field": "face_HW", "mapping": "unusable", "caveat": "faceH가 검출 헤어라인 기준. 규준은 nasion 기준(n-gn)뿐. 역산 시 헤어라인-nasion ≈ 71mm로 통상 trichion-nasion(55-60mm) 초과 → 머리카락 윗선 검출 의심. 168↔152 기반 face_HW_morph 추가 시 규준 0.802(=109.6/136.6, S1 동일표본)와 direct 대응 가능.", "our_sample_median": 1.33},
+    {"field": "upper", "mapping": "unusable", "caveat": "헤어라인 기준 + 눈썹 분할점, 두 편향이 겹침."},
+    {"field": "mid", "mapping": "unusable", "caveat": "절대값 비교 불가. mid_lower_ratio 항목 참조."},
+    {"field": "lower", "mapping": "unusable", "caveat": "절대값 비교 불가. mid_lower_ratio 항목 참조."},
+    {"field": "nose_w", "mapping": "unusable", "caveat": "규준 상충: 한국 여성 코너비 S1 33.2mm vs S2 39.59mm (19% 차). 어느 쪽에도 근거 없음. 추가로 98/327은 alare보다 안쪽 점. 참고 비율: 0.243(S1) ~ 0.290(S2/S1)."},
+    {"field": "mouth_w", "mapping": "unusable", "caveat": "규준은 견고(S1 44.1, S2 44.45 일치)하나 비율 0.323 vs 우리 중앙값 0.377 (+17%). 61/291이 실제 cheilion보다 바깥을 잡는 것으로 보임. 절대 비교 금지.", "our_sample_median": 0.377},
+    {"field": "jaw_w", "mapping": "unusable", "caveat": "규준 0.777(=106.1/136.6, S1 동일표본)은 있으나, 턱각너비는 2D 사진과 직접 계측 사이 9.3mm(약 9%) 차이로 가장 어긋나는 항목(S4). 172/397이 gonion인지도 미검증. Sample의 jaw_w 중앙값을 0.777과 대조하면 converted 전환 가능."},
+    {"field": "temple_w", "mapping": "unusable", "caveat": "대응 고전 계측 항목 없음. 127/356과 234/454 모두 MediaPipe 얼굴 외곽선 위 점이라 서로의 재척도일 수 있음(오류대장 §046)."},
+    {"field": "lip_upper", "mapping": "unusable", "caveat": "분모가 헤어라인 기준 faceH. 참고: S2 윗입술 붉은부분 ≈ 19.85-12.94 = 6.9mm(뺄셈 유도값, SD 없음)."},
+    {"field": "lip_lower", "mapping": "unusable", "caveat": "분모가 헤어라인 기준 faceH. 참고: S2 아랫입술 9.58±1.41mm."},
+    {"field": "brow_eye_gap", "mapping": "unusable", "caveat": "대응 규준 없음."},
+    {"field": "chin_len", "mapping": "unusable", "caveat": "아랫입술하단(17)→턱끝 구간은 고전 계측에 없음. 분모도 헤어라인 기준."},
+    {"field": "jaw_angular_deg", "mapping": "unusable", "caveat": "랜드마크 체인 꺾임각 평균 — 대응 항목 없음."},
+    {"field": "chin_angle_deg", "mapping": "unusable", "caveat": "대응 항목 없음."},
+    {"field": "brow_arch_deg", "mapping": "unusable", "caveat": "산식이 절대값이라 꺾인 방향을 버림(이론팀 2026-08-17). 방향 없는 각도는 규준 비교 자체가 성립 안 함."}
+  ],
+
+  "global_caveats": [
+    "2D 사진 ≠ 직접 계측: bizygomatic 3.3mm, bigonial 9.3mm 유의차(S4). 우리 분모 faceW와 jaw_w가 여기 걸린다.",
+    "우리 faceW는 MediaPipe 234↔454이며 zygion이 아니다. eye_len 대조는 맞았고(0.193 vs 0.192) mouth_w는 17% 어긋났다 — 한 항목의 일치가 전체를 보증하지 않는다.",
+    "같은 이름 다른 값: 한국 여성 코너비 33.2 vs 39.6mm.",
+    "연령 효과: 20-39→60-79에서 입은 44.5→47.8mm 넓어지고 눈 가로는 26.3→23.5mm 짧아진다. 새일센터 참석자(30-50대)에는 40-59세 행을 쓴다.",
+    "표본 크기: S1 여성 40, S3 여성 31, 우리 Sample 12(n<30 → 참고용 라벨 필수).",
+    "모든 비율 필드에 SD가 없다(공분산 미제공). '상위 몇 %' 표현 금지."
+  ]
+}
