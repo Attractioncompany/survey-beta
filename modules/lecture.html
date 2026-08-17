@@ -57,7 +57,7 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=0b59aeb"></script>
+<script src="czm-core.js?v=5090d25"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
@@ -129,11 +129,34 @@ function normLines(r,l,age){
   return out;
 }
 
-const state=()=>({
-  pc:   LS.get(LKEY,null),
-  face: LS.get(FKEY,null),
-  diag: LS.get(K.diag,null),
-});
+// ── 회차 관리 ───────────────────────────────────────────────
+// 링크로 새로 들어오면 **처음부터** 시작한다. 지난 사람 결과가 남아 바로 리포트로 튀면 안 된다.
+// 다만 흐름 중간에 촬영·설문으로 나갔다 오는 것은 같은 회차다 —
+// sessionStorage는 그 왕복에서는 살아 있고, 링크를 새로 열면 사라진다. 딱 맞는 그릇이다.
+const RUN="czm_lec_run";
+function runStart(){
+  try{
+    if(sessionStorage.getItem(RUN)) return +sessionStorage.getItem(RUN);
+    const t=Date.now();
+    sessionStorage.setItem(RUN, String(t));
+    // 이번 회차 것만 지운다. chugu_diag는 웹 진단과 공유하는 키라 **지우지 않는다** —
+    // 대신 "이 회차에 새로 한 설문인가"를 시각으로 가린다(아래 state).
+    LS.del(LKEY); LS.del(FKEY);
+    ["face","diag"].forEach(k=>sessionStorage.removeItem("czm_lec_sent_"+k));
+    return t;
+  }catch(e){ return 0; }
+}
+const RUN_TS=runStart();
+
+const state=()=>{
+  const d=LS.get(K.diag,null);
+  return {
+    pc:   LS.get(LKEY,null),
+    face: LS.get(FKEY,null),
+    // 이번 회차에 새로 마친 설문만 인정한다. 예전에 웹으로 진단한 기록이 남아 있어도 건너뛰지 않는다.
+    diag: (d && (d.ts||0) >= RUN_TS) ? d : null,
+  };
+};
 
 function head(sub){ return `<div class="hd"><h1>추구미즘</h1><small>${sub}</small></div>`; }
 
@@ -205,9 +228,9 @@ function renderStuck(what, href){
 }
 
 function resetAll(){
-  [LKEY,FKEY,K.diag].forEach(k=>LS.del(k));
-  try{ ["face","diag"].forEach(k=>sessionStorage.removeItem("czm_lec_sent_"+k)); }catch(e){}
-  route();
+  [LKEY,FKEY].forEach(k=>LS.del(k));
+  try{ sessionStorage.removeItem(RUN); ["face","diag"].forEach(k=>sessionStorage.removeItem("czm_lec_sent_"+k)); }catch(e){}
+  location.reload();   // 회차를 새로 연다
 }
 
 // ── ④ 통합 리포트 ──────────────────────────────────────────
