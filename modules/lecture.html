@@ -61,14 +61,14 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=985bffd"></script>
+<script src="czm-core.js?v=51471d2"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
 const LKEY="chugu_lecture";            // {pc8:"romantic", age:"20-39", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=985bffd";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=51471d2";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -257,9 +257,9 @@ function route(){
 // 자동 이동이 한 번 실패한 뒤의 화면 — 사람이 직접 고르게 한다
 function renderStuck(what, href){
   app.innerHTML = head("이어서") + `<div class="card">
-    <p class="lead">${esc(what)}이(가) 아직 안 끝났어요.</p>
-    <p class="note">중간에 끊겼을 수 있어요. 다시 해볼까요?</p>
-    <a class="btn" href="${href}">${esc(what)} 하러 가기</a>
+    <p class="lead">${esc(what)}이 아직 안 끝났어요.</p>
+    <p class="note">중간에 끊겼나 봐요.</p>
+    <a class="btn" href="${href}">${esc(what)} 다시 하기</a>
     <button class="btn quiet" id="reset">처음부터 다시</button></div>`;
   $("reset").onclick=resetAll;
 }
@@ -277,16 +277,26 @@ function resetAll(){
 // ⚠ "어떤 인상"은 해석이다. 개발팀이 지어내지 않는다 —
 //   이론팀의 부위 리포트 엔진(part-report.js + asset-score.js)이 그 일을 한다.
 //   설문 리포트 3절이 쓰는 바로 그 엔진이라, 두 화면의 말이 갈리지 않는다.
-function partSection(face){
+function partSection(face, surveyHaveKey){
   const P=window.__PART;
   if(!P||!P.SNAP||!face) return {html:"", narr:""};
   try{
+    const surveyName = CZM.TYPE_NAMES[surveyHaveKey] || null;
     const m={...face.ratio, ...face.line};   // 강의 흐름은 색을 재지 않는다 → 색 지표는 결측으로 간다
     const {ref,dist}=P.SNAP;
     const one=P.AS.scoreOne(m, ref, dist);
     const rows=P.PR.buildPartRows(one, {n:dist.n});
     const overall=one.overallType && one.overallType.type;
-    const narr=P.PR.summaryNarrative(rows, overall, !!one.energeticSignal, null);
+    // 채널 수렴 — 강의 흐름은 **색을 재지 않는다.** 형태(사진) + 설문 = 최대 2채널이라
+    // 확신 화법("같은 방향을 가리켜서 ~로 모였어요")이 성립하지 않는다.
+    // conv를 안 넘기면 하위 호환으로 확신 화법이 나온다(part-report §17) — 반드시 넘긴다.
+    // 대표 요구("판정이 아니라 방향")와 정본 v1.4 §3-3이 같은 것을 가리킨다.
+    const conv=P.PR.channelConvergence({
+      colorType:null, shapeType:overall, surveyType:surveyName, expressionType:null,
+      overallType:overall,
+      adjacentOf: one.overallType && one.overallType.adjacent ? [one.overallType.second] : [],
+    });
+    const narr=P.PR.summaryNarrative(rows, overall, !!one.energeticSignal, conv);
     // 대표 지적 2026-08-17: "이번엔 흐리게 보였어요"는 측정 실패인지 안 잰 건지 구분이 안 된다.
     // 강의 흐름은 색을 **일부러** 안 잰다. 못 읽은 칸은 문장을 지어내지 말고 그냥 빼고,
     // 몇 군데를 봤는지만 밝힌다. 안 보여주는 것이 모르는 말을 하는 것보다 낫다.
@@ -313,7 +323,7 @@ function renderReport(){
   if(Number.isFinite(g.T)&&g.T!==0) parts.push(g.T>0?"따뜻한":"시원한");
   if(Number.isFinite(g.M)&&g.M!==0) parts.push(g.M>0?"어려 보이는":"차분한");
 
-  const part=partSection(s.face), norms=normLines(r,l,(s.pc||{}).age), col=colorSection(s.diag.want, pcLabel);
+  const part=partSection(s.face, s.diag.have), norms=normLines(r,l,(s.pc||{}).age), col=colorSection(s.diag.want, pcLabel);
   const tips=pickTips(g, wantName, pcLabel);
 
   // 해설 골격 (대표 확정 2026-08-17): 가진 것 → 가고 싶은 방향 → 시도 → 주의.
@@ -354,14 +364,13 @@ function renderReport(){
       </div>`).join("")}
       <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.75">
         ${col&&col.mine?`· <b>얼굴 가까이</b>(립·스카프·상의 목선)엔 잘 받는 색을 두세요. 얼굴이 사는 자리예요.<br>`:``}
-        ${col&&col.want?`· <b>얼굴에서 먼 곳</b>(하의·가방·신발)엔 ${esc(wantName)} 색을 써보세요. 인상은 그쪽이 만들어요.<br>`:``}
-        · 한 번에 하나만 바꿔보세요. 무엇이 달라졌는지 알 수 있어요.</p>
+        ${col&&col.want?`· <b>얼굴에서 먼 곳</b>(하의·가방·신발)엔 ${esc(wantName)} 색을 써보세요. 얼굴은 편하고, 전체 느낌은 ${esc(wantName)} 쪽으로 가요.<br>`:``}
+        · 한 번에 하나만 바꿔보세요. 여러 개를 같이 바꾸면 어느 게 통했는지 몰라요.</p>
     </div>
 
     <div class="card"><h2>다만 이건 주의하세요</h2>
       <p class="note" style="font-size:14px;line-height:1.75">
-        · 한꺼번에 다 바꾸면 어색해져요. 오늘은 하나만으로 충분해요.<br>
-        ${norms.length?`· 아래 견줌은 <b>눈 쪽만</b> 가능해요. 얼굴형·코·입·턱은 연구마다 재는 방법이 달라서 지금 비교하면 정확하지 않아요.<br>`:``}
+        ${norms.length?`· 또래 평균과 견줄 수 있는 건 <b>눈 쪽</b>뿐이에요. 얼굴형·코·입·턱은 연구마다 재는 방법이 달라서, 지금 견주면 틀린 말이 돼요.<br>`:``}
         · 사진은 조명과 각도에 따라 값이 조금씩 달라져요. 오늘 한 장의 결과예요.</p>
     </div>
 
@@ -388,7 +397,7 @@ function renderReport(){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=985bffd"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=51471d2"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
