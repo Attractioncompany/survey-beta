@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>추구미즘</title>
+<!--
+  앱 기틀 v1 Phase 1 — 홈 + 퀘스트 루프
+  설계: docs/superpowers/specs/2026-08-16-app-foundation-v1-design.md §3-2 §4
+  사전: modules/quest-dict.json (이론설계_퀘스트사전 v1.2 전사본)
+
+  화면이 지켜야 하는 계약 (설계서 §1)
+    · 3종 합산 금지 — 스탯 3개를 더한 수를 절대 그리지 않는다
+    · 레벨·등급·진행률 %·평균·백분위·랭킹 금지 — 비교 대상은 지난 나뿐
+    · 숫자는 줄지 않는다 · 구미는 실망하지 않는다 · 쌓인 것만 표시한다
+    · 0을 보여주지 않는다 — 빈 칸은 "첫 칸을 채워볼까요"로 말한다
+
+  ※ 유저향 문구는 전부 [마케팅 검수 전] 초안. 커밋 전 brand/문체가이드 3단 통과 필요.
+-->
+<style>
+:root{
+  --bg:#FBFAF8; --card:#fff; --ink:#1E1B18; --sub:#6B635C; --line:#EBE6E0;
+  --accent:#C9756B; --soft:#F5EFEA; --ok:#5B8C6E;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;
+  -webkit-font-smoothing:antialiased;padding-bottom:40px}
+.wrap{max-width:520px;margin:0 auto;padding:20px 18px}
+h1{font-size:19px;margin:0 0 2px;letter-spacing:-.02em}
+.hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px}
+.hd small{color:var(--sub);font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+.card h2{font-size:13px;color:var(--sub);margin:0 0 10px;font-weight:600;letter-spacing:.01em}
+.lead{font-size:18px;line-height:1.5;margin:0 0 4px;letter-spacing:-.01em}
+.note{font-size:13px;color:var(--sub);margin:6px 0 0}
+button{font:inherit;cursor:pointer}
+.btn{display:block;width:100%;padding:13px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:600;margin-top:12px}
+.btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line);font-weight:500}
+.btn.quiet{background:none;border:0;color:var(--sub);font-size:14px;text-decoration:underline;padding:8px 0;width:auto;margin:8px auto 0}
+.q{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);
+   border-radius:14px;padding:14px 15px;margin-bottom:9px}
+.q:active{background:var(--soft)}
+.q .t{font-size:15.5px;line-height:1.45}
+.q .m{font-size:12px;color:var(--sub);margin-top:6px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.tag{border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-size:11px;color:var(--sub)}
+.tag.free{border-color:#CFE0D4;color:#4C7A5E}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.st{background:var(--soft);border-radius:13px;padding:13px 11px;text-align:center}
+.st b{display:block;font-size:24px;font-weight:700;letter-spacing:-.02em}
+.st span{font-size:11.5px;color:var(--sub)}
+.st.empty b{font-size:14px;font-weight:600;color:var(--sub);padding:5px 0}
+.field{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;font:inherit;margin-top:9px;background:#fff}
+.demo{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;background:var(--soft);
+  border-radius:12px;padding:14px 15px;margin-top:4px;align-items:baseline}
+.demo-l{font-size:12px;color:var(--sub)} .demo-v{font-size:15px;font-weight:600}
+.hidden{display:none}
+.chk{font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap}
+.chk .p{color:var(--ok)} .chk .f{color:#B4443A;font-weight:700}
+.banner{background:#FFF6E8;border:1px solid #F0DEC0;border-radius:12px;padding:11px 13px;font-size:13px;color:#7A5C2E;margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<!-- 계약층. 모듈보다 먼저 온다 — 저장 키·좌표·측정값 모양을 여기서 꺼내 쓴다 -->
+<script src="czm-core.js?v=af69a3c"></script>
+<script type="module">
+// 모듈 캐시 무력화. "?v=af69a3c"는 배포 시 커밋 해시로 치환된다(deploy_survey.sh).
+// 로컬에서는 매번 다른 값이어야 한다 — 고정값이면 개발 중 고친 코드가 캐시에 가려진다(두 번 겪었다).
+// 정적 import는 변수를 못 받으므로 동적 import를 쓴다. 문자열 "?v=af69a3c"는 sed가 찾을 수 있게 그대로 둔다.
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=af69a3c";
+
+// 모듈 격리 (모듈구조 v1 규칙 4) — 하나가 죽어도 페이지는 뜬다.
+// 오늘 quest-engine의 export 하나가 빠졌을 때 화면이 통째로 백지가 됐다.
+// 걸음이 깨져도 기록·영상·의견은 보여야 한다. 실패는 그 자리에만 남긴다.
+const DOWN = [];
+async function mod(path, label){
+  try { return await import(`${path}${MODV}`); }
+  catch(e){ console.error("모듈 로드 실패 —", path, e); DOWN.push(label); return null; }
+}
+const QE = await mod("./quest-engine.js", "걸음");
+const SS = await mod("./session.js", "계정");
+const { issueOffer, judgeSkill, selfCheck, withKnowledge } = QE ?? {};
+const { ensureUser, linkUid, sbFetch, fetchStats, PUBLIC,
+        isSignedIn, oauthStart, captureRedirect, emailLink, signOut } = SS ?? {};
+const downBanner = () => DOWN.length
+  ? `<div class="banner">${DOWN.join("·")} 기능이 잠깐 안 되고 있어요. 나머지는 그대로 쓰실 수 있어요.</div>` : ``;
+
+const $ = id => document.getElementById(id);
+const app = $("app");
+const K = CZM.KEYS, LS = CZM.store;   // 저장 키·읽기쓰기는 계약층이 소유한다
+
+let UID = LS.raw(K.uid);   // index.html은 생문자열로 저장한다
+if (!UID) { UID = crypto.randomUUID(); try{ localStorage.setItem(K.uid, UID); }catch(e){} }
+
+// 퀴즈는 이론팀 파일이 원천이다. 사전에 복사하지 않고 실행 시 합친다 —
+// 문항이 늘면 코드를 안 고쳐도 학습 칸이 는다. (배포 시 경로는 deploy_survey.sh가 고친다)
+const [DICT0, QUIZ] = await Promise.all([
+  fetch("quest-dict.json", {cache:"no-store"}).then(r => r.json()),
+  fetch("quest-quiz.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).catch(() => null),
+]);
+const DICT = (QUIZ && withKnowledge) ? withKnowledge(DICT0, QUIZ) : DICT0;
+
+// ── 서버 기록 ────────────────────────────────────────────────
+// 로컬 계측 오염 방지 (index.html:271과 같은 규율, 2026-08-05).
+// 이게 없어서 개발 중 테스트가 운영 DB에 그대로 쌓였다 — 매번 손으로 지워야 했다.
+// 서버 왕복을 실제로 확인해야 할 때만 ?live=1 로 연다.
+const LOCAL = /^(localhost|127\.|$)/.test(location.hostname)
+              && !new URLSearchParams(location.search).has("live");
+const sbPost = (table, row) => LOCAL ? Promise.resolve(true)
+  : sbFetch(table, {method:"POST", headers:{Prefer:"return=minimal"}, body:JSON.stringify(row)});
+const track = (event, props={}) => sbPost("events", {user_id:UID, event, props, app_version:"home_v1"});
+
+// ── 상태 ─────────────────────────────────────────────────────
+// 서버가 원천이다. 로컬은 조회가 실패했을 때만 쓰는 사본 — 두 벌을 동시에 진실로 삼지 않는다.
+let STATS = LS.get(K.stats, []);          // [{kind, ref, slot, at}]
+const st = {
+  get active(){ return LS.get(K.activeQuest, null); },
+  set active(v){ LS.set(K.activeQuest, v); },
+  add(e){ STATS = [...STATS, e]; LS.set(K.stats, STATS); },
+  get skipped(){ return LS.get(K.skipped, []); },
+  set skipped(v){ LS.set(K.skipped, v); },
+};
+const diag  = LS.get(K.diag, null);
+const photo = LS.get(K.photo, null);
+const cell  = id => DICT.cells.find(c => c.id === id);
+const count = kind => STATS.filter(s => s.kind === kind).length;
+
+// 로그인한 뒤에만 서버와 이야기한다. 순서가 곧 의존관계다 —
+// 행이 있어야 계정에 묶을 수 있고, 묶여야 own_read가 내 행을 알아본다.
+async function bootSession(){
+  if (LOCAL || !SS || !isSignedIn()) return;
+  if (!LS.get(K.userEnsured, false) && await ensureUser(UID)) LS.set(K.userEnsured, true);
+  await linkUid(UID);
+  const remote = await fetchStats();
+  if (remote) { STATS = remote.map(r => ({kind:r.kind, ref:r.ref, slot:r.slot, at:r.acquired_at}));
+                LS.set(K.stats, STATS); }
+  // 진단을 마치면 지식 한 칸이 자동으로 열린다 — 전 화면이 0인 첫날을 만들지 않는다(설계서 §3-4)
+  if (diag && !STATS.some(s => s.ref === "diagnosis")) {
+    st.add({kind:"knowledge", ref:"diagnosis", slot:null, at:new Date().toISOString()});
+    sbPost("stat_entries", {user_id:UID, kind:"knowledge", ref:"diagnosis",
+                            source_kind:"auto_detect", attrs:{via:"first_diagnosis"}});
+  }
+}
+
+// ── 화면 ─────────────────────────────────────────────────────
+const esc = s => String(s).replace(/[<&]/g, c => ({"<":"&lt;","&":"&amp;"}[c]));
+
+function head(sub){ return `<div class="hd"><h1>추구미즘</h1><small>${sub}</small></div>`; }
+
+function statsCard(){
+  const rows = [["item","아이템"],["skill","스킬"],["knowledge","지식"]].map(([k,label])=>{
+    const n = count(k);
+    // 0을 숫자로 보여주지 않는다. 합계는 어디에도 그리지 않는다.
+    return n === 0
+      ? `<div class="st empty"><b>첫 칸</b><span>${label}</span></div>`
+      : `<div class="st"><b>${n}</b><span>${label}</span></div>`;
+  }).join("");
+  return `<div class="card"><h2>쌓인 것</h2><div class="stats">${rows}</div>
+    ${STATS.length===0 ? `<p class="note">여기 첫 칸을 채워볼까요.</p>` : ``}</div>`;
+}
+
+function effortLine(){
+  const done = STATS.filter(s => s.ref !== "diagnosis").length;
+  if (!done) return "";
+  // 최초 진단이 원점. 누적이고 줄지 않는다. 남과 비교하지 않는다.
+  return `<div class="card"><h2>진단 이후</h2>
+    <p class="lead">지금까지 ${done}개 해내셨어요.</p></div>`;
+}
+
+// 고객팀 회신(전체회의 2026-08-15)에서 온 값이다 — 개발팀이 지어낸 문턱이 아니다
+const RETURN_GAP_DAYS = 3;
+
+// ── 처음 온 사람 ─────────────────────────────────────────────
+// 설계서 §3-3. 카드 문구는 설계서에서 그대로 가져온다.
+const PREVIEW = [
+  { h:"35문항이면 여기까지 나와요",
+    body:`<div class="demo"><div class="demo-l">추구미</div><div class="demo-v">로맨틱</div>
+          <div class="demo-l">지금</div><div class="demo-v">클래식</div>
+          <div class="demo-l">벌어진 쪽</div><div class="demo-v">웜·곡선</div></div>
+          <p class="note">※ 예시 화면입니다. 실제 리포트 샘플로 교체 예정.</p>` },
+  { h:"다 바꾸라고 안 해요",
+    body:`<div class="q" style="margin:0"><div class="t">아이라인 끝을 조금 내려 둥글게 그려보세요</div>
+          <div class="m"><span class="tag free">돈 안 들어요</span></div></div>
+          <p class="note">한 번에 하나씩만 드려요.</p>` },
+  { h:"해본 건 사라지지 않아요",
+    body:`<div class="stats"><div class="st"><b id="cnt">0</b><span>쌓인 것</span></div></div>` },
+];
+
+function renderPreview(i = 0){
+  const c = PREVIEW[i], last = i === PREVIEW.length - 1;
+  track("preview_shown", {step:i});
+  app.innerHTML = head(`${i+1} / ${PREVIEW.length}`) + `<div class="card">
+    <p class="lead">${c.h}</p>${c.body}
+    <button class="btn" id="next">${last ? "저장하고 시작하기" : "다음"}</button>
+    ${last ? `` : `<button class="btn quiet" id="skip">건너뛰기</button>`}</div>`;
+  if (last) {                      // 0에서 올라가는 것만 보여준다 — 줄어드는 숫자는 그리지 않는다
+    let n = 0; const el = $("cnt");
+    const t = setInterval(() => { el.textContent = ++n; if (n >= 12) clearInterval(t); }, 70);
+  }
+  $("next").onclick = () => { track("preview_advanced", {step:i}); last ? renderSignup() : renderPreview(i+1); };
+  $("skip") && ($("skip").onclick = () => { track("preview_advanced", {step:i, skipped:true}); renderSignup(); });
+}
+
+// 가입·로그인 — 대표 결정 2026-08-17로 여기가 관문이 됐다. 건너뛰기가 없다.
+// 애플은 승인 대기라 버튼을 두지 않는다 — 눌러도 안 되는 버튼은 두지 않는다.
+function renderSignup(mode = "up"){
+  track(mode === "up" ? "signup_shown" : "signin_shown");
+  const up = mode === "up";
+  app.innerHTML = head(up ? "시작하기" : "로그인") + `<div class="card">
+    <p class="lead">${up ? "추구미즘 시작하기" : "다시 오셨네요"}</p>
+    <p class="note">${up ? "결과와 쌓은 걸 계속 이어가려면 계정이 필요해요. 이름도 나이도 안 물어봐요."
+                         : "쓰시던 계정으로 들어오시면 그대로 이어져요."}</p>
+    <button class="btn" id="kakao" style="background:#FEE500;color:#191600">카카오로 ${up ? "시작하기" : "로그인"}</button>
+    <input class="field" id="em" type="email" inputmode="email" autocomplete="email" placeholder="이메일로 하기">
+    <button class="btn ghost" id="go">메일로 링크 받기</button>
+    <button class="btn quiet" id="swap">${up ? "이미 계정이 있어요" : "처음이에요"}</button>
+    <p class="note" id="msg"></p></div>`;
+  $("kakao").onclick = () => { track("signup_started", {method:"kakao", mode}); oauthStart("kakao"); };
+  $("swap").onclick  = () => renderSignup(up ? "in" : "up");
+  $("go").onclick = async () => {
+    const em = $("em").value.trim(); if (!em.includes("@")) return $("em").focus();
+    track("signup_started", {method:"email", mode});
+    $("msg").textContent = await emailLink(em)
+      ? "보낸 메일의 링크를 눌러주세요. 이 창은 닫으셔도 돼요."
+      : "지금은 메일이 안 나가네요. 카카오로 해보셔도 좋아요.";
+  };
+}
+
+// 허브의 기능 진입로. 지금까지 옷 색 판정·타입별 추천은 어디서도 링크가 없는 고아 페이지였다.
+const HUB = [
+  { href: "../index.html?view=start", label: "설문 진단", desc: "35문항 · 3~4분" },
+  { href: "photo-module.html",        label: "촬영 진단", desc: "사진으로 색·형태 재기" },
+  { href: "cloth-check.html",         label: "옷 색 판정", desc: "가진 옷이 내 쪽인지" },
+  { href: "pick.html",                label: "타입별 추천", desc: "내 타입이 자주 쓰는 것" },
+];
+const hubCard = () => `<div class="card"><h2>기능</h2>` + HUB.map(h =>
+  `<a class="q" href="${h.href}" style="display:block;text-decoration:none;color:inherit">
+     <div class="t">${h.label}</div><div class="m">${h.desc}</div></a>`).join("") + `</div>`;
+
+// 진단 전 — 대표 지시 2026-08-17: "진단을 아직 안 받으셨어요" 한 줄 + 진단으로 보낸다
+function renderNoDiag(){
+  track("hub_shown", {diagnosed:false});
+  app.innerHTML = head("시작 전") + `<div class="card">
+      <p class="lead">아직 진단을 안 받으셨어요.</p>
+      <p class="note">진단을 마치면 여기에 지금 자리와 오늘 할 걸음이 들어와요.</p>
+      <a class="btn" href="../index.html?view=start" style="display:block;text-align:center;text-decoration:none">진단 시작하기</a>
+    </div>` + hubCard() + `<button class="btn quiet" id="out">로그아웃</button>`;
+  $("out").onclick = () => { signOut(); route(); };
+}
+
+// 진단 후 — 브리핑. 좌표 수치는 내지 않는다(정본 금지). 축은 방향만 말한다.
+function briefing(){
+  const N = DICT.type_names ?? {};
+  const g = diag.gap_axis ?? {};
+  const AX = { T:["웜·곡선","쿨·직선"], D:["순함","강함"], M:["동안","성숙"] };
+  const top = Object.entries(g).filter(([k,v]) => AX[k] && Number.isFinite(v))
+                .sort((a,b) => Math.abs(b[1]) - Math.abs(a[1]))[0];
+  const dir = top ? AX[top[0]][top[1] > 0 ? 1 : 0] : null;
+  return `<div class="card"><h2>지금 자리</h2>
+    <div class="demo">
+      <div class="demo-l">추구미</div><div class="demo-v">${esc(N[diag.want] ?? diag.want)}</div>
+      <div class="demo-l">지금</div><div class="demo-v">${esc(N[diag.have] ?? diag.have)}</div>
+      ${dir ? `<div class="demo-l">벌어진 쪽</div><div class="demo-v">${esc(dir)}</div>` : ``}
+    </div></div>`;
+}
+
+function renderHome(){
+  if (!diag) return renderNoDiag();
+  track("hub_shown", {diagnosed:true});
+  const a = st.active;
+  let today;
+  if (!QE) {                     // 걸음 모듈이 죽었다 — 이 카드만 접고 나머지는 그대로 그린다
+    today = `<div class="card"><h2>오늘 하나만</h2>
+      <p class="lead">걸음을 지금 불러오지 못했어요.</p>
+      <p class="note">잠시 뒤 새로고침해 주세요. 쌓인 건 그대로 있어요.</p></div>`;
+  } else if (a) {
+    const c = cell(a.id);
+    today = `<div class="card"><h2>오늘 하나만</h2>
+      <p class="lead">${esc(c.copy)}</p>
+      ${c.kind === "knowledge"
+        ? `<button class="btn" id="toQuiz">풀어보기</button>`
+        : c.kind === "item"
+        ? `<button class="btn" id="toReg">담았어요</button>`
+        : c.countable && c.field
+          ? (a.before
+              ? `<button class="btn" id="toShot">해봤어요 · 사진으로 확인하기</button>`
+              // 기준선이 없으면 비교할 대상이 없다 — 판정 자체가 성립하지 않는다
+              : `<p class="note">먼저 지금 얼굴을 한 장 찍어둘게요. 나중에 이 사진과 비교해요.</p>
+                 <button class="btn" id="toShot">지금 얼굴 찍어두기</button>`)
+          : `<p class="note">이 걸음은 아직 사진으로 확인하지 못해요. 이번 주 시도로 남겨둘게요.</p>
+             <button class="btn ghost" id="tryDone">시도했어요</button>`}
+      <button class="btn quiet" id="drop">다른 걸음으로 바꾸기</button></div>`;
+  } else {
+    today = `<div class="card"><h2>오늘 하나만</h2>
+      <p class="lead">고를 수 있는 걸음이 준비돼 있어요.</p>
+      <button class="btn" id="toList">걸음 고르기</button></div>`;
+  }
+  // §3-5 복귀 — 경과 일수를 적지 않고, 밀린 처방을 쌓아두지 않고, 구미는 실망하지 않는다
+  const away = LS.get(K.lastSeen, null);
+  const gapD = away ? (Date.now() - new Date(away)) / 864e5 : 0;
+  const back = gapD >= RETURN_GAP_DAYS && STATS.length > 0;
+  track("home_shown", {returning: back, has_active: !!a});
+  LS.set(K.lastSeen, new Date().toISOString());
+
+  app.innerHTML = head("") + downBanner()
+    + (back ? `<div class="banner">쌓아둔 건 그대로 있어요.</div>` : ``)
+    + briefing() + today + effortLine() + statsCard() + hubCard()
+    + `<button class="btn quiet" id="toRec">기록 · 옷장</button>
+       <button class="btn quiet" id="toVid">볼 만한 영상</button>
+       ${diag.scores ? `<a class="btn quiet" href="../index.html?view=report" style="display:block;text-align:center">내 결과 다시 보기</a>` : ``}
+       <button class="btn quiet" id="toVoc">하고 싶은 말 남기기</button>
+       <button class="btn quiet" id="selfck">엔진 자체 점검</button>
+       <button class="btn quiet" id="out">로그아웃</button>`;
+  $("toRec").onclick = renderRecord;
+  $("toVoc").onclick = renderVoc;
+  $("toVid").onclick = renderContent;
+  $("out").onclick   = () => { signOut(); route(); };
+
+  $("toList")?.addEventListener("click", renderList);
+  $("drop")?.addEventListener("click", () => { st.active = null; renderList(); });
+  $("toReg")?.addEventListener("click", renderRegister);
+  $("toQuiz")?.addEventListener("click", renderQuiz);
+  $("toShot")?.addEventListener("click", () => location.href = "../photo.html?flow=verify");
+  $("tryDone")?.addEventListener("click", () => {
+    // 세지 않는 칸이다(§3-5). 기록만 남기고 스탯은 올리지 않는다.
+    track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"skill",
+                             field:null, sign_match:null, countable:false});
+    st.active = null; renderHome();
+  });
+  $("selfck")?.addEventListener("click", renderCheck);
+}
+
+function renderList(){
+  const r = issueOffer(DICT, diag.gap_axis, {excluded: st.skipped});
+  if (r.status === "arrived") {
+    app.innerHTML = head("도착") + `<div class="card">
+      <p class="lead">지금 자리가 추구미와 거의 겹쳐요. 새 걸음을 만들지 않을게요.</p>
+      <button class="btn ghost" id="back">홈으로</button></div>`;
+    $("back").onclick = renderHome; return;
+  }
+  const offerId = crypto.randomUUID();
+  sbPost("quest_offers", {offer_id:offerId, user_id:UID, primary_axis:r.primary_axis,
+    gap_value:r.gap_value, candidate_pool:r.candidate_pool, offered_quests:r.offered_quests,
+    randomization_unit:"none", arm:"none"});
+  track("quest_offer_shown", {offer_id:offerId, n:r.offered_quests.length, axis:r.primary_axis});
+
+  const cards = r.cells.map((c,i) => `<button class="q" data-id="${c.id}" data-i="${i}">
+      <div class="t">${esc(c.copy)}</div>
+      <div class="m">
+        <span class="tag ${c.cost === "free" ? "free" : ""}">${c.cost === "free" ? "돈 안 들어요" : "구매 필요"}</span>
+        ${c.grade === "scale" ? `<span class="tag">확인이 아직 정밀하지 않아요</span>` : ``}
+        ${c.countable === false ? `<span class="tag">사진 확인은 아직</span>` : ``}
+      </div></button>`).join("");
+
+  // 목록이 짧은 것은 사전 공백의 정직한 표시다 — 채우려고 없는 걸음을 지어내지 않는다(§4-4)
+  app.innerHTML = head("걸음 고르기") + `<div class="card">
+      <p class="lead">마음 가는 걸 하나만 골라보세요.</p>
+      <p class="note">하나씩 해야 뭐가 달라졌는지 알 수 있어요.</p></div>`
+    + cards
+    + `<button class="btn quiet" id="reroll">다른 걸음 보기</button>
+       <button class="btn quiet" id="back">홈으로</button>`;
+
+  app.querySelectorAll(".q").forEach(b => b.onclick = () => {
+    const id = b.dataset.id;
+    track("quest_selected", {offer_id:offerId, quest_id:id, position:+b.dataset.i});
+    st.active = {id, offer_id:offerId, started:new Date().toISOString(),
+                 before: photo || null};   // 판정용 기준선을 걸음 시작 시점에 고정한다
+    renderHome();
+  });
+  $("reroll").onclick = () => {
+    // 사유를 묻지 않는다 — 사유 선택지는 우리가 만든 범주라 그 자체가 창작이다(§4-3)
+    track("quest_rerolled", {offer_id:offerId});
+    st.skipped = [...st.skipped, ...r.offered_quests.slice(0,1)];
+    renderList();
+  };
+  $("back").onclick = renderHome;
+}
+
+function renderRegister(){
+  const a = st.active, c = cell(a.id);
+  app.innerHTML = head("담기") + `<div class="card">
+    <p class="lead">${esc(c.copy)}</p>
+    <input class="field" id="nm" placeholder="뭐라고 부를까요? (예: 베이지 트렌치)">
+    <p class="note">슬롯: ${esc(c.slot)} · 사진은 옷장 화면이 열리면 붙일게요.</p>
+    <button class="btn" id="save">담기</button>
+    <button class="btn quiet" id="back">나중에</button></div>`;
+  $("back").onclick = renderHome;
+  $("save").onclick = async () => {
+    const name = $("nm").value.trim(); if (!name) return $("nm").focus();
+    const ref = `${c.slot}:${name}`;
+    st.add({kind:"item", ref, slot:c.slot, at:new Date().toISOString()});
+    await sbPost("stat_entries", {user_id:UID, kind:"item", slot:c.slot, ref,
+                                  source_kind:"self_report", attrs:{name}});
+    track("stat_added", {kind:"item", ref, source_kind:"self_report"});
+    track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"item",
+                              field:null, sign_match:null, countable:true});
+    st.active = null; renderHome();
+  };
+}
+
+// 볼 만한 영상 — 사전 §3-8-1 규칙 1·3.
+// 내 HAVE·WANT 타입 행에 속한 어휘로 모은 것만 보여준다. 좌표 거리로 고르면 환산 상수를 창작하게 된다.
+// 카탈로그는 개인정보가 없어 읽기가 열려 있다(공개키로 조회). 재생은 유튜브 공식 페이지로 보낸다(약관).
+async function renderContent(){
+  app.innerHTML = head("영상") + `<div class="card"><p class="lead">불러오는 중이에요.</p></div>`;
+  const types = [...new Set([diag.want, diag.have].filter(Boolean))].join(",");
+  const url = `${PUBLIC.url}/rest/v1/content_items`
+    + `?select=video_id,title,channel,thumb_url,content_keywords!inner(type_code)`
+    + `&content_keywords.type_code=in.(${types})&limit=24`;
+  let rows = [];
+  try {
+    const r = await fetch(url, {headers:{apikey:PUBLIC.key, Authorization:`Bearer ${PUBLIC.key}`}});
+    if (r.ok) rows = await r.json();
+  } catch(e){ console.warn("content", e); }
+
+  app.innerHTML = head("영상") + (rows.length
+    ? rows.map(v => `<div class="q" style="cursor:default">
+        <a href="https://www.youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener"
+           style="display:flex;gap:11px;text-decoration:none;color:inherit;align-items:flex-start">
+          ${v.thumb_url ? `<img src="${esc(v.thumb_url)}" alt="" style="width:104px;border-radius:9px;flex:0 0 auto">` : ``}
+          <span><span class="t">${esc(v.title)}</span>
+          <span class="m" style="display:block">${esc(v.channel ?? "")}</span></span></a>
+        <div class="m" style="margin-top:9px;gap:14px">
+          <button class="btn quiet" style="margin:0" data-v="${v.video_id}" data-k="1">도움됐어요</button>
+          <button class="btn quiet" style="margin:0" data-v="${v.video_id}" data-k="-1">별로예요</button>
+        </div></div>`).join("")
+    : `<div class="card"><p class="lead">아직 모아둔 영상이 없어요.</p></div>`)
+    + `<button class="btn ghost" id="back">홈으로</button>`;
+  $("back").onclick = renderHome;
+  app.querySelectorAll("[data-v]").forEach(b => b.onclick = async () => {
+    await sbPost("content_feedback", {user_id:UID, video_id:b.dataset.v, vote:+b.dataset.k});
+    track("content_voted", {video_id:b.dataset.v, vote:+b.dataset.k, type_code:diag.want});
+    b.parentElement.innerHTML = `<span class="tag">고마워요</span>`;
+  });
+}
+
+// 지식 걸음 — 완료 = 정답(§2-5). 오답에 벌점이 없고 실패 횟수를 세지 않는다.
+// 정답률·연속 정답도 화면에 두지 않는다(이론 판정 2026-08-17) — 그걸 세는 순간 시험이 된다.
+function renderQuiz(){
+  const a = st.active, c = cell(a.id), q = c.quiz;
+  const draw = (picked) => {
+    const right = picked === q.answer_index;
+    app.innerHTML = head("알아보기") + `<div class="card">
+      <p class="lead">${esc(q.question)}</p>
+      ${q.choices.map((ch, i) => `<button class="q" data-i="${i}"
+          style="${picked==null ? "" : i===q.answer_index ? "border-color:var(--ok)" : i===picked ? "opacity:.5" : "opacity:.5"}">
+          <div class="t">${esc(ch)}</div></button>`).join("")}
+      ${picked==null ? `` : right
+        ? `<p class="lead" style="margin-top:14px">맞아요.</p><p class="note">${esc(q.why)}</p>
+           <button class="btn" id="done">한 칸 쌓기</button>`
+        : `<p class="lead" style="margin-top:14px">이건 다른 쪽이에요.</p>
+           <p class="note">초록으로 표시된 게 맞아요. ${esc(q.why)}</p>
+           <button class="btn" id="again">다시 풀기</button>`}
+      <button class="btn quiet" id="back">나중에</button></div>`;
+    $("back").onclick = renderHome;
+    $("again") && ($("again").onclick = () => draw(null));
+    if (picked == null) app.querySelectorAll(".q").forEach(b => b.onclick = () => draw(+b.dataset.i));
+    $("done") && ($("done").onclick = async () => {
+      st.add({kind:"knowledge", ref:c.id, slot:null, at:new Date().toISOString()});
+      await sbPost("stat_entries", {user_id:UID, kind:"knowledge", ref:c.id,
+                                    source_kind:"auto_detect", attrs:{qid:q.qid}});
+      track("stat_added", {kind:"knowledge", ref:c.id, source_kind:"auto_detect"});
+      track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"knowledge",
+                                field:null, sign_match:null, countable:true});
+      st.active = null; renderHome();
+    });
+  };
+  draw(null);
+}
+
+// 재촬영을 마치고 돌아왔을 때 부호를 본다 (photo-module이 chugu_photo_result를 갱신한다)
+function tryJudge(){
+  const a = st.active; if (!a) return false;
+  const c = cell(a.id); if (!c || c.kind !== "skill" || !c.field) return false;
+  const now = LS.get(K.photo, null);
+  if (!now) return false;
+
+  if (!a.before) {                       // 첫 촬영은 기준선이다. 비교 대상이 없으니 판정하지 않는다.
+    st.active = {...a, before: now};
+    app.innerHTML = head("기준 사진") + `<div class="card">
+      <p class="lead">지금 얼굴을 저장했어요.</p>
+      <p class="note">${esc(c.copy)}<br>해보신 뒤에 다시 찍으면 비교해드릴게요.</p>
+      <button class="btn" id="back">홈으로</button></div>`;
+    $("back").onclick = renderHome; return true;
+  }
+  if (JSON.stringify(now) === JSON.stringify(a.before)) return false;   // 아직 다시 찍지 않았다
+
+  const v = judgeSkill(c, a.before, now);
+  track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"skill",
+                            field:v.field ?? null, sign_match:v.sign_match, countable:!!c.countable});
+  if (v.verdict === "done" && c.countable) {
+    st.add({kind:"skill", ref:c.id, slot:null, at:new Date().toISOString()});
+    sbPost("stat_entries", {user_id:UID, kind:"skill", ref:c.id,
+                            source_kind:"auto_detect", attrs:{field:v.field, delta:v.delta}});
+    track("stat_added", {kind:"skill", ref:c.id, source_kind:"auto_detect"});
+  }
+  st.active = null;
+  app.innerHTML = head("확인") + `<div class="card">
+    <p class="lead">${v.verdict === "done"
+      ? "방향이 맞게 움직였어요. 한 칸 쌓였어요."
+      : "이번엔 사진에서 방향이 잡히지 않았어요. 다시 해봐도 괜찮아요."}</p>
+    <p class="note">${v.verdict === "done" ? "" : "실패로 세지 않아요."}</p>
+    <button class="btn" id="back">홈으로</button></div>`;
+  $("back").onclick = renderHome;
+  return true;
+}
+
+// 설계서 §3-1 기록 탭. 담아둔 것을 볼 데가 없으면 담을 이유도 없어진다.
+function renderRecord(){
+  const day = t => { const d = new Date(t); return `${d.getMonth()+1}월 ${d.getDate()}일`; };
+  const group = (kind, title, line) => {
+    const rows = STATS.filter(s => s.kind === kind);
+    return `<div class="card"><h2>${title}</h2>` + (rows.length
+      ? rows.slice().reverse().map(s =>
+          `<div class="q" style="margin-bottom:7px"><div class="t">${esc(line(s))}</div>
+           <div class="m">${s.at ? day(s.at) : ""}${s.slot ? ` · ${esc(s.slot)}` : ""}</div></div>`).join("")
+      : `<p class="note">여기 첫 칸을 채워볼까요.</p>`) + `</div>`;
+  };
+  app.innerHTML = head("기록")
+    + group("item", "옷장", s => s.ref.includes(":") ? s.ref.split(":").slice(1).join(":") : s.ref)
+    + group("skill", "해낸 걸음", s => cell(s.ref)?.copy ?? s.ref)
+    + group("knowledge", "알아본 것", s => s.ref === "diagnosis" ? "내 추구미와 지금 자리를 확인했어요" : (cell(s.ref)?.copy ?? s.ref))
+    + `<button class="btn ghost" id="back">홈으로</button>`;
+  $("back").onclick = renderHome;
+}
+
+// 고객팀 TestFlight 게이트 ⑧. 자유입력만 받는다 —
+// 선택지를 주면 우리가 만든 범주 안에서만 말하게 되고, 그건 유저의 말이 아니다.
+function renderVoc(){
+  app.innerHTML = head("의견") + `<div class="card">
+    <p class="lead">뭐든 편하게 적어주세요.</p>
+    <textarea class="field" id="voc" rows="5" placeholder="불편했던 것, 이상했던 것, 좋았던 것"></textarea>
+    <button class="btn" id="send">보내기</button>
+    <button class="btn quiet" id="back">닫기</button>
+    <p class="note" id="vmsg"></p></div>`;
+  $("back").onclick = renderHome;
+  $("send").onclick = async () => {
+    const text = $("voc").value.trim(); if (!text) return $("voc").focus();
+    await track("voc_submitted", {text, where:"home", has_active: !!st.active});
+    $("vmsg").textContent = "잘 받았어요. 고맙습니다.";
+    $("send").disabled = true;
+  };
+}
+
+function renderCheck(){
+  const rows = selfCheck(DICT);
+  const bad = rows.filter(r => !r.pass).length;
+  app.innerHTML = head("자체 점검") + `<div class="card"><h2>발행·판정 규칙</h2>
+    <p class="lead">${bad === 0 ? "전부 통과" : `${bad}건 실패`}</p>
+    <div class="chk">${rows.map(r =>
+      `<span class="${r.pass?"p":"f"}">${r.pass?"통과":"실패"}</span>  ${esc(r.name)}` +
+      (r.detail ? `\n        ${esc(r.detail)}` : "")).join("\n")}</div>
+    <button class="btn ghost" id="back">홈으로</button></div>`;
+  $("back").onclick = renderHome;
+}
+
+// ── 진입 ─────────────────────────────────────────────────────
+// 소개 → 가입/로그인 → 허브. 대표 결정 2026-08-17로 가입이 관문이다.
+// 로컬에서는 관문을 열어둔다(서버 호출이 어차피 막혀 있어 로그인해도 볼 게 없다) — ?login=1로 강제.
+const GATED = !LOCAL || new URLSearchParams(location.search).has("login");
+
+async function route(){
+  if (new URLSearchParams(location.search).has("selfcheck")) return renderCheck();
+  if (!QE && !selfCheck) { /* 자체 점검은 걸음 모듈이 있어야 돈다 */ }
+  if (GATED && SS && !isSignedIn())
+    return LS.get(K.previewDone, false) ? renderSignup("up") : renderPreview();
+  await bootSession();
+  if (!tryJudge()) renderHome();
+}
+
+const returned = SS ? captureRedirect() : null;   // 로그인에서 돌아왔는가
+if (returned?.error) {
+  track("signin_failed", {reason: returned.error});
+  app.innerHTML = head("로그인") + `<div class="card">
+    <p class="lead">로그인이 끝까지 가지 못했어요.</p>
+    <p class="note">${esc(returned.error)}</p>
+    <button class="btn" onclick="location.href=location.pathname">다시 해보기</button></div>`;
+} else {
+  if (returned) track("signin_succeeded", {});
+  route();
+}
+</script>
+</body>
+</html>

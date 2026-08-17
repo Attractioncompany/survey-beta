@@ -272,6 +272,8 @@ body.cam-open{overflow:hidden;}
          문안: theory/이론초안_정면측정보완_8타입해설_2026-07-23.md §2 확정본
              + theory/마케팅카피최종_8타입해설_2026-07-23.md A·B 반영. 창작 없음, 원문 그대로. -->
     <div class="dev-only" id="sigCardsWrap">
+      <!-- 단계 계약(모듈구조 v1 §4-1) — 어디서 끊겼는지 한눈에. DEV 전용 -->
+      <pre id="stageReport" style="font-size:12px;line-height:1.8"></pre>
       <div id="sigCards"></div>
     </div>
   </div>
@@ -279,6 +281,10 @@ body.cam-open{overflow:hidden;}
   </div><!-- /step4 -->
 </main>
 
+<!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
+<script src="czm-core.js?v=af69a3c"></script>
+<script src="measure-color.js?v=af69a3c"></script>
+<script src="measure-structure.js?v=af69a3c"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -333,21 +339,15 @@ function shadowBands(R,LN){
   };
 }
 // 턱선 곡선 피팅 잔차 (외부제안 채택·2026-07-31, 판정 미사용·로깅 전용) — 다항 최소제곱 MSE. 입력 좌표는 faceW=1 정규화 필수(스케일 의존).
-function _gaussSolve(A,b){ const n=A.length,M=A.map((r,i)=>[...r,b[i]]);
-  for(let c=0;c<n;c++){ let p=c; for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[p][c])) p=r;
-    if(Math.abs(M[p][c])<1e-12) return null; [M[c],M[p]]=[M[p],M[c]];
-    const piv=M[c][c]; for(let k=c;k<=n;k++) M[c][k]/=piv;
-    for(let r=0;r<n;r++){ if(r===c) continue; const f=M[r][c]; for(let k=c;k<=n;k++) M[r][k]-=f*M[c][k]; } }
-  return M.map(r=>r[n]); }
-function polyfitMSE(xs,ys,deg){ const n=xs.length,m=deg+1; if(n<m) return {mse:null,coef:null};
-  const ATA=Array.from({length:m},()=>new Array(m).fill(0)), ATy=new Array(m).fill(0);
-  for(let i=0;i<n;i++){ const pw=[]; let p=1; for(let j=0;j<m;j++){ pw.push(p); p*=xs[i]; }
-    for(let r=0;r<m;r++){ for(let c=0;c<m;c++) ATA[r][c]+=pw[r]*pw[c]; ATy[r]+=pw[r]*ys[i]; } }
-  const coef=_gaussSolve(ATA,ATy); if(!coef) return {mse:null,coef:null};
-  let se=0; for(let i=0;i<n;i++){ let f=0,p=1; for(let j=0;j<m;j++){ f+=coef[j]*p; p*=xs[i]; } se+=(ys[i]-f)**2; }
-  return {mse:se/n, coef}; }
+// 다항 적합(턱선 곡률)은 구조분석 모듈로 옮겼다 — modules/measure-structure.js
+// 복사본을 두면 한쪽만 고쳐진다. 필요하면 CZM.polyfitMSE 를 쓴다.
 // 통합 흐름 (2026-07-31 대표 확정: 촬영 → 설문 순서): ?flow=full 이면 측정 결과를 저장하고 설문(2단계)으로 안내
 const FLOW_FULL = new URLSearchParams(location.search).get("flow")==="full";
+// ?flow=verify — 퀘스트 재촬영(home.html). 측정 결과 저장은 full과 같고 돌아가는 곳만 다르다.
+// ⚠ 저장을 flow에 걸어둔 탓에 verify를 빠뜨리면 판정이 조용히 안 돈다(오류대장 053).
+const FLOW_VERIFY = new URLSearchParams(location.search).get("flow")==="verify";
+// ?flow=lecture — 강의용(2026-08-18 충북여성새로일하기센터). 형태 측정만 하고 색 판정은 건너뛴다.
+const FLOW_LECTURE = new URLSearchParams(location.search).get("flow")==="lecture";
 
 // ── 형태 측정 익명 전송 (backend REQUEST_형태측정전송스펙_0730 · 대표 승인 2026-07-30) ──
 // ⚠ 전송 대상은 파생 스칼라 23필드 + quality(jsonb)뿐. 얼굴·랜드마크 좌표·드레이핑·오버레이·크롭은 절대 전송 금지.
@@ -398,7 +398,7 @@ async function init(){
     });
     $("pickBtn").disabled=false;
     $("liveBtn").disabled=false;
-    pmTrack("photo_enter",{flow:FLOW_FULL?"full":"solo"});
+    pmTrack("photo_enter",{flow:FLOW_FULL?"full":FLOW_VERIFY?"verify":"solo"});   // verify를 안 가르면 재촬영 유입이 solo에 섞인다
     $("liveBtn").textContent="📸 촬영 시작";
     $("status").textContent="구미가 준비됐어요 — 촬영 시작을 눌러주세요";
   }catch(e){
@@ -462,7 +462,7 @@ $("file").addEventListener("change", async ev=>{
   try{ DEVICE = readExifDevice(await f.slice(0,131072).arrayBuffer()); }catch(e){ DEVICE="exif_err"; }
   const img=new Image();
   const url=URL.createObjectURL(f);
-  img.onload=()=>{ URL.revokeObjectURL(url); analyze(img); };
+  img.onload=()=>{ URL.revokeObjectURL(url); CZM.trace.reset(); CZM.trace.run("측정", ()=>analyze(img)); };
   // 브라우저가 못 여는 사진(예: 일부 기기의 HEIC)일 때 "분석 중..."에 갇히지 않게 즉시 복귀
   img.onerror=()=>{ URL.revokeObjectURL(url); gateFail("이 사진은 열지 못했어요 — 다른 사진으로 한 번만 더 부탁해요"); };
   img.src=url;
@@ -524,48 +524,7 @@ function stopTiltSensor(){
   if(_devTiltFn){ window.removeEventListener("deviceorientation", _devTiltFn); _devTiltFn=null; }
 }
 
-function rgb2lab(r,g,b){
-  let [R,G,B]=[r,g,b].map(v=>{v/=255; return v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92;});
-  let X=(R*0.4124+G*0.3576+B*0.1805)/0.95047, Y=R*0.2126+G*0.7152+B*0.0722, Z=(R*0.0193+G*0.1192+B*0.9505)/1.08883;
-  const fx=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);
-  const fX=fx(X),fY=fx(Y),fZ=fx(Z);
-  return {L:116*fY-16, a:500*(fX-fY), b:200*(fY-fZ)};
-}
-function sampleLab(ctx,x,y,r=4){
-  const d=ctx.getImageData(Math.max(0,x-r),Math.max(0,y-r),r*2,r*2).data;
-  let R=0,G=0,B=0,n=0;
-  for(let i=0;i<d.length;i+=4){R+=d[i];G+=d[i+1];B+=d[i+2];n++;}
-  return rgb2lab(R/n,G/n,B/n);
-}
-function sampleRegionLab(ctx,cx,cy,r){ // 원형 영역 전체 픽셀 → 중앙값 Lab (이상치 강건)
-  const R=Math.max(4,Math.round(r)), w=R*2;
-  const x0=Math.max(0,Math.round(cx)-R), y0=Math.max(0,Math.round(cy)-R);
-  const d=ctx.getImageData(x0,y0,w,w).data;
-  const Ls=[],As=[],Bs=[];
-  let clipped=0;
-  for(let yy=0;yy<w;yy++)for(let xx=0;xx<w;xx++){
-    if((xx-R)*(xx-R)+(yy-R)*(yy-R)>R*R) continue;
-    const i=(yy*w+xx)*4;
-    if(d[i]===undefined) continue;
-    if(Math.max(d[i],d[i+1],d[i+2])>=250) clipped++;   // 흰색이 날아간(포화된) 픽셀
-    const lab=rgb2lab(d[i],d[i+1],d[i+2]);
-    if(!isFinite(lab.L)) continue;
-    Ls.push(lab.L);As.push(lab.a);Bs.push(lab.b);
-  }
-  if(!Ls.length) return {L:NaN,a:NaN,b:NaN,n:0,clip:1};
-  const med=arr=>{arr.sort((a,b)=>a-b);return arr[Math.floor(arr.length/2)];};
-  return {L:med(Ls),a:med(As),b:med(Bs),n:Ls.length,clip:clipped/Ls.length};
-}
-// 눈썹 L — 한 점(105)만 찍으면 눈썹을 빗나가 피부를 집는다.
-// 실측(Sample 11장, 2026-07-20): 눈썹 L이 71.1 / 69.0 / 60.6 로 피부와 구분이 안 되던 3장이
-// 능선 다중 샘플링 후 30.0 / 31.7 / 52.7 로 교정됨. 눈썹은 피부보다 어두우므로 어두운 쪽을 취한다.
-function sampleBrowDark(ctx,lm,W,H,ids){
-  const vals=ids.map(i=>{const p=P(lm,i,W,H); return sampleLab(ctx,p.x,p.y,2).L;}).filter(isFinite);
-  if(!vals.length) return NaN;
-  vals.sort((a,b)=>a-b);
-  const k=Math.max(1,Math.round(vals.length*0.4));
-  return vals.slice(0,k).reduce((x,y)=>x+y,0)/k;
-}
+// 색 샘플링·헤어라인 검출은 색분석 모듈로 옮겼다 — modules/measure-color.js (M-02)
 const clamp=(v,a,c)=>Math.max(a,Math.min(c,v));
 const P=(lm,i,W,H)=>({x:lm[i].x*W, y:lm[i].y*H});
 const dist=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
@@ -613,179 +572,33 @@ function analyze(img){
   for(let i=0;i<fd.length;i+=24){ satSum += Math.max(fd[i],fd[i+1],fd[i+2])-Math.min(fd[i],fd[i+1],fd[i+2]); satN++; }
   const globalSat = satSum/satN;
 
-  // ---------- 샘플링 ----------
-  const rr=Math.max(8, faceW*0.07);
-  const cheekL=sampleRegionLab(ctx, P(lm,118,W,H).x, P(lm,118,W,H).y, rr);
-  const cheekR=sampleRegionLab(ctx, P(lm,347,W,H).x, P(lm,347,W,H).y, rr);
-  const brow  =sampleRegionLab(ctx, P(lm,9,W,H).x,   P(lm,9,W,H).y - faceW*0.10, rr*0.8); // 미간 위 이마
-  const skin={L:(cheekL.L+cheekR.L+brow.L)/3, a:(cheekL.a+cheekR.a+brow.a)/3, b:(cheekL.b+cheekR.b+brow.b)/3};
-  // 공막(눈 흰자) — 홍채 중심과 내안각 사이
-  const irisL=P(lm,468,W,H), irisR=P(lm,473,W,H);
-  const scL=sampleLab(ctx,(irisL.x+eyeLi.x)/2,(irisL.y+eyeLi.y)/2,2);
-  const scR=sampleLab(ctx,(irisR.x+eyeRi.x)/2,(irisR.y+eyeRi.y)/2,2);
-  const sclera={L:(scL.L+scR.L)/2, a:(scL.a+scR.a)/2, b:(scL.b+scR.b)/2};  // a*는 조명지표 로깅용 보존(scleraOK 판정은 L·b만 사용, 불변)
-  const browDark=sampleBrowDark(ctx,lm,W,H,[70,63,105,66,107,300,293,334,296,336]);
-  const browCol={L: isFinite(browDark)? browDark : sampleLab(ctx, P(lm,105,W,H).x, P(lm,105,W,H).y,3).L};
-  const lipCol =sampleLab(ctx, (P(lm,13,W,H).x+P(lm,14,W,H).x)/2, (P(lm,13,W,H).y+P(lm,14,W,H).y)/2,3);
-  const hairPts=[[P(lm,10,W,H).x, Math.max(6,P(lm,10,W,H).y-faceW*0.18)],[P(lm,10,W,H).x-faceW*0.28, Math.max(6,P(lm,10,W,H).y-faceW*0.08)],[P(lm,10,W,H).x+faceW*0.28, Math.max(6,P(lm,10,W,H).y-faceW*0.08)]];
-  const hairCol=hairPts.map(([hx,hy])=>sampleLab(ctx,hx,hy,6)).sort((p,q)=>p.L-q.L)[0]; // 최암값
-  const irisCol={L:(sampleLab(ctx,irisL.x,irisL.y,3).L + sampleLab(ctx,irisR.x,irisR.y,3).L)/2};
-
-  // ---------- 조명 레퍼런스 선택 (공막 → 밝은 무채색 배경 폴백) ----------
-  let ref={a:0,b:0}, refType="none";
-  const bgR=Math.max(10,W*0.04);
-  const bgCands=[sampleRegionLab(ctx,W*0.08,H*0.08,bgR), sampleRegionLab(ctx,W*0.92,H*0.08,bgR), sampleRegionLab(ctx,W*0.5,H*0.05,bgR)];
-  // 흰 배경이 날아가면(포화) 그 배경은 노출·색 레퍼런스로 못 씁니다.
-  // 아무리 밝게 찍어도 L이 100에서 멈추고 a·b는 0에 붙어버려서, 보정이 "충분히 됐다"고 착각하게 만듭니다.
-  // 요청서가 지적한 '스튜디오 밝은 조명 검증셋 8명 고대비 편향'이 바로 이 구간입니다.
-  const bgBright=bgCands.filter(s=>s.L>70 && Math.hypot(s.a,s.b)<8);
-  const bgOK=bgBright.filter(s=>s.clip<0.25 && s.L<97);
-  const bgBlown = bgBright.length>0 && bgOK.length===0;   // 밝은 배경은 있는데 전부 날아간 상태
-  const bgPick=bgOK.sort((p,q)=>q.L-p.L)[0];
-  const scleraOK = sclera.L > Math.max(62, skin.L+6) && Math.abs(sclera.b) < 12;
-  if(bgPick){ ref={a:bgPick.a,b:bgPick.b}; refType="background"; }
-  else if(scleraOK){ ref={a:0,b:sclera.b}; refType="sclera"; }
-  const refWarn = refType==="none";
-
-  // ---------- 명도(L*) 노출 정규화 — REQUEST_dev_L_normalize ----------
-  // 요청서는 가산 보정(L+shift)을 지정했지만, 같은 shift를 피부와 다크앵커 양쪽에 더하면
-  // 대비(=두 L의 차)에서 상쇄돼 아무 효과가 없습니다. 요청서가 노린 "밝은 사진일수록 갭만 확대"는
-  // 다크앵커가 0 부근 바닥이라 노출에 덜 밀리기 때문이므로, 0을 고정하는 곱(게인) 보정이 맞습니다.
-  //   재현: 피부65/동공18(정상) vs 피부73.6/동공20(밝음) → 가산 밴드 0.32↔0.62(불변) / 게인 0.27↔0.30(수렴)
-  // 개발팀 판단으로 게인 방식 채택 — 이론팀 사후 확정 요청 (기록: theory/DEV_NOTES_오류대장.md)
-  const WHITE_REF = 93;              // 흰 벽·종이 기준 L* — 캘리브레이션 상수 (요청서 초기값)
-  const L_CLAMP = 25;                // 배경 L 허용 범위 WHITE_REF±25 (요청서 §2의 클램프를 게인으로 옮긴 것)
-  // 밝기 보정은 "배경이 실제로 흰색일 때"만 유효합니다.
-  // 회색 벽(L≈80)과 어둡게 찍힌 흰 벽(L≈80)은 픽셀만 봐선 구분되지 않습니다.
-  // 구분 못 하는 채로 게인을 걸면 회색 배경 사진의 피부를 통째로 밀어올려 명도가 포화됩니다.
-  //   실측(Sample 11장, 2026-07-20): 게인 적용 1/11 → 미적용 3/11 로 오히려 악화 (오류대장 007)
-  // 반면 색(a·b) 보정은 회색 배경도 무채색이면 유효하므로 기존 임계(L>70)를 그대로 씁니다.
-  const L_REF_MIN = 88;              // 밝기 보정을 허용할 최소 배경 L — 잠정값, 이론팀 확정 대기
-  let L_gain = 1, L_shift = 0, L_corrected = false;
-  if(refType==="background" && bgPick.L >= L_REF_MIN){
-    L_gain = WHITE_REF / clamp(bgPick.L, WHITE_REF-L_CLAMP, WHITE_REF+L_CLAMP);
-    L_shift = WHITE_REF - bgPick.L;  // 참고용 기록 (요청서 명시 필드)
-    L_corrected = true;
-  }
-  const Lc = v => v*L_gain;          // 피부·동공·헤어·눈썹에 동일 적용
-  const bgDim = refType==="background" && !L_corrected;   // 배경은 있는데 흰 벽 기준(88)보다 어둡게 찍힘
-
-  const _oL=dist(P(lm,159,W,H),P(lm,145,W,H))/dist(eyeL,eyeLi), _oR=dist(P(lm,386,W,H),P(lm,374,W,H))/dist(eyeRi,eyeR);
-  const eyeOpen0=(_oL+_oR)/2;
-  // 이마 샘플 오염 검사 (머리카락 가림): 볼 평균과 크게 다르면 제외
-  const cheekAvg={L:(cheekL.L+cheekR.L)/2, a:(cheekL.a+cheekR.a)/2, b:(cheekL.b+cheekR.b)/2};
-  const browDelta=Math.hypot(brow.L-cheekAvg.L, brow.a-cheekAvg.a, brow.b-cheekAvg.b);
-  const skinPts = browDelta>18 ? [cheekL,cheekR] : [cheekL,cheekR,brow];
-  const skin2 = {L:skinPts.reduce((s,p)=>s+p.L,0)/skinPts.length, a:skinPts.reduce((s,p)=>s+p.a,0)/skinPts.length, b:skinPts.reduce((s,p)=>s+p.b,0)/skinPts.length};
-
-  // ---------- [색상] L/a/b 기반 ----------
-  const a_corr = skin2.a - ref.a;
-  const b_corr = skin2.b - ref.b;
-  const hue = Math.atan2(b_corr, a_corr)*180/Math.PI;    // 색상각: 낮을수록 붉은기 비중↑=쿨
-  const chroma = Math.hypot(a_corr, b_corr);             // 채도
-  const muteness = clamp((37-chroma)/12, 0, 1);          // 탁기 — cal#3: 영역샘플링 기준 재앵커(c30=0.58 여름뮤트 정합)
-  // 명도·대비는 노출 정규화된 L로 계산합니다 (색상 a*/b*는 기존 배경 보정 그대로)
-  const skinL = Lc(skin2.L), hairL = Lc(hairCol.L), browL = Lc(browCol.L), irisLm = Lc(irisCol.L);
-  // 방안5 (이론 지시 2026-07-23): 하이라이트 클리핑 게이트 — 포화 피부샘플을 A(명도)에서만 제외.
-  //   conH(대비)·판정 경로의 skinL은 불변(가중 미변경). A만 정직화 → skinL_A는 N.bright 전용.
-  const CLIP_A = 0.15;   // 피부샘플 포화 비율 임계 (잠정 — 하니스 로그로 조정)
-  const _skinPtsA = skinPts.filter(p => (p.clip||0) < CLIP_A);
-  const skinL_A = Lc(_skinPtsA.length ? _skinPtsA.reduce((s,p)=>s+p.L,0)/_skinPtsA.length : skin2.L);
-  const skinClipMax = Math.max(cheekL.clip||0, cheekR.clip||0, brow.clip||0);
-  const ita = Math.atan2(skinL-50, b_corr)*180/Math.PI; // ITA 피부톤 각도(밝기 계열)
-  // 대비 (전문 판정 표준: 모발·눈썹·눈동자 vs 피부)
-  const c_hair = Math.abs(skinL - hairL);
-  const c_brow = Math.abs(skinL - browL);
-  const c_iris = Math.abs(skinL - irisLm);
-  // 동공 우선: 염색 불가능한 유일 기준. 측정 원활 조건 = 눈 충분히 열림 + 홍채가 피부보다 확실히 어두움
+  // ---------- [색] 픽셀 측정 → modules/measure-color.js (M-02) ----------
+  // 샘플링·조명 레퍼런스·L 정규화·색상/대비를 한 모듈로 뺐다(구조도 §6-1, 2026-08-17).
+  // 임계·상수는 한 글자도 안 바꾸고 옮겼다 — Sample 3장 × 45필드 대조 확인.
   const DYED = (document.querySelector('input[name="dye"]:checked')||{}).value==="y";
-  const irisOK = eyeOpen0 > 0.22 && irisLm < skinL - 15;
-  // cal#7: 대비 = 피부톤과 다크 앵커의 갭. 실대비 = 동공↔피부(염색 불가 기준). 염색모는 헤어를 진단에서 제외
-  let contrast, cbasis;
-  if(irisOK){ contrast = c_iris; cbasis = "iris_primary"; }
-  else if(!DYED){ contrast = c_hair*0.6 + c_brow*0.4; cbasis = "hair_fallback"; }
-  else { contrast = c_iris; cbasis = "iris_lowconf"; }   // 염색모+동공불량: 임시 측정 + 재촬영 요청
+  const _CL = CZM.measureColor({ctx, lm, W, H, faceW, eyeL, eyeLi, eyeR, eyeRi, dyed:DYED});
+  const {cheekL, cheekR, brow, skin, sclera, browCol, lipCol, hairCol, irisCol, irisL, irisR,
+         ref, refType, refWarn, bgPick, bgBlown, bgDim, scleraOK,
+         L_gain, L_shift, L_corrected, Lc,
+         eyeOpen0, cheekAvg, browDelta, skinPts, skin2,
+         a_corr, b_corr, hue, chroma, muteness,
+         skinL, hairL, browL, irisLm, skinL_A, skinClipMax, ita,
+         c_hair, c_brow, c_iris, irisOK, contrast, cbasis, hairTop} = _CL;
 
-  // ---------- [비율] 3분할·부위 비율 ----------
-  // 상안부 꼭대기 = 검출된 헤어라인 (10번은 이마 중간 — 대표 지적 2026-07-22, engine v2.1)
-  // 게이트는 '어두운 오염'(앞머리 가림)일 때만 — 밝은 차이(번들거림)는 v3가 볼 기준으로 처리하므로 검출 진행
-  const hairTop = (browDelta>18 && brow.L < cheekAvg.L - 12) ? {y:P(lm,10,W,H).y, detected:false}
-                : detectHairline(ctx, lm, W, H, faceW, brow, cheekAvg);
-  const topPt = {x:P(lm,10,W,H).x, y:hairTop.y};
-  const faceH = dist(topPt, P(lm,152,W,H));
-  const browY = (P(lm,105,W,H).y + P(lm,334,W,H).y)/2;
-  const subnasale = P(lm,2,W,H);
-  const upper = (browY - hairTop.y);
-  const midf  = (subnasale.y - browY);
-  const lower = (P(lm,152,W,H).y - subnasale.y);
-  const triSum = upper+midf+lower;
-  const f_upper=upper/triSum, f_mid=midf/triSum, f_lower=lower/triSum;
-  const eyeLen = dist(eyeL, eyeLi)/faceW;
-  const interocular = dist(eyeLi, eyeRi)/dist(eyeL,eyeLi);
-  const noseW = dist(P(lm,98,W,H), P(lm,327,W,H))/faceW;
-  const jawW  = dist(P(lm,172,W,H), P(lm,397,W,H))/faceW;
-  const faceRatio = faceH/faceW;
-  const lipThick = dist(P(lm,13,W,H), P(lm,14,W,H))/faceH;
-  const mouthW = dist(P(lm,61,W,H), P(lm,291,W,H))/faceW;
-  const mouthCorner = -(((P(lm,61,W,H).y+P(lm,291,W,H).y)/2 - (P(lm,13,W,H).y+P(lm,14,W,H).y)/2)/faceH*100); // +상향
-  // ── 신규 측정 3종 (이론팀 스펙 2026-07-22 §5) — 내부 신호 수집. 유저 카드는 마케팅 검수 후 별도.
-  // brow_eye_gap: 눈썹(105/334)↔윗눈꺼풀(159/386) 세로거리 ÷ faceW. eye_open>0.22 게이트.
-  const _eyeVertH = (dist(P(lm,159,W,H),P(lm,145,W,H)) + dist(P(lm,386,W,H),P(lm,374,W,H)))/2;  // 눈 세로높이(배수 비교용)
-  const _browEyeRaw = (Math.abs(P(lm,105,W,H).y-P(lm,159,W,H).y) + Math.abs(P(lm,334,W,H).y-P(lm,386,W,H).y))/2;
-  const browEyeGap  = eyeOpen0>0.22 ? +( _browEyeRaw/faceW ).toFixed(3) : null;
-  const browEyeGapX = (eyeOpen0>0.22 && _eyeVertH>0) ? +( _browEyeRaw/_eyeVertH ).toFixed(2) : null; // 눈 세로높이 배수(참고)
-  // 입술 상/하 두께: dist(0,13)·dist(14,17) ÷ faceH. lip_thick(13,14)는 기존 유지.
-  const lipUpper = +(dist(P(lm,0,W,H),P(lm,13,W,H))/faceH).toFixed(3);
-  const lipLower = +(dist(P(lm,14,W,H),P(lm,17,W,H))/faceH).toFixed(3);
-  const lipUlRatio = lipUpper>0 ? +(lipLower/lipUpper).toFixed(2) : null;   // 하/상 비율
-  // temple_w: 눈꼬리 높이 좌우 최외곽 127/356 (좌표검증 2026-07-22: 눈꼬리Y Δ≈1px·최외곽) ÷ faceW. 내부 신호 전용 [가설].
-  const templeW = +(dist(P(lm,127,W,H),P(lm,356,W,H))/faceW).toFixed(3);
-  // 입 벌림 플래그(체크리스트 M2) — 전부 저장 원칙상 lip값은 남기고 플래그만. 임계 0.055는 잠정(이론팀 캘리브레이션 대기).
-  const mouthOpen = lipThick > 0.055;
-  // ── M축(동안↔성숙) 후보 2종 — 이론 초안 v0.2 §4-3. 로깅 전용, 판정 미투입. 이론팀 판정 대기 [가설]
-  // 기존 3분할(f_upper/mid/lower)로는 못 잡는 값이다: 3분할은 헤어라인·눈썹·코기저·턱끝의 구간 비율이고,
-  // 아래 둘은 (a) 턱만의 길이 (b) 파츠 덩어리가 얼굴 위/아래 어디로 쏠렸는가 — 서로 다른 정보.
-  // chin_len: 아랫입술 하단(17)→턱끝(152) ÷ faceH. 顔タイプ "あごの長さ" 상당. 짧을수록 동안 쪽.
-  //   lower(코기저→턱끝)는 입을 포함해 턱만의 길이를 분리하지 못하므로 별도 측정한다.
-  const chinLen = +((P(lm,152,W,H).y - P(lm,17,W,H).y)/faceH).toFixed(3);
-  // parts_vpos: 눈 라인(안쪽 눈머리 133/362 중점)이 헤어라인→턱끝 사이 어디인가. 클수록 파츠가 아래쪽 = 동안 쪽.
-  //   顔タイプ 협회가 주축으로 명시한 "パーツの上下位置"에 대응. 기준선은 정수리가 아니라 검출 헤어라인이며,
-  //   협회도 子供顔 요건에 "おでこが広く"를 포함하므로 헤어라인 기준이 방향과 어긋나지 않는다.
-  const partsVpos = +(((eyeLi.y+eyeRi.y)/2 - hairTop.y)/faceH).toFixed(3);
-  // face_taper: 하관폭 ÷ 관자놀이폭. 작을수록 역삼각형(위 넓고 아래 좁음).
-  //   대표 지시 2026-08-07 — 에너제틱의 "부분부분 날카로움" 예시로 '얼굴형 역삼각형'이 지목됐다.
-  //   ⚠ 정직 고지: temple_w 는 «개인차 미검증» 플래그 상태이고 다각도 스캔에서 조건 간 CV 0.25%로
-  //   거의 구조적 불변이었다(오류대장 §046). temple_w 가 실제로 불변이면 face_taper 는 사실상
-  //   jaw_w 의 재척도일 뿐 '역삼각형도'가 아니다. 분포 확보 전까지 이 한계를 안고 쓴다.
-  const faceTaper = templeW>0 ? +(jawW/templeW).toFixed(3) : null;
-
-  // ---------- [라인] 직선감·곡선감 ----------
-  const chain=[172,136,150,149,176,148,152,377,400,378,379,365,397];
-  let angSum=0;
-  for(let i=1;i<chain.length-1;i++){
-    const p1=P(lm,chain[i-1],W,H),p2=P(lm,chain[i],W,H),p3=P(lm,chain[i+1],W,H);
-    const v1=Math.atan2(p2.y-p1.y,p2.x-p1.x), v2=Math.atan2(p3.y-p2.y,p3.x-p2.x);
-    let dd=Math.abs(v2-v1); if(dd>Math.PI)dd=2*Math.PI-dd;
-    angSum+=dd;
-  }
-  const jawAngular=angSum/(chain.length-2)*57.3;
-  // 턱선 곡선 피팅 잔차(로깅 전용, 판정 미사용) — chain 재사용, faceW=1 정규화. 3차 주·2차 병기(외부제안 채택 2026-07-31)
-  const _jx=chain.map(i=>P(lm,i,W,H).x/faceW), _jy=chain.map(i=>P(lm,i,W,H).y/faceW);
-  const _fit3=polyfitMSE(_jx,_jy,3), _fit2=polyfitMSE(_jx,_jy,2);
-  const jawCurveMse3=_fit3.mse!=null?+_fit3.mse.toFixed(5):null, jawCurveMse2=_fit2.mse!=null?+_fit2.mse.toFixed(5):null;
-  const jawCurveA=_fit2.coef?+_fit2.coef[2].toFixed(4):null; // 2차항 계수(곡률 방향·크기, 참고)
-  // 턱끝 각도 (작을수록 뾰족·V라인 / 클수록 둥글거나 각짐)
-  const chin=P(lm,152,W,H), cL=P(lm,148,W,H), cR=P(lm,377,W,H);
-  const v1=Math.atan2(cL.y-chin.y,cL.x-chin.x), v2=Math.atan2(cR.y-chin.y,cR.x-chin.x);
-  let chinAngle=Math.abs(v1-v2)*57.3; if(chinAngle>180)chinAngle=360-chinAngle;
-  // 눈썹 아치(꺾임) vs 일자: 앞머리→산→꼬리 방향 변화
-  const bIn=P(lm,107,W,H), bPk=P(lm,105,W,H), bOut=P(lm,70,W,H);
-  const bv1=Math.atan2(bPk.y-bIn.y,bPk.x-bIn.x), bv2=Math.atan2(bOut.y-bPk.y,bOut.x-bPk.x);
-  let browArch=Math.abs(bv2-bv1)*57.3; if(browArch>180)browArch=360-browArch;
-  const eyeAngle = -(((eyeL.y-eyeLi.y)+(eyeR.y-eyeRi.y))/2) / faceW * 100;  // N8(이론확정 2026-07-30): 부호 반전 — 바깥(33/263)−안쪽(133/362)이라 올라간 눈매가 음수로 나오던 것 시정(mouth_corner와 동일 패턴). +상향
-  const eyeOpen=eyeOpen0;
-  // 종합 직선감 스코어 (0=곡선 1=직선) — v0 러프, 캘리브레이션 대상
-  const lineScore = clamp( clamp((jawAngular-7)/12,0,1)*0.45 + clamp((chinAngle-115)/50,0,1)*0.25 + clamp((25-browArch)/20,0,1)*0.30, 0, 1);
+  // ---------- [구조] 비율·라인 → modules/measure-structure.js ----------
+  // 순수 계산(랜드마크만)이라 이 파일 밖으로 뺐다(모듈구조 v1 §4-2, 2026-08-17).
+  // 값·임계는 한 글자도 안 바꾸고 옮겼다 — Sample 3장 × 29필드로 이관 전후 대조 확인.
+  // 헤어라인(hairTop)은 픽셀을 봐야 하므로 색분석 쪽에 남고, 여기로는 y값만 넘긴다.
+  const _ST = CZM.measureStructure({lm, W, H, faceW, hairTopY:hairTop.y, eyeOpen0, eyeL, eyeLi, eyeR, eyeRi});
+  const {faceH, browY, f_upper, f_mid, f_lower, lineScore} = _ST;
+  const R_=_ST.ratio, L_=_ST.line;
+  const faceRatio=R_.face_HW, eyeLen=R_.eye_len, interocular=R_.interocular, noseW=R_.nose_w, jawW=R_.jaw_w,
+        lipThick=R_.lip_thick, mouthW=R_.mouth_w, browEyeGap=R_.brow_eye_gap, browEyeGapX=R_.brow_eye_gap_x,
+        lipUpper=R_.lip_upper, lipLower=R_.lip_lower, lipUlRatio=R_.lip_ul_ratio, templeW=R_.temple_w,
+        mouthOpen=R_.mouth_open, chinLen=R_.chin_len, partsVpos=R_.parts_vpos, faceTaper=R_.face_taper;
+  const jawAngular=L_.jaw_angular_deg, chinAngle=L_.chin_angle_deg, browArch=L_.brow_arch_deg,
+        eyeAngle=L_.eye_angle, eyeOpen=L_.eye_open, mouthCorner=L_.mouth_corner,
+        jawCurveMse3=L_.jaw_curve_mse3, jawCurveMse2=L_.jaw_curve_mse2, jawCurveA=L_.jaw_curve_a;
 
   // ---------- 축 계산 ----------
   const HUE_NEUTRAL = 57;   // cal#4: 배경보정 파이프라인 기준, 쿨 2표본(53.8/34.8) 정합 — 웜 표본으로 상한 검증 필요
@@ -852,6 +665,19 @@ function analyze(img){
       jaw_curve_mse3:jawCurveMse3, jaw_curve_mse2:jawCurveMse2, jaw_curve_a:jawCurveA}
   };
   STATE.quality.shadow = shadowBands(STATE.ratio, STATE.line);   // 가설 섀도 상시 기록(CARD_GATE 무관, 판정·노출 불변)
+  // ?flow=lecture — 강의용. 퍼스널컬러는 현장 상호진단으로 직접 입력받으므로
+  // 드레이핑(R1~R4)과 색 판정을 건너뛰고 **형태 측정만** 넘긴다.
+  // 색 판정 정확도가 아직 6/12라 현장에서 쓰지 않는 것이 맞다(2026-08-17 대표 결정).
+  if(FLOW_LECTURE){
+    try{ localStorage.setItem("chugu_lecture_face", JSON.stringify({
+      v:1, ts:Date.now(), engine_ver:"photo_v2.2_sat_anchor",
+      ratio:STATE.ratio, line:STATE.line, quality:STATE.quality })); }catch(e){}
+    $("status").textContent="얼굴 측정이 끝났어요";
+    $("restartBtn").insertAdjacentHTML("beforebegin",
+      `<a class="btn stepnav" style="display:block;text-align:center;text-decoration:none" href="modules/lecture.html">돌아가기 →</a>`);
+    goStep(4);
+    return;
+  }
   $("status").textContent="분석은 끝났어요 — 두 장만 골라주세요";
   askDraping("r1");
 }
@@ -897,40 +723,6 @@ const R4_VARIANTS = {
 // MediaPipe 메시 최상단(10번)은 이마 중간에서 끝난다 — 삼정 비율의 기준(헤어라인)에 못 미침 (대표 실측 지적 2026-07-22).
 // 이마 중간에서 위로 세로선 3개를 스캔, '피부색 닮음'이 끊기는 첫 지속 지점(3연속 비피부)을 헤어라인으로 본다.
 // 2/3선 이상에서 못 찾으면 10번 폴백 + hairline_detected:false (없는 확신을 만들지 않는다).
-function detectHairline(ctx, lm, W, H, faceW, brow, cheek){
-  // v3 (대표 실기기 3장 검증 2026-07-22: 2성공 1실패 — 실패=이마 번들거림 최강 사진):
-  //   v2는 기준색이 이마 샘플 단독이라, 이마가 하이라이트로 오염되면 기준이 비정상적으로 밝아져
-  //   그 위의 정상 피부를 '어둡다=모발'로 오판했다. v3 —
-  //   ① 기준 명도를 볼(번들거림 없는 부위)로 안정화: seed L = min(이마, 볼+6)
-  //   ② 적응형 추적: 피부로 판정된 픽셀은 기준을 그쪽으로 따라가게(EMA) —
-  //      번들거림→정상 피부의 '점진적' 어두워짐은 피부로 추적되고, 모발의 '급격+지속' 하락만 경계
-  //   ③ 밝아지는 픽셀(반사·흰 배경)은 여전히 피부 취급 (v2 유지)
-  const top10 = P(lm,10,W,H);
-  const xs = [top10.x - faceW*0.10, top10.x, top10.x + faceW*0.10];
-  const maxRise = faceW*0.7;
-  const ys=[];
-  for(const x of xs){
-    // v3.2: 기준은 '고정' — L만 볼로 바닥 고정(하이라이트 오염 차단), 색조는 이마 자체.
-    // 적응형 추적(EMA)은 기각: 잔머리의 점진적 어두워짐을 기준이 따라 내려가 경계를 통과함(가을딥 dev 로그 hairline_detected:false로 확인)
-    const refL = Math.min(brow.L, cheek.L + 6);
-    const refA = brow.a, refB = brow.b;
-    let boundary=null, run=0;
-    for(let dy=2; dy<maxRise; dy+=2){
-      const y = top10.y - dy;
-      if(y<2) break;
-      const px = sampleLab(ctx, x, y, 2);
-      const darker = px.L < refL - 16;
-      const chromaShift = (Math.abs(px.a-refA) > 12 || Math.abs(px.b-refB) > 14) && px.L <= refL + 6;
-      if(darker || chromaShift){ run++; if(run>=3){ boundary = y + 6; break; } }
-      else run=0;
-    }
-    if(boundary!==null && boundary < top10.y - 4) ys.push(boundary);
-  }
-  if(ys.length<2) return {y: top10.y, detected:false};
-  ys.sort((a,b)=>a-b);
-  return {y: ys[Math.floor(ys.length/2)], detected:true};
-}
-
 function cropFace(cv, lm, W, H, faceW){
   const cx=(P(lm,234,W,H).x+P(lm,454,W,H).x)/2;
   const cy=(P(lm,10,W,H).y+P(lm,152,W,H).y)/2;
@@ -1005,7 +797,7 @@ function answerDraping(id, v){
   STATE.draping[id]=v;
   if(id==="r1") return askDraping("r2");   // r2 이후는 finalize()가 필요 라운드(r3/r4)를 판단해 되부른다
   $("drapeCard").style.display="none";
-  finalize();
+  CZM.trace.run("종합판정", finalize);
 }
 
 // 웜쿨 최종 = 드레이핑 0.8 + 색채 측정 0.2 (확정서 2026-07-22 §1.5 — 자가체크 0.3은 드레이핑으로 이관)
@@ -1305,7 +1097,7 @@ function shotUse(){
   DEVICE="live_capture";           // EXIF가 없는 경로 — 기기 정보 대신 촬영 모드 표기
   $("status").textContent="분석 중...";
   const img=new Image();
-  img.onload=()=>analyze(img);
+  img.onload=()=>{ CZM.trace.reset(); CZM.trace.run("측정", ()=>analyze(img)); };
   img.onerror=()=>gateFail("촬영한 사진을 읽지 못했어요 — 한 번만 더 찍어주세요");
   img.src=shotPending;
   shotPending=null;
@@ -1567,7 +1359,7 @@ function render(o){
     `</div></details>`;
   if(DEV) $("json").textContent=JSON.stringify(o,null,2);
   // 통합 흐름: 측정 요약을 저장하고 2단계(설문)로 — 같은 오리진(survey-beta)에서 index.html이 읽는다
-  if(FLOW_FULL && !document.getElementById("toSurveyBtn")){
+  if((FLOW_FULL || FLOW_VERIFY) && !document.getElementById("toSurveyBtn")){
     // 설문 화면으로 넘길 측정 결과. v2에서 **형태 지표를 추가**한다 —
     // v1은 색(pc12·웜쿨)만 넘겨서 통합 리포트가 "색 결과 한 줄"에 머물렀다.
     // 부위별 판정(정본 3절)은 ratio·line 없이는 원리적으로 불가하다.
@@ -1577,13 +1369,20 @@ function render(o){
       mute:o.mute_display?o.mute_display.label:null, confidence:o.axes.confidence,
       axes:{line_score:o.axes.line_score, soft_deep:o.axes.soft_deep, warm_cool:o.axes.warm_cool},
       ratio:o.ratio, line:o.line,
-      color:{skinL:o.color.skin_L, hue:o.color.hue_angle, chroma:o.color.chroma, contrast:o.color.contrast_overall},
+      // hair_L·dyed는 산출은 되는데 여기서 빠져 있어 헤어 걸음이 판정될 수 없었다.
+      // 값 자체는 §3-5가 "필드 없음"이라 적은 뒤에 이미 생겼다 — 이론팀 C3 승인 대기(2026-08-17).
+      color:{skinL:o.color.skin_L, hue:o.color.hue_angle, chroma:o.color.chroma, contrast:o.color.contrast_overall,
+             hair_L:o.color.hair_L, dyed:o.color.dyed},
       quality:{gaze_h:o.quality.gaze_h, dev_tilt:o.quality.dev_tilt, hazy:o.quality.hazy,
                L_corrected:o.quality.L_corrected, forehead_used:o.quality.forehead_used}})); }catch(e){}
-    $("restartBtn").insertAdjacentHTML("beforebegin",
-      `<a class="btn stepnav" id="toSurveyBtn" style="display:block;text-align:center;text-decoration:none" href="index.html?flow=full">다음 단계 — 추구미 설문 (2/2) →</a>`);
+    $("restartBtn").insertAdjacentHTML("beforebegin", FLOW_VERIFY
+      ? `<a class="btn stepnav" id="toSurveyBtn" style="display:block;text-align:center;text-decoration:none" href="modules/home.html">확인하러 돌아가기 →</a>`
+      : `<a class="btn stepnav" id="toSurveyBtn" style="display:block;text-align:center;text-decoration:none" href="index.html?flow=full">다음 단계 — 추구미 설문 (2/2) →</a>`);
   }
-  if(DEV) $("sigCards").innerHTML = signalCards(o);
+  if(DEV){
+    $("sigCards").innerHTML = signalCards(o);
+    $("stageReport").textContent = CZM.diagnoseText(o);
+  }
 }
 
 // ── 8타입 얼굴 시그널 해설 카드 (DEV 전용 — 선반영, 미배포) ──────────────────

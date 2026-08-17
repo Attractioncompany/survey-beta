@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>추구미즘 · 강의 진단</title>
+<!--
+  강의용 진단 흐름 (2026-08-18 충북여성새로일하기센터)
+  대표 확정 2026-08-17:
+    ① 퍼스널컬러 = 현장 상호진단 후 **직접 입력** (촬영 색 판정은 아직 6/12라 쓰지 않는다)
+    ② 정면 촬영 → 이목구비·얼굴형 **측정만**
+    ③ 설문 35문항
+    ④ 셋을 종합한 리포트 — **관찰 서술**로. 등급 판정은 하지 않는다(밴드 기준선이 아직 없다)
+
+  ⚠ 유저향 문구 [마케팅 검수 전]
+-->
+<style>
+:root{--bg:#FBFAF8;--card:#fff;--ink:#1E1B18;--sub:#6B635C;--line:#EBE6E0;--accent:#C9756B;--soft:#F5EFEA;--ok:#5B8C6E}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;-webkit-font-smoothing:antialiased;padding-bottom:44px}
+.wrap{max-width:520px;margin:0 auto;padding:20px 18px}
+h1{font-size:19px;margin:0 0 2px;letter-spacing:-.02em}
+.hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px}
+.hd small{color:var(--sub);font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+.card h2{font-size:13px;color:var(--sub);margin:0 0 10px;font-weight:600}
+.lead{font-size:18px;line-height:1.5;margin:0 0 4px;letter-spacing:-.01em}
+.note{font-size:13px;color:var(--sub);margin:6px 0 0}
+button{font:inherit;cursor:pointer}
+.btn{display:block;width:100%;padding:13px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:600;margin-top:12px;text-align:center;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line);font-weight:500}
+.btn.quiet{background:none;border:0;color:var(--sub);font-size:14px;text-decoration:underline;padding:8px 0;width:auto;margin:8px auto 0}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.pcgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}
+.pc{padding:14px 10px;border:1px solid var(--line);border-radius:13px;background:#fff;text-align:center;font-size:15px}
+.pc.sel{border-color:var(--accent);background:var(--soft);font-weight:700}
+.steps{margin-bottom:14px}
+.step{display:flex;gap:11px;align-items:flex-start;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:#fff;margin-bottom:9px;text-decoration:none;color:inherit}
+.step .n{flex:0 0 24px;height:24px;border-radius:99px;background:var(--soft);color:var(--sub);font-size:12.5px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.step.done .n{background:var(--ok);color:#fff}
+.step .t{font-size:15.5px}
+.step .m{font-size:12.5px;color:var(--sub);margin-top:3px}
+.obs{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;background:var(--soft);border-radius:12px;padding:14px 15px;align-items:baseline}
+.obs-l{font-size:12.5px;color:var(--sub)} .obs-v{font-size:15px;font-weight:600}
+.tag{border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-size:11px;color:var(--sub)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script src="czm-core.js?v=af69a3c"></script>
+<script>
+const $=id=>document.getElementById(id), app=$("app");
+const K=CZM.KEYS, LS=CZM.store;
+const LKEY="chugu_lecture";            // {pc8:"romantic", at:"..."}
+const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
+const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
+
+const state=()=>({
+  pc:   LS.get(LKEY,null),
+  face: LS.get(FKEY,null),
+  diag: LS.get(K.diag,null),
+});
+
+function head(sub){ return `<div class="hd"><h1>추구미즘</h1><small>${sub}</small></div>`; }
+
+// ── ① 퍼스널컬러 직접 입력 ──────────────────────────────────
+// 8타입 라벨은 계약층(czm-core.js PC8)이 소유한다. 여기 복사하지 않는다 —
+// 두 칸(봄 클리어·겨울 스트롱)이 이론팀 확정 대기라 바뀔 수 있다.
+function renderPC(){
+  const cur=(state().pc||{}).pc8;
+  app.innerHTML = head("1 / 3") + `<div class="card">
+    <p class="lead">진단받은 퍼스널컬러를 골라주세요.</p>
+    <p class="note">서로 봐준 결과 그대로 넣으시면 돼요.</p>
+    <div class="pcgrid">${CZM.PC8.map(t=>
+      `<button class="pc${cur===t.key?" sel":""}" data-k="${t.key}">${esc(t.label)}</button>`).join("")}</div>
+    <button class="btn" id="next" ${cur?"":"disabled"}>다음</button>
+    <button class="btn quiet" id="back">처음으로</button></div>`;
+  app.querySelectorAll(".pc").forEach(b=>b.onclick=()=>{
+    LS.set(LKEY,{pc8:b.dataset.k, at:new Date().toISOString()});
+    renderPC();
+  });
+  $("next").onclick=renderHome;
+  $("back").onclick=renderHome;
+}
+
+// ── 진행 화면 ───────────────────────────────────────────────
+function renderHome(){
+  const s=state();
+  const row=(n,done,title,sub,href,onclick)=>
+    `<a class="step${done?" done":""}" ${href?`href="${href}"`:`id="${onclick}"`}>
+       <span class="n">${done?"✓":n}</span>
+       <span><span class="t">${title}</span><span class="m">${sub}</span></span></a>`;
+  const pcLabel = s.pc ? (CZM.PC8.find(t=>t.key===s.pc.pc8)||{}).label : null;
+  const ready = s.pc && s.face && s.diag;
+
+  app.innerHTML = head("진단 진행") + `<div class="card">
+      <p class="lead">세 가지만 하면 리포트가 나와요.</p>
+      <p class="note">중간에 멈춰도 한 것까지는 남아요.</p></div>
+    <div class="steps">
+      ${row(1, !!s.pc,   "퍼스널컬러 입력", pcLabel ? esc(pcLabel)+" 입력됨" : "서로 봐준 결과를 넣어주세요", null, "goPC")}
+      ${row(2, !!s.face, "얼굴 촬영",       s.face ? "측정 완료" : "정면 한 장 · 이목구비와 얼굴형을 재요", "../photo.html?flow=lecture")}
+      ${row(3, !!s.diag, "설문",           s.diag ? "완료" : "35문항 · 3~4분", "../index.html?flow=lecture")}
+    </div>
+    <button class="btn" id="report" ${ready?"":"disabled"}>${ready?"결과 리포트 보기":"셋 다 마치면 열려요"}</button>
+    <button class="btn quiet" id="reset">처음부터 다시</button>`;
+  $("goPC").onclick=renderPC;
+  $("report").onclick=renderReport;
+  $("reset").onclick=()=>{ [LKEY,FKEY,K.diag].forEach(k=>LS.del(k)); renderHome(); };
+}
+
+// ── ④ 리포트 ────────────────────────────────────────────────
+// 관찰 서술만 한다. 등급("성숙형입니다")은 밴드 기준선이 없어 지어내야 하므로 쓰지 않는다.
+// 평균 대비 서술은 규준 자료(조사 중)가 붙으면 여기서 채운다.
+function renderReport(){
+  const s=state();
+  const pcLabel=(CZM.PC8.find(t=>t.key===s.pc.pc8)||{}).label;
+  const N=CZM.TYPE_NAMES, r=s.face.ratio, l=s.face.line;
+  const n=(v,d=2)=>v==null?"—":(+v).toFixed(d);
+  const g=s.diag.gap_axis||{};
+  const AX={T:["웜·곡선","쿨·직선"],D:["순함","강함"],M:["동안","성숙"]};
+  const top=Object.entries(g).filter(([k,v])=>AX[k]&&Number.isFinite(v))
+              .sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]))[0];
+
+  app.innerHTML = head("결과") + `
+    <div class="card"><h2>퍼스널컬러</h2>
+      <p class="lead">${esc(pcLabel)}</p>
+      <p class="note">현장에서 서로 봐준 결과예요.</p></div>
+
+    <div class="card"><h2>얼굴에서 읽은 것</h2>
+      <div class="obs">
+        <div class="obs-l">얼굴 세로:가로</div><div class="obs-v">${n(r.face_HW)}</div>
+        <div class="obs-l">3분할</div><div class="obs-v">${n(r.upper,3)} · ${n(r.mid,3)} · ${n(r.lower,3)}</div>
+        <div class="obs-l">눈 길이</div><div class="obs-v">${n(r.eye_len,3)}</div>
+        <div class="obs-l">눈 사이</div><div class="obs-v">${n(r.interocular)}</div>
+        <div class="obs-l">눈꼬리</div><div class="obs-v">${n(l.eye_angle)}</div>
+        <div class="obs-l">눈-눈썹 간격</div><div class="obs-v">${n(r.brow_eye_gap,3)}</div>
+        <div class="obs-l">입술 두께</div><div class="obs-v">${n(r.lip_upper,3)} / ${n(r.lip_lower,3)}</div>
+        <div class="obs-l">턱선 각도</div><div class="obs-v">${n(l.jaw_angular_deg,1)}°</div>
+        <div class="obs-l">턱끝 각도</div><div class="obs-v">${n(l.chin_angle_deg,1)}°</div>
+      </div>
+      <p class="note" id="normNote">※ 평균과 견주는 서술은 규준 자료가 붙는 대로 여기에 들어갑니다.
+         지금은 <b>잰 값만</b> 보여드려요 — 기준선 없이 "넓은 편"이라고 말하지 않습니다.</p>
+    </div>
+
+    <div class="card"><h2>설문에서 나온 것</h2>
+      <div class="obs">
+        <div class="obs-l">추구미</div><div class="obs-v">${esc(N[s.diag.want]??s.diag.want)}</div>
+        <div class="obs-l">지금</div><div class="obs-v">${esc(N[s.diag.have]??s.diag.have)}</div>
+        ${top?`<div class="obs-l">벌어진 쪽</div><div class="obs-v">${AX[top[0]][top[1]>0?1:0]}</div>`:``}
+      </div></div>
+
+    <button class="btn ghost" id="back">진행 화면으로</button>`;
+  $("back").onclick=renderHome;
+}
+
+renderHome();
+</script>
+</body>
+</html>
