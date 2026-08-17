@@ -50,14 +50,14 @@ button{font:inherit;cursor:pointer}
 .prow b{font-size:14px} .plabel{font-size:12px;color:var(--sub);margin-left:7px}
 .pline{font-size:13px;color:var(--ink);opacity:.85;line-height:1.65;margin-top:4px}
 .pdots{font-size:11px;color:var(--sub);letter-spacing:2px;margin-top:4px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
-.chips i{width:30px;height:30px;border-radius:8px;border:1px solid rgba(0,0,0,.07)}
+.chips{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:10px 0 4px}
+.chips i{aspect-ratio:1;border-radius:9px;border:1px solid rgba(0,0,0,.07)}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=bf3bbcc"></script>
+<script src="czm-core.js?v=2dbd6c8"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
