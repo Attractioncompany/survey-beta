@@ -52,6 +52,17 @@
     var lower = (P(152).y - subnasale.y);
     var triSum = upper + midf + lower;
     var f_upper = upper / triSum, f_mid = midf / triSum, f_lower = lower / triSum;
+    // ── 미간(nasion, 168) 기준 중·하안부 ──────────────────────
+    // 왜 따로 두나: 위 3분할(upper/mid/lower)의 분할점은 **눈썹**이다. 계측 규준은 **미간**을 쓴다.
+    //   그대로 견주면 우리 중안부가 체계적으로 부풀어 틀린 판정이 나온다(규준 조사 2026-08-17 §mid_lower).
+    // 기존 필드는 손대지 않고 **새 필드만 더한다** — 쌓인 측정치의 정의가 갈리면 안 된다.
+    // 규준(한국 여성 n=40, 직접 계측): 중안부 41.6 : 하안부 58.4.
+    var nasion = P(168);
+    var nMid = subnasale.y - nasion.y;          // n-sn
+    var nLow = P(152).y - subnasale.y;          // sn-gn
+    var nSum = nMid + nLow;
+    var midPct = nSum > 0 ? +(nMid / nSum * 100).toFixed(1) : null;
+
     var eyeLen = dist(eyeL, eyeLi) / faceW;
     var interocular = dist(eyeLi, eyeRi) / dist(eyeL, eyeLi);
     var noseW = dist(P(98), P(327)) / faceW;
@@ -124,7 +135,9 @@
         lip_thick: +lipThick.toFixed(3), mouth_w: +mouthW.toFixed(3),
         brow_eye_gap: browEyeGap, brow_eye_gap_x: browEyeGapX,
         lip_upper: lipUpper, lip_lower: lipLower, lip_ul_ratio: lipUlRatio, mouth_open: mouthOpen,
-        temple_w: templeW, chin_len: chinLen, parts_vpos: partsVpos, face_taper: faceTaper
+        temple_w: templeW, chin_len: chinLen, parts_vpos: partsVpos, face_taper: faceTaper,
+        // 미간 기준 — 규준(41.6:58.4)과 직접 견줄 수 있는 유일한 비율
+        n_mid_pct: midPct, n_low_pct: midPct == null ? null : +(100 - midPct).toFixed(1)
       },
       line: {
         jaw_angular_deg: +jawAngular.toFixed(1), chin_angle_deg: +chinAngle.toFixed(1),

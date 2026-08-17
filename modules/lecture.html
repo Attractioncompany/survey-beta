@@ -56,19 +56,37 @@ button{font:inherit;cursor:pointer}
 .tip-c{font-size:12.5px;color:#8A6A00;margin-top:5px}
 .chips{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:10px 0 4px}
 .chips i{aspect-ratio:1;border-radius:9px;border:1px solid rgba(0,0,0,.07)}
+/* 페이지 리포트 (대표 지시 2026-08-18: 한 장에 쏟지 말고 끊어 읽게) */
+.dots{display:flex;gap:5px;margin:0 0 16px}
+.dots i{flex:1;height:3px;border-radius:99px;background:var(--line)}
+.dots i.on{background:var(--accent)}
+.ptitle{font-size:23px;font-weight:800;letter-spacing:-.03em;margin:0 0 14px}
+.nav{display:flex;gap:9px;align-items:center;margin-top:18px}
+.nav .btn{margin-top:0}
+.nav .btn.ghost{flex:0 0 88px}
+.nav span{flex:0 0 0}
+.cover{background:linear-gradient(160deg,#FDF6F3,#F6F1F5);border:1px solid #EFE3E0;border-radius:18px;padding:24px 20px}
+.ctag{font-size:12px;color:var(--sub);margin:0}
+.cbig{font-size:32px;font-weight:800;letter-spacing:-.035em;margin:3px 0 2px}
+.clead{font-size:15px;line-height:1.65;margin:16px 0 0;color:var(--ink)}
+.vrow{display:grid;grid-template-columns:78px 1fr;gap:13px;padding:13px 0;border-top:1px solid rgba(0,0,0,.06);align-items:baseline}
+.vrow:first-child{border-top:0;padding-top:2px}
+.vk{font-size:12.5px;color:var(--sub)}
+.vv{font-size:17px;font-weight:700;letter-spacing:-.02em}
+.vs{font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.6}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=8e97dc0"></script>
+<script src="czm-core.js?v=453bea6"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
 const LKEY="chugu_lecture";            // {pc8:"romantic", age:"20-39", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=8e97dc0";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=453bea6";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -87,13 +105,24 @@ let NORMS=null, PRESC=null, PALETTE=null, TIPS=null, DICT=null, ENGINE=null;
 function pickTips(gapAxis, wantName, myPC){
   if(!TIPS||!DICT||!ENGINE) return [];
   let cells=[];
-  try{ cells=(ENGINE.issueOffer(DICT, gapAxis).cells||[]).filter(c=>c.kind==="skill").slice(0,2); }
+  // skill 칸만 보던 것을 넓혔다 — 사전의 item 칸에도 조언이 붙어 있는데 통째로 버려지고 있었다
+  // (실측 2026-08-18: 칸 4개 중 skill 1개만 남아 팁이 1건밖에 안 나왔다).
+  try{ cells=(ENGINE.issueOffer(DICT, gapAxis).cells||[]).slice(0,3); }
   catch(e){ return []; }
 
   const row=PRESC && (PRESC.types[myPC] || PRESC.types[(CZM.PC8.find(t=>t.label===myPC)||{}).master]);
   const real=v=>v && !/^\(.*\)$/.test(v.trim()) ? v : null;
+  const short=v=>{
+    let x=v.split("※")[0].replace(/\([^)]*\)/g,"").replace(/[,·+]\s*$/,"").trim();
+    if(x.length<=18) return x;
+    x=x.split("+")[0].trim();
+    if(x.length<=18) return x;
+    const q=x.split("·"); let acc=q[0];
+    for(let i=1;i<q.length && (acc+"·"+q[i]).length<=18;i++) acc+="·"+q[i];
+    return acc;
+  };
   const fill=txt=>txt.replace(/\{pc\.(best|second|accessory)\}/g, (_,k)=>{
-    const v=row && real(row[k]); return v || "\u0000";   // 채울 값이 없으면 표식을 남겨 그 팁을 버린다
+    const v=row && real(row[k]); return v ? short(v) : "\u0000";  // 채울 값이 없으면 표식을 남겨 그 팁을 버린다
   });
 
   const out=[];
@@ -102,14 +131,17 @@ function pickTips(gapAxis, wantName, myPC){
     if(!cand.length) continue;
     // 구체성 우선: 추구미 일치 > 공통. 무과금을 앞에 둔다(신뢰 보호 4조 — 유과금만 조언하지 않는다).
     cand.sort((a,b)=>((b.want===wantName)-(a.want===wantName)) || ((a.cost==="paid")-(b.cost==="paid")));
+    let taken=0;
     for(const t of cand){
       const tip=fill(t.tip);
       if(tip.includes("\u0000")) continue;               // 자리표시자(겨울 딥 등) → 내지 않는다
+      if(t.cost==="paid" && out.some(o=>o.cost==="paid")) continue;  // 유과금은 통틀어 1건까지
       out.push({...t, tip, why:fill(t.why||""), caution:t.caution?fill(t.caution):null, step:c.copy});
-      break;                                             // 칸당 1건 — 목록이 되면 "다 바꾸라"가 된다
+      if(++taken>=2) break;                              // 칸당 2건까지
     }
+    if(out.length>=4) break;                             // 통틀어 4건 — 더 늘면 "다 바꾸라"가 된다
   }
-  return out;
+  return out.slice(0,4);
 }
 
 function colorSection(wantKey, myPC){
@@ -124,13 +156,16 @@ function colorSection(wantKey, myPC){
     const b=real(row.best); if(!b) return null;
     return {best:b, second:real(row.second), accessory:real(row.accessory)};
   };
-  const chips=lbl=>{
+  const hexOf=lbl=>{
     const pal=PALETTE && PALETTE.palettes && (PALETTE.palettes[lbl] ||
               PALETTE.palettes[(CZM.PC8.find(t=>t.label===lbl)||{}).master]);
-    return pal && pal.best ? `<div class="chips">${pal.best.slice(0,10).map(h=>`<i style="background:${h}"></i>`).join("")}</div>` : "";
+    return (pal && pal.best) ? pal.best.slice(0,10) : [];
   };
+  const chips=lbl=>{ const h=hexOf(lbl);
+    return h.length ? `<div class="chips">${h.map(x=>`<i style="background:${x}"></i>`).join("")}</div>` : ""; };
   return { mine:nameOf(myPC), want:nameOf(wantPC.label),
-           mineChips:chips(myPC), wantChips:chips(wantPC.label), wantLabel:wantPC.label };
+           mineChips:chips(myPC), wantChips:chips(wantPC.label),
+           mineHex:hexOf(myPC), wantHex:hexOf(wantPC.label), wantLabel:wantPC.label };
 }
 
 function normLines(r,l,age){
@@ -139,29 +174,38 @@ function normLines(r,l,age){
   const out=[];
 
   // ① 눈 사이 — 유일한 직접 대응. 유저가 고른 연령대 행을 쓴다.
+  // 대표 지시 2026-08-18: 수치를 그대로 두지 말고 **판정을 앞세운다.**
+  //   유저에게 "0.204"는 아무 뜻도 없다. 판정이 먼저고 숫자는 근거로 뒤에 붙인다.
   const io=F("interocular");
   if(io && r.interocular!=null){
     const m=io.norm_mean[age] ?? io.norm_mean[io.recommended_row];
     const d=r.interocular-m;
-    out.push({t:"눈 사이", v:`${r.interocular.toFixed(2)}`,
-      s:`같은 또래 평균 ${m} — ${Math.abs(d)<0.05?"거의 같아요":d>0?"조금 넓은 쪽이에요":"조금 좁은 쪽이에요"}`});
+    out.push({t:"눈 사이", v:Math.abs(d)<0.05?"또래 평균과 거의 같아요":d>0?"조금 넓은 편이에요":"조금 좁은 편이에요",
+      s:`측정값 ${r.interocular.toFixed(2)} · 또래 평균 ${m}`});
   }
 
   // ② 눈꼬리 — 변환 필요. 유일하게 SD가 있어 "평균 범위"를 말할 수 있다.
+  //    ⚠ 밴드 판정(eye_angle)과 **같은 것을 잰다.** 둘을 나란히 두면
+  //    "올라간 눈매"와 "평균보다 내려간 쪽" 이 모순으로 읽힌다(실측 2026-08-18).
+  //    그래서 방향과 평균 대비를 한 문장으로 합치고, 밴드 줄은 리포트에서 뺀다.
   const ea=F("eye_angle");
   if(ea && l.eye_angle!=null && r.eye_len){
     const deg=Math.asin((l.eye_angle/100)/r.eye_len)*180/Math.PI;
     const within=Math.abs(deg-ea.norm_mean)<=ea.norm_sd;
-    out.push({t:"눈꼬리 기울기", v:`${deg.toFixed(1)}°`,
-      s:`평균 ${ea.norm_mean}° — ${within?"평균 범위 안이에요":deg>ea.norm_mean?"조금 더 올라간 쪽이에요":"조금 더 내려간 쪽이에요"}`});
+    const dir=deg>1?"올라간 눈매":deg<-1?"내려간 눈매":"수평에 가까운 눈매";
+    const cmp = within ? `또래 평균(${ea.norm_mean.toFixed(1)}°)과 비슷한 정도예요`
+      : deg < 0 ? `또래 평균은 ${ea.norm_mean.toFixed(1)}° 올라간 쪽인데, 반대로 내려가 있어요`
+      : deg > ea.norm_mean ? `또래 평균 ${ea.norm_mean.toFixed(1)}°보다 더 올라간 편이에요`
+      : `올라가 있긴 한데 또래 평균 ${ea.norm_mean.toFixed(1)}°보다는 완만해요`;
+    out.push({t:"눈매", v:dir, own:"eye_angle", s:`${deg.toFixed(1)}° — ${cmp}`});
   }
 
   // ③ 눈 길이 — 변환값, SD 없음. "비슷한 수준"까지만.
   const el=F("eye_len");
   if(el && r.eye_len!=null){
     const d=r.eye_len-el.norm_mean;
-    out.push({t:"눈 길이", v:`${r.eye_len.toFixed(3)}`,
-      s:`평균 ${el.norm_mean} — ${Math.abs(d)<0.01?"비슷한 수준이에요":d>0?"긴 쪽이에요":"짧은 쪽이에요"}`});
+    out.push({t:"눈 길이", v:Math.abs(d)<0.01?"또래 평균과 비슷해요":d>0?"긴 편이에요":"짧은 편이에요",
+      s:`측정값 ${r.eye_len.toFixed(3)} · 또래 평균 ${el.norm_mean}`});
   }
   return out;
 }
@@ -270,6 +314,105 @@ function resetAll(){
   location.reload();   // 회차를 새로 연다
 }
 
+
+// ── 결과 저장 ───────────────────────────────────────────────
+// 강의 참석자가 가져갈 것이 있어야 한다. 화면으로만 보고 닫으면 남는 게 없다.
+//
+// 화면을 통째로 캡처(html2canvas 류)하지 않는다 — 외부 라이브러리가 하나 더 붙고,
+// 긴 리포트가 잘리거나 폰트가 깨진다. 우리는 데이터를 갖고 있으니 **카드를 직접 그린다.**
+// 그러면 인쇄·공유에 맞는 비율로 나오고 의존성이 0이다.
+//
+// iOS Safari는 <a download>가 잘 안 먹는다. 그래서 순서를 이렇게 둔다:
+//   ① navigator.share(파일) — 아이폰에서 "이미지 저장"이 바로 뜬다
+//   ② 다운로드 링크 — 안드로이드·데스크톱
+//   ③ 새 탭으로 열기 — 둘 다 막혔을 때. 길게 눌러 저장할 수 있다
+function drawCard(data){
+  const W=1080, PAD=64;
+  const cv=document.createElement("canvas");
+  const ctx=cv.getContext("2d");
+  const F="-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif";
+  let y=0;
+  // 1차: 높이를 재기 위해 한 번 훑는다(그리지 않는다)
+  const runs=[];
+  const push=(t,{size=28,weight=400,color="#1E1B18",gap=14,indent=0}={})=>{
+    ctx.font=`${weight} ${size}px ${F}`;
+    const max=W-PAD*2-indent, words=String(t).split(" "), lines=[]; let cur="";
+    for(const w of words){
+      const test=cur?cur+" "+w:w;
+      if(ctx.measureText(test).width>max && cur){ lines.push(cur); cur=w; } else cur=test;
+    }
+    if(cur) lines.push(cur);
+    for(const ln of lines){ runs.push({kind:"text",t:ln,size,weight,color,indent,y:y+size}); y+=size*1.45; }
+    y+=gap;
+  };
+  const rule=()=>{ runs.push({kind:"rule",y:y+8}); y+=26; };
+  const chips=(hexes)=>{ if(!hexes||!hexes.length) return;
+    const n=Math.min(10,hexes.length), s=Math.floor((W-PAD*2-9*(n-1))/n);
+    runs.push({kind:"chips",hexes:hexes.slice(0,n),size:s,y:y}); y+=s+22; };
+
+  y=PAD;
+  push("추구미즘",{size:32,weight:800,color:"#C9756B",gap:6});
+  push(data.pc,{size:76,weight:800,gap:8});
+  push("오늘 서로 봐준 퍼스널컬러",{size:26,color:"#6B635C",gap:26});
+  rule();
+  push(`지금 나의 매력   ${data.have}`,{size:34,weight:700,gap:6});
+  push(`추구미           ${data.want}`,{size:34,weight:700,gap:12});
+  if(data.gapLine) push(data.gapLine,{size:28,color:"#6B635C",gap:24});
+  rule();
+  const same = data.mineBest && data.mineBest===data.wantBest;
+  if(data.mineChips&&data.mineChips.length){
+    push(same?`${data.pc}에 잘 받는 색 = ${data.want} 매력을 만드는 색`:`${data.pc}에 잘 받는 색`,
+         {size:30,weight:700,gap:10});
+    chips(data.mineChips);
+    if(data.mineBest) push(data.mineBest,{size:26,color:"#6B635C",gap:22});
+  }
+  if(!same && data.wantChips&&data.wantChips.length){
+    push(`${data.want} 매력을 만드는 색`,{size:30,weight:700,gap:10}); chips(data.wantChips);
+    if(data.wantBest) push(data.wantBest,{size:26,color:"#6B635C",gap:22});
+  }
+  if(data.parts.length){ rule(); push("얼굴에서 읽은 것",{size:30,weight:700,gap:12});
+    data.parts.forEach(t=>push("· "+t,{size:26,color:"#3A342F",gap:8})); y+=12; }
+  if(data.tips.length){ rule(); push("오늘 해볼 것",{size:30,weight:700,gap:12});
+    data.tips.forEach(t=>push("· "+t,{size:26,color:"#3A342F",gap:8})); y+=12; }
+  rule();
+  push("attractioncompany.github.io/survey-beta",{size:22,color:"#8A827B",gap:0});
+
+  const H=Math.ceil(y+PAD);
+  cv.width=W; cv.height=H;
+  ctx.fillStyle="#FBFAF8"; ctx.fillRect(0,0,W,H);
+  for(const r of runs){
+    if(r.kind==="rule"){ ctx.strokeStyle="#EBE6E0"; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(PAD,r.y); ctx.lineTo(W-PAD,r.y); ctx.stroke(); continue; }
+    if(r.kind==="chips"){ let x=PAD;
+      for(const h of r.hexes){ ctx.fillStyle=h; ctx.beginPath();
+        ctx.roundRect(x,r.y,r.size,r.size,12); ctx.fill(); x+=r.size+9; } continue; }
+    ctx.font=`${r.weight} ${r.size}px ${F}`; ctx.fillStyle=r.color;
+    ctx.fillText(r.t, PAD+r.indent, r.y);
+  }
+  return cv;
+}
+
+async function saveCard(data, btn){
+  let cv;
+  try{ cv=drawCard(data); }
+  catch(e){ console.warn("카드 그리기 실패", e); btn.textContent="저장이 안 되네요"; return; }
+  const blob=await new Promise(r=>cv.toBlob(r,"image/png"));
+  if(!blob){ btn.textContent="저장이 안 되네요"; return; }
+  const name=`추구미즘_${data.pc.replace(/\s/g,"")}.png`;
+  const file=new File([blob],name,{type:"image/png"});
+  // ① 아이폰: 공유 시트에서 "이미지 저장"
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file]}); btn.textContent="저장했어요"; return; }
+    catch(e){ if(e && e.name==="AbortError"){ return; } }
+  }
+  // ② 안드로이드·데스크톱
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  btn.textContent="저장했어요";
+}
+
 // ── ④ 통합 리포트 ──────────────────────────────────────────
 // 대표 지시 2026-08-17: 설문 리포트처럼 **한 장으로** 나오고,
 //   "평균 대비 어떤가 → 나는 어디가 어떤 편인가 → 그래서 어떤 인상인가"까지 이어져야 한다.
@@ -279,7 +422,7 @@ function resetAll(){
 //   설문 리포트 3절이 쓰는 바로 그 엔진이라, 두 화면의 말이 갈리지 않는다.
 function partSection(face, surveyHaveKey){
   const P=window.__PART;
-  if(!P||!P.SNAP||!face) return {html:"", narr:""};
+  if(!P||!P.SNAP||!face) return {html:"", narr:"", lines:[]};
   try{
     const surveyName = CZM.TYPE_NAMES[surveyHaveKey] || null;
     const m={...face.ratio, ...face.line};   // 강의 흐름은 색을 재지 않는다 → 색 지표는 결측으로 간다
@@ -306,98 +449,165 @@ function partSection(face, surveyHaveKey){
         <b>${r.part}</b>
         <div class="pline">${r.line}</div>
       </div>`).join("");
-    return {html:list, narr:narr||"", seen:shown.length};
-  }catch(e){ console.warn("부위 리포트 실패", e); return {html:"", narr:""}; }
+    return {html:list, narr:narr||"", seen:shown.length, lines:shown.map(r=>r.line)};
+  }catch(e){ console.warn("부위 리포트 실패", e); return {html:"", narr:"", lines:[]}; }
 }
 
+// 측정값을 판정으로 — 대표 지시 2026-08-18 "수치를 받고 있는 부분은 판정을 내리고 보여줘야지".
+// 밴드는 계약층이 소유한다(CZM.BANDS). 여기서 문턱을 만들지 않는다.
+function verdicts(r, l){
+  const B=CZM.BANDS, out=[];
+  const ml=CZM.midLowerVerdict(r.n_mid_pct);
+  // 다른 줄과 마찬가지로 **판정이 크고 숫자는 근거로 아래**. 이 줄만 숫자를 앞세우면 눈이 어긋난다.
+  if(ml) out.push({group:"얼굴 비율", k:"중안부 : 하안부", v:ml.text.replace("평균보다 ",""),
+                   s:`${ml.mid} : ${ml.low} · 또래 평균 ${ml.norm} : ${(100-ml.norm).toFixed(1)}`});
+  if(l.jaw_angular_deg!=null) out.push({group:"얼굴형", k:"턱선", v:B.jaw_angular_deg(l.jaw_angular_deg),
+                   s:`${l.jaw_angular_deg}° — 턱선이 꺾이는 정도예요`});
+  if(l.chin_angle_deg!=null) out.push({group:"얼굴형", k:"턱끝", v:B.chin_angle_deg(l.chin_angle_deg),
+                   s:`${l.chin_angle_deg}° — 턱 끝이 모이는 각도예요`});
+  if(l.eye_angle!=null) out.push({group:"눈", k:"눈매 방향", own:"eye_angle", v:B.eye_angle(l.eye_angle),
+                   s:`눈꼬리가 눈머리보다 ${l.eye_angle>0?"위":"아래"}에 있어요`});
+  if(l.brow_arch_deg!=null) out.push({group:"눈썹", k:"눈썹 모양", v:B.brow_arch_deg(l.brow_arch_deg),
+                   s:`${l.brow_arch_deg}° — 눈썹 산이 꺾이는 정도예요`});
+  if(l.mouth_corner!=null) out.push({group:"입", k:"입꼬리", v:B.mouth_corner(l.mouth_corner),
+                   s:"입꼬리가 향하는 쪽이에요"});
+  return out;
+}
+
+// ── 페이지 리포트 ───────────────────────────────────────────
+// 대표 지시: 한 장에 다 쏟지 말고 **페이징으로 끊어서** 읽게. 설문 리포트와 같은 얼굴로 간다.
+let PAGE=0, PAGES=[];
 function renderReport(){
   const s=state();
   const pcLabel=(CZM.PC8.find(t=>t.key===s.pc.pc8)||{}).label;
   const N=CZM.TYPE_NAMES, r=s.face.ratio, l=s.face.line;
   const wantName=N[s.diag.want]??s.diag.want, haveName=N[s.diag.have]??s.diag.have;
+  // 부호는 WANT−HAVE다. g.D>0이면 추구미가 더 또렷하다는 뜻이니 **지금은 부드러운 쪽**이다.
+  // 세 축을 다 늘어놓으면 3연속 대구가 되고(헌법 §6-1) 읽히지도 않는다 — 벌어진 순으로 두 개만.
+  const g=s.diag.gap_axis||{};
+  // 이어 쓸 때와 끝맺을 때 어미가 다르다 — ["…고", "…한"] 두 벌을 들고 다닌다.
+  const AX=[[g.D,["부드럽고","부드러운"],["또렷하고","또렷한"]],
+            [g.T,["따뜻하고","따뜻한"],["시원하고","시원한"]],
+            [g.M,["어려 보이고","어려 보이는"],["차분하고","차분한"]]];
+  const gp=AX.filter(a=>Number.isFinite(a[0])&&a[0]!==0)
+    .sort((a,b)=>Math.abs(b[0])-Math.abs(a[0])).slice(0,2)
+    .map(a=>a[0]>0?a[1]:a[2]);
+  const gapLine = gp.length
+    ? `${wantName} 매력과 견주면 지금은 ${gp.map((w,i)=>w[i===gp.length-1?1:0]).join(" ")} 쪽이에요.`
+    : "";
 
-  // 격차는 축 이름을 던지지 않고 문장으로 말한다. 화법은 설문 리포트 4절(정본 §3-4)에서 가져온다.
-  // gap_axis = 추구미 − 지금 → 부호가 가리키는 것은 **지금 내가 어느 쪽에 있는가**다.
-  const g=s.diag.gap_axis||{}, parts=[];
-  if(Number.isFinite(g.D)&&g.D!==0) parts.push(g.D>0?"부드러운":"또렷한");
-  if(Number.isFinite(g.T)&&g.T!==0) parts.push(g.T>0?"따뜻한":"시원한");
-  if(Number.isFinite(g.M)&&g.M!==0) parts.push(g.M>0?"어려 보이는":"차분한");
+  const part=partSection(s.face, s.diag.have), norms=normLines(r,l,(s.pc||{}).age);
+  const col=colorSection(s.diag.want, pcLabel), tips=pickTips(g, wantName, pcLabel);
+  const vs=verdicts(r,l);
+  const byGroup=g2=>vs.filter(x=>x.group===g2);
+  const vRow=x=>`<div class="vrow"><div class="vk">${x.k}</div>
+      <div><div class="vv">${esc(x.v)}</div><div class="vs">${esc(x.s)}</div></div></div>`;
 
-  const part=partSection(s.face, s.diag.have), norms=normLines(r,l,(s.pc||{}).age), col=colorSection(s.diag.want, pcLabel);
-  const tips=pickTips(g, wantName, pcLabel);
-
-  // 해설 골격 (대표 확정 2026-08-17): 가진 것 → 가고 싶은 방향 → 시도 → 주의.
-  // "그런데 당신 색은 ~"처럼 대립시키면 유저가 자기가 잘못된 줄 안다(결핍 화법 금지·헌법 §4).
-  app.innerHTML = head("결과") + `
-    <div class="card hero">
-      <p class="note" style="margin:0">오늘의 진단</p>
-      <p class="big">${esc(pcLabel)}</p>
-      <div class="obs" style="margin-top:14px">
+  PAGES=[];
+  // ① 표지
+  PAGES.push({t:"오늘의 진단", html:`
+    <div class="cover">
+      <p class="ctag">퍼스널컬러</p>
+      <p class="cbig">${esc(pcLabel)}</p>
+      ${col&&col.mineChips?col.mineChips:""}
+      <div class="obs" style="margin-top:22px">
         <div class="obs-l">지금 나의 매력</div><div class="obs-v">${esc(haveName)}</div>
         <div class="obs-l">추구미</div><div class="obs-v">${esc(wantName)}</div>
       </div>
-    </div>
+      ${gapLine?`<p class="clead">${esc(gapLine)}</p>`:``}
+    </div>`});
 
-    <div class="card"><h2>지금 내가 가진 것</h2>
-      ${part.narr?`<p class="lead">${part.narr}</p>`:``}
-      ${part.html||""}
-      ${part.seen?`<p class="note">사진에서 또렷하게 읽힌 ${part.seen}군데예요.</p>`:``}
-      ${col&&col.mine?`
-        <p class="lead" style="margin-top:18px">${esc(pcLabel)}에 잘 받는 색이에요.</p>
-        ${col.mineChips}
-        <p class="note">${esc(col.mine.best)}${col.mine.second?`<br>곁들이면 좋은 색: ${esc(col.mine.second)}`:``}${col.mine.accessory?`<br>소품: ${esc(col.mine.accessory)}`:``}</p>`:``}
-    </div>
+  // ② 얼굴 비율·형태 — 숫자가 아니라 판정으로
+  const faceV=[...byGroup("얼굴 비율"), ...byGroup("얼굴형")];
+  if(faceV.length) PAGES.push({t:"얼굴 비율과 형태", html:`
+    <div class="card">${faceV.map(vRow).join("")}</div>
+    <p class="note">턱선·턱끝은 우리 측정 기준으로 본 것이에요.</p>`});
 
-    <div class="card"><h2>만들어가고 싶은 방향</h2>
-      <p class="lead">${esc(wantName)}</p>
-      ${parts.length?`<p class="note" style="font-size:14px;color:var(--ink)">지금은 ${esc(wantName)}보다 ${parts.join(" 쪽, ")} 쪽에 있어요.</p>`:``}
-      ${col&&col.want?`
-        ${col.wantChips}
-        <p class="note">${esc(wantName)} 매력은 이런 색으로 만들어져요 — ${esc(col.want.best)}</p>`:``}
-    </div>
-
-    <div class="card"><h2>시도해보면 좋은 것</h2>
-      ${tips.map(t=>`<div class="tip">
-        <div class="tip-t">${esc(t.tip)}</div>
-        ${t.why?`<div class="tip-w">${esc(t.why)}</div>`:``}
-        ${t.caution?`<div class="tip-c">${esc(t.caution)}</div>`:``}
-      </div>`).join("")}
-      <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.75">
-        ${col&&col.mine?`· <b>얼굴 가까이</b>(립·스카프·상의 목선)엔 잘 받는 색을 두세요. 얼굴이 사는 자리예요.<br>`:``}
-        ${col&&col.want?`· <b>얼굴에서 먼 곳</b>(하의·가방·신발)엔 ${esc(wantName)} 색을 써보세요. 얼굴은 편하고, 전체 느낌은 ${esc(wantName)} 쪽으로 가요.<br>`:``}
-        · 한 번에 하나만 바꿔보세요. 여러 개를 같이 바꾸면 어느 게 통했는지 몰라요.</p>
-    </div>
-
-    <div class="card"><h2>다만 이건 주의하세요</h2>
-      <p class="note" style="font-size:14px;line-height:1.75">
-        ${norms.length?`· 또래 평균과 견줄 수 있는 건 <b>눈 쪽</b>뿐이에요. 얼굴형·코·입·턱은 연구마다 재는 방법이 달라서, 지금 견주면 틀린 말이 돼요.<br>`:``}
-        · 사진은 조명과 각도에 따라 값이 조금씩 달라져요. 오늘 한 장의 결과예요.</p>
-    </div>
-
+  // ③ 이목구비
+  // 규준 줄이 눈매를 이미 말하면(own:"eye_angle") 밴드 줄은 뺀다 — 같은 것을 두 번, 그것도
+  // 다른 결론처럼 말하게 된다(실측 2026-08-18: "올라간 눈매" 밑에 "평균보다 내려간 쪽").
+  const normOwns=new Set(norms.map(x=>x.own).filter(Boolean));
+  const partV=[...byGroup("눈"), ...byGroup("눈썹"), ...byGroup("입")]
+    .filter(x=>!normOwns.has(x.own));
+  PAGES.push({t:"이목구비", html:`
+    ${partV.length?`<div class="card">${partV.map(vRow).join("")}</div>`:``}
     ${norms.length?`<div class="card"><h2>또래 평균과 견주면</h2>
-      <div class="obs">${norms.map(x=>
-        `<div class="obs-l">${x.t}</div><div class="obs-v">${x.v}<br><span class="sub13">${x.s}</span></div>`).join("")}</div>
-      <p class="note">한국 여성 계측 연구 기준이에요.</p></div>`:``}
+      ${norms.map(x=>`<div class="vrow"><div class="vk">${x.t}</div>
+        <div><div class="vv">${x.v}</div><div class="vs">${esc(x.s)}</div></div></div>`).join("")}
+      <p class="note">한국 여성 계측 연구 기준이에요.</p></div>`:``}`});
 
-    <div class="card"><h2>측정값</h2>
-      <div class="obs">
-        <div class="obs-l">얼굴 세로:가로</div><div class="obs-v">${(+r.face_HW).toFixed(2)}</div>
-        <div class="obs-l">3분할</div><div class="obs-v">${(+r.upper).toFixed(3)} · ${(+r.mid).toFixed(3)} · ${(+r.lower).toFixed(3)}</div>
-        <div class="obs-l">턱선 각도</div><div class="obs-v">${(+l.jaw_angular_deg).toFixed(1)}°</div>
-        <div class="obs-l">턱끝 각도</div><div class="obs-v">${(+l.chin_angle_deg).toFixed(1)}°</div>
-      </div>
-      <p class="note">비교할 기준이 아직 없는 값들이에요. 측정한 그대로 보여드려요.</p>
+  // ④ 부위별 인상
+  if(part.html) PAGES.push({t:"부위별로 보면", html:`
+    <div class="card">${part.narr?`<p class="lead">${part.narr}</p>`:``}${part.html}
+    <p class="note">사진에서 또렷하게 읽힌 ${part.seen}군데예요.</p></div>`});
+
+  // ⑤ 색
+  // 진단받은 색과 추구미 색이 같은 칸일 때가 있다(예: 겨울 스트롱 = 세련된).
+  // 그걸 두 카드로 나눠 똑같은 색을 두 번 내면 유저는 뭐가 다른지 찾다가 지친다. 합쳐서 한 번만.
+  const sameColor = col && col.mine && col.want && col.mine.best===col.want.best;
+  if(col&&(col.mine||col.want)) PAGES.push({t:"색 이야기", html:`
+    ${sameColor?`<div class="card"><h2>${esc(pcLabel)}에 잘 받는 색 = ${esc(wantName)} 매력을 만드는 색</h2>${col.mineChips}
+      <p class="note">${esc(col.mine.best)}${col.mine.second?`<br>곁들이면 좋은 색: ${esc(col.mine.second)}`:``}${col.mine.accessory?`<br>소품: ${esc(col.mine.accessory)}`:``}</p>
+      <p class="note">두 색이 같은 칸이에요. 색은 이미 맞춰져 있으니 다른 데를 손보면 돼요.</p></div>`
+    :`${col.mine?`<div class="card"><h2>${esc(pcLabel)}에 잘 받는 색</h2>${col.mineChips}
+      <p class="note">${esc(col.mine.best)}${col.mine.second?`<br>곁들이면 좋은 색: ${esc(col.mine.second)}`:``}${col.mine.accessory?`<br>소품: ${esc(col.mine.accessory)}`:``}</p></div>`:``}
+    ${col.want?`<div class="card"><h2>${esc(wantName)} 매력을 만드는 색</h2>${col.wantChips}
+      <p class="note">${esc(col.want.best)}</p></div>`:``}`}`});
+
+  // ⑥ 시도 + 주의
+  PAGES.push({t:"오늘 해볼 것", html:`
+    ${tips.map(t=>`<div class="tip"><div class="tip-t">${esc(t.tip)}</div>
+      ${t.why?`<div class="tip-w">${esc(t.why)}</div>`:``}
+      ${t.caution?`<div class="tip-c">${esc(t.caution)}</div>`:``}</div>`).join("")}
+    <div class="card"><h2>색은 이렇게</h2>
+      <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8">
+      ${col&&col.mine?`· <b>얼굴 가까이</b>(립·스카프·상의 목선)엔 잘 받는 색을 두세요. 얼굴이 사는 자리예요.<br>`:``}
+      ${col&&col.want&&!sameColor?`· <b>얼굴에서 먼 곳</b>(하의·가방·신발)엔 ${esc(wantName)} 색을 써보세요. 얼굴은 편하고, 전체 느낌은 ${esc(wantName)} 쪽으로 가요.<br>`:``}
+      · 한 번에 하나만 바꿔보세요. 여러 개를 같이 바꾸면 어느 게 통했는지 몰라요.</p></div>
+    <div class="card"><h2>다만 이건 주의하세요</h2>
+      <p class="note" style="font-size:14px;line-height:1.8">
+      · 또래 평균과 견줄 수 있는 건 <b>눈 쪽과 얼굴 비율</b>뿐이에요. 코·입·턱은 연구마다 재는 방법이 달라서, 지금 견주면 틀린 말이 돼요.<br>
+      · 사진은 조명과 각도에 따라 값이 조금씩 달라져요. 오늘 한 장의 결과예요.</p></div>`});
+
+  const CARD={pc:pcLabel, have:haveName, want:wantName, gapLine,
+    mineChips:col&&col.mineHex?col.mineHex:[], mineBest:col&&col.mine?col.mine.best:"",
+    wantChips:col&&col.wantHex?col.wantHex:[], wantBest:col&&col.want?col.want.best:"",
+    parts:(part.lines||[]).concat(vs.map(x=>x.k.includes(":")?x.v:`${x.k}: ${x.v}`)),
+    tips:tips.map(t=>t.tip)};
+
+  PAGE=Math.min(PAGE, PAGES.length-1);
+  paint(CARD);
+}
+
+function paint(CARD){
+  const p=PAGES[PAGE], last=PAGE===PAGES.length-1;
+  app.innerHTML = `<div class="hd"><h1>추구미즘</h1><small>${PAGE+1} / ${PAGES.length}</small></div>
+    <div class="dots">${PAGES.map((_,i)=>`<i class="${i===PAGE?"on":""}"></i>`).join("")}</div>
+    <p class="ptitle">${esc(p.t)}</p>
+    <div id="pbody">${p.html}</div>
+    <div class="nav">
+      ${PAGE>0?`<button class="btn ghost" id="prev">이전</button>`:`<span></span>`}
+      ${last?`<button class="btn" id="save">결과 저장하기</button>`
+            :`<button class="btn" id="next">다음</button>`}
     </div>
-
-    <button class="btn quiet" id="back">처음부터 다시</button>`;
-  $("back").onclick=resetAll;
+    ${last?`<button class="btn quiet" id="back">처음부터 다시</button>`:``}`;
+  const go=d=>{ PAGE=Math.max(0,Math.min(PAGES.length-1,PAGE+d)); paint(CARD); window.scrollTo({top:0,behavior:"instant"}); };
+  $("next")&&($("next").onclick=()=>go(1));
+  $("prev")&&($("prev").onclick=()=>go(-1));
+  $("back")&&($("back").onclick=resetAll);
+  $("save")&&($("save").onclick=e=>{ const b=e.currentTarget; b.textContent="만드는 중…"; saveCard(CARD,b); });
+  // 좌우로 쓸어 넘기기 — 폰에서 버튼까지 내려가지 않아도 된다
+  let x0=null;
+  app.ontouchstart=e=>{ x0=e.touches[0].clientX; };
+  app.ontouchend=e=>{ if(x0==null) return; const dx=e.changedTouches[0].clientX-x0; x0=null;
+    if(Math.abs(dx)>60) go(dx<0?1:-1); };
 }
 
 // 규준 자료는 조사 산출물이 원천이다. 여기 숫자를 복사하지 않는다 —
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=8e97dc0"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=453bea6"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))

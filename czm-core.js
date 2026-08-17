@@ -126,6 +126,32 @@
     return out;
   }
 
+  // ── 판정 밴드 ──────────────────────────────────────────────
+  // photo-module의 DEV 해설표(HINT)에 이미 있던 구간을 **그대로** 옮겼다. 새 문턱을 만들지 않았다.
+  // 여기 둔 이유: 강의 리포트와 촬영 화면이 같은 기준으로 말해야 한다. 두 곳에 두면 갈린다.
+  // 유저에게 보이는 말이므로 등급이 아니라 **어느 쪽인지**만 말한다("각진 편" O / "3등급" X).
+  var BANDS = {
+    // 얼굴형 — lineScore가 쓰는 구간(7~19 / 115~165)을 그대로 읽는다
+    // 라벨은 유저가 그대로 읽는 말이다. "중간"은 아무것도 알려주지 않아 뜻이 통하는 말로 바꿨다
+    // (2026-08-18 · 문턱은 그대로, 라벨만).
+    jaw_angular_deg: function (v) { return v >= 19 ? "각진 편" : v >= 7 ? "적당히 각진 편" : "둥근 편"; },
+    chin_angle_deg:  function (v) { return v >= 165 ? "완만한 편" : v >= 115 ? "적당한 편" : "뾰족한 편"; },
+    brow_arch_deg:   function (v) { return v >= 25 ? "아치형" : v >= 5 ? "완만한 아치" : "일자형"; },
+    // 눈매 방향 — 부호 임계 0.5는 기존 값
+    eye_angle:       function (v) { return v > 0.5 ? "올라간 눈매" : v < -0.5 ? "내려간 눈매" : "수평에 가까운 눈매"; },
+    mouth_corner:    function (v) { return v > 0.5 ? "올라간 입꼬리" : v < -0.5 ? "내려간 입꼬리" : "수평에 가까운 입꼬리"; }
+  };
+
+  // 중·하안부 — 규준(한국 여성 41.6 : 58.4)과 직접 견준다. 밴드가 아니라 평균 대비다.
+  // ±2%p 안이면 "평균과 비슷"으로 본다 — SD가 없어 그 이상은 말할 수 없다(규준 조사 §usage_rule).
+  function midLowerVerdict(midPct) {
+    if (midPct == null) return null;
+    var NORM = 41.6, d = midPct - NORM;
+    return { mid: +midPct.toFixed(1), low: +(100 - midPct).toFixed(1), norm: NORM, delta: +d.toFixed(1),
+             text: Math.abs(d) <= 2 ? "평균과 비슷해요"
+                 : d > 0 ? "중안부가 평균보다 긴 편이에요" : "하안부가 평균보다 긴 편이에요" };
+  }
+
   // ── 단계 계약 ──────────────────────────────────────────────
   // 목적: "어디서 오류났는지" 한 화면에서 보이게 한다.
   // 지금은 측정이 반쯤 실패해도 결과가 그냥 비어 나온다 — 역추적해야 알 수 있다.
@@ -195,6 +221,7 @@
   }
 
   root.CZM = {
+    BANDS: BANDS, midLowerVerdict: midLowerVerdict,
     STAGES: STAGES, trace: trace, diagnose: diagnose, diagnoseText: diagnoseText,
     KEYS: KEYS, store: store,
     TYPE_KEYS: TYPE_KEYS, TYPE_NAMES: TYPE_NAMES, PC8: PC8,
