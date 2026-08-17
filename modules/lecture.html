@@ -79,14 +79,14 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=453bea6"></script>
+<script src="czm-core.js?v=258d766"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
 const LKEY="chugu_lecture";            // {pc8:"romantic", age:"20-39", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=453bea6";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=258d766";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -102,7 +102,7 @@ let NORMS=null, PRESC=null, PALETTE=null, TIPS=null, DICT=null, ENGINE=null;
 // 팁은 **걸음이 아니다**(이론 판정 2026-08-17). 이미 발행된 칸 하나에 매달리는 "어떻게"다.
 // 그래서 칸을 먼저 정해야 한다 — 걸음 엔진에 gap_axis를 물어 나온 칸에만 팁을 붙인다.
 // 이 순서를 어기면 사전 밖 걸음이 조언 형태로 새어나가고 퀘스트 사전이 무력해진다.
-function pickTips(gapAxis, wantName, myPC){
+function pickTips(gapAxis, wantName, myPC, gender){
   if(!TIPS||!DICT||!ENGINE) return [];
   let cells=[];
   // skill 칸만 보던 것을 넓혔다 — 사전의 item 칸에도 조언이 붙어 있는데 통째로 버려지고 있었다
@@ -127,7 +127,7 @@ function pickTips(gapAxis, wantName, myPC){
 
   const out=[];
   for(const c of cells){
-    const cand=TIPS.tips.filter(t=>t.cell===c.id);
+    const cand=TIPS.tips.filter(t=>t.cell===c.id && !(t.makeup && gender && gender!=="f"));
     if(!cand.length) continue;
     // 구체성 우선: 추구미 일치 > 공통. 무과금을 앞에 둔다(신뢰 보호 4조 — 유과금만 조언하지 않는다).
     cand.sort((a,b)=>((b.want===wantName)-(a.want===wantName)) || ((a.cost==="paid")-(b.cost==="paid")));
@@ -168,8 +168,11 @@ function colorSection(wantKey, myPC){
            mineHex:hexOf(myPC), wantHex:hexOf(wantPC.label), wantLabel:wantPC.label };
 }
 
-function normLines(r,l,age){
+function normLines(r,l,age,gender){
   if(!NORMS) return [];
+  // 규준 원전이 전부 한국 **여성** 표본이다(S1 여성 40 · S2 여성 192 · S3 여성 31).
+  // 남성에게 이 평균을 들이대면 틀린 말을 하게 된다 — 없는 것은 없다고 다룬다.
+  if(gender && gender!=="f") return [];
   const F=k=>NORMS.fields.find(f=>f.field===k);
   const out=[];
 
@@ -496,8 +499,9 @@ function renderReport(){
     ? `${wantName} 매력과 견주면 지금은 ${gp.map((w,i)=>w[i===gp.length-1?1:0]).join(" ")} 쪽이에요.`
     : "";
 
-  const part=partSection(s.face, s.diag.have), norms=normLines(r,l,(s.pc||{}).age);
-  const col=colorSection(s.diag.want, pcLabel), tips=pickTips(g, wantName, pcLabel);
+  const gender=s.diag.gender||null;                       // 설문에서 받은 값(index.html이 chugu_diag에 넣는다)
+  const part=partSection(s.face, s.diag.have), norms=normLines(r,l,(s.pc||{}).age,gender);
+  const col=colorSection(s.diag.want, pcLabel), tips=pickTips(g, wantName, pcLabel, gender);
   const vs=verdicts(r,l);
   const byGroup=g2=>vs.filter(x=>x.group===g2);
   const vRow=x=>`<div class="vrow"><div class="vk">${x.k}</div>
@@ -555,18 +559,20 @@ function renderReport(){
       <p class="note">${esc(col.want.best)}</p></div>`:``}`}`});
 
   // ⑥ 시도 + 주의
-  PAGES.push({t:"오늘 해볼 것", html:`
+  PAGES.push({t:tips.length?"오늘 해볼 것":"색은 이렇게", html:`
     ${tips.map(t=>`<div class="tip"><div class="tip-t">${esc(t.tip)}</div>
       ${t.why?`<div class="tip-w">${esc(t.why)}</div>`:``}
       ${t.caution?`<div class="tip-c">${esc(t.caution)}</div>`:``}</div>`).join("")}
     <div class="card"><h2>색은 이렇게</h2>
       <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8">
-      ${col&&col.mine?`· <b>얼굴 가까이</b>(립·스카프·상의 목선)엔 잘 받는 색을 두세요. 얼굴이 사는 자리예요.<br>`:``}
+      ${col&&col.mine?`· <b>얼굴 가까이</b>(${gender&&gender!=="f"?"셔츠 목선·스카프·모자":"립·스카프·상의 목선"})엔 잘 받는 색을 두세요. 얼굴이 사는 자리예요.<br>`:``}
       ${col&&col.want&&!sameColor?`· <b>얼굴에서 먼 곳</b>(하의·가방·신발)엔 ${esc(wantName)} 색을 써보세요. 얼굴은 편하고, 전체 느낌은 ${esc(wantName)} 쪽으로 가요.<br>`:``}
       · 한 번에 하나만 바꿔보세요. 여러 개를 같이 바꾸면 어느 게 통했는지 몰라요.</p></div>
     <div class="card"><h2>다만 이건 주의하세요</h2>
       <p class="note" style="font-size:14px;line-height:1.8">
-      · 또래 평균과 견줄 수 있는 건 <b>눈 쪽과 얼굴 비율</b>뿐이에요. 코·입·턱은 연구마다 재는 방법이 달라서, 지금 견주면 틀린 말이 돼요.<br>
+      ${gender&&gender!=="f"
+        ? `· 지금 가진 얼굴 계측 자료가 한국 <b>여성</b> 표본뿐이라, 평균과 견주는 부분은 빼고 우리 측정 기준으로만 봤어요.<br>`
+        : `· 또래 평균과 견줄 수 있는 건 <b>눈 쪽과 얼굴 비율</b>뿐이에요. 코·입·턱은 연구마다 재는 방법이 달라서, 지금 견주면 틀린 말이 돼요.<br>`}
       · 사진은 조명과 각도에 따라 값이 조금씩 달라져요. 오늘 한 장의 결과예요.</p></div>`});
 
   const CARD={pc:pcLabel, have:haveName, want:wantName, gapLine,
@@ -607,7 +613,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=453bea6"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=258d766"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
