@@ -187,7 +187,8 @@
       "tip": "입술 안쪽부터 채우고, 원래 라인 바로 바깥으로 한 겹만 넓혀보세요.",
       "why": "입술이 도톰해지면 인상이 부드러운 쪽으로 한 칸 움직여요.",
       "caution": "한 겹을 넘기면 다른 사람 얼굴 같아져서 거울 앞에서 불편해져요.",
-      "source": "퀘스트사전 §3-3(lip_upper+lip_lower ↑)"
+      "source": "퀘스트사전 §3-3(lip_upper+lip_lower ↑)",
+      "makeup": true
     },
     {
       "id": "t.lip.T+.any",
@@ -203,7 +204,8 @@
       "tip": "입술 라인 안쪽으로 한 겹만 좁혀 바르고, 가장자리를 손끝으로 정리해보세요.",
       "why": "입술선이 또렷해지면 인상이 단정한 쪽으로 한 칸 움직여요.",
       "caution": null,
-      "source": "퀘스트사전 §3-3(lip_upper+lip_lower ↓)"
+      "source": "퀘스트사전 §3-3(lip_upper+lip_lower ↓)",
+      "makeup": true
     },
     {
       "id": "t.eye.T-.any",
@@ -717,6 +719,152 @@
       "caution": null,
       "source": "마스터 타입8(또렷·샤프 · 배치 군더더기 없음) · HAVE-2 정돈된 포인트 메이크업",
       "makeup": true
+    },
+    {
+      "id": "t.eye.T-.m",
+      "cell": "eye.T-",
+      "axis": "T",
+      "dir": "-",
+      "want": null,
+      "pc8": null,
+      "area": "item.glasses",
+      "cost": "free",
+      "effort": "today",
+      "status": "craft",
+      "tip": "안경을 쓰신다면 각진 테 대신 둥근 테로 바꿔 껴보세요. 테 하나 바뀐 건데 눈매가 순해 보여요.",
+      "why": "안경테는 눈을 둘러싼 선이라, 눈은 그대로 두고 눈매 인상만 바꿔요.",
+      "caution": null,
+      "source": "개발팀 초안 2026-08-18 (남성 대응) — 마케팅 검수 대기"
+    },
+    {
+      "id": "t.eye.T+.m",
+      "cell": "eye.T+",
+      "axis": "T",
+      "dir": "+",
+      "want": null,
+      "pc8": null,
+      "area": "item.glasses",
+      "cost": "free",
+      "effort": "today",
+      "status": "craft",
+      "tip": "안경을 쓰신다면 얇은 메탈테나 각진 테를 껴보세요. 눈매 선이 또렷하게 서요.",
+      "why": "테가 얇고 각질수록 눈 주변 선이 흐려지지 않고 그대로 읽혀요.",
+      "caution": null,
+      "source": "개발팀 초안 2026-08-18 (남성 대응) — 마케팅 검수 대기"
+    },
+    {
+      "id": "t.eye.M-.m",
+      "cell": "eye.M-",
+      "axis": "M",
+      "dir": "-",
+      "want": null,
+      "pc8": null,
+      "area": "item.glasses",
+      "cost": "free",
+      "effort": "today",
+      "status": "craft",
+      "tip": "안경을 쓰신다면 짙은 뿔테 말고 밝은 색 테나 알이 작은 테를 껴보세요. 무거운 테를 내려놓는 것만으로 인상이 가벼워져요.",
+      "why": "테가 굵고 어두울수록 얼굴에 무게가 실려요.",
+      "caution": null,
+      "source": "개발팀 초안 2026-08-18 (남성 대응) — 마케팅 검수 대기"
+    },
+    {
+      "id": "t.eye.M+.m",
+      "cell": "eye.M+",
+      "axis": "M",
+      "dir": "+",
+      "want": null,
+      "pc8": null,
+      "area": "item.glasses",
+      "cost": "free",
+      "effort": "today",
+      "status": "craft",
+      "tip": "안경을 쓰신다면 알이 크고 가로로 긴 테, 색이 짙은 테를 껴보세요. 눈매가 차분하게 가라앉아요.",
+      "why": "가로로 긴 선이 얼굴에 놓이면 시선이 위아래로 덜 튀어요.",
+      "caution": null,
+      "source": "개발팀 초안 2026-08-18 (남성 대응) — 마케팅 검수 대기"
+    },
+    {
+      "id": "t.lip.T-.m",
+      "cell": "lip.T-",
+      "axis": "T",
+      "dir": "-",
+      "want": null,
+      "pc8": null,
+      "area": "grooming.beard",
+      "cost": "free",
+      "effort": "today",
+      "status": "craft",
+      "tip": "턱선 수염을 칼같이 밀지 말고 경계를 조금 흐리게 남겨보세요. 입가 선이 덜 날카로워요.",
+      "why": "경계가 뚜렷할수록 얼굴 아래쪽이 단단하게 읽혀요.",
+      "caution": "한 번에 다 밀지는 마세요. 다시 자라는 데 며칠 걸려서 되돌리기가 느려요.",
+      "source": "개발팀 초안 2026-08-18 (남성 대응) — 마케팅 검수 대기",
+      "gender": "m"
+    },
+    {
+      "id": "t.lip.T+.m2",
+      "cell": "lip.T+",
+      "axis": "T",
+      "dir": "+",
+      "want": null,
+      "pc8": null,
+      "area": "grooming.beard",
+      "cost": "free",
+      "effort": "today",
+      "status": "craft",
+      "tip": "인중과 턱선 수염 경계를 한 번만 또렷하게 정리해보세요. 입매 윤곽이 살아나요.",
+      "why": "경계가 흐리면 입술선이 어디서 끝나는지 눈에 안 잡혀요.",
+      "caution": "한 번에 모양까지 바꾸진 마세요. 오늘은 경계만요.",
+      "source": "개발팀 초안 2026-08-18 (남성 대응) — 마케팅 검수 대기",
+      "gender": "m"
+    },
+    {
+      "id": "t.lip.T+.balm",
+      "cell": "lip.T+",
+      "axis": "T",
+      "dir": "+",
+      "want": null,
+      "pc8": null,
+      "area": "grooming.lip",
+      "cost": "free",
+      "effort": "today",
+      "status": "craft",
+      "tip": "색 없는 립밤을 얇게 한 번 발라보세요. 색은 안 들어가고 입술선만 또렷해져요.",
+      "why": "입술이 트면 윤곽이 흐려 보여요. 표면이 정리되면 선이 살아나요.",
+      "caution": null,
+      "source": "개발팀 초안 2026-08-18 (남성 대응) — 마케팅 검수 대기"
+    },
+    {
+      "id": "t.color.D+.m",
+      "cell": "color.D+",
+      "axis": "D",
+      "dir": "+",
+      "want": null,
+      "pc8": null,
+      "area": "item.top",
+      "cost": "free",
+      "effort": "today",
+      "status": "craft",
+      "tip": "셔츠나 니트를 한 톤 더 진한 것으로 바꿔 입어보세요. 같은 옷장 안에서 골라도 인상이 단단해져요.",
+      "why": "얼굴 가까이 오는 색이 진할수록 이목구비 윤곽이 또렷하게 읽혀요.",
+      "caution": null,
+      "source": "개발팀 초안 2026-08-18 (남성 대응) — 마케팅 검수 대기"
+    },
+    {
+      "id": "t.color.D-.m",
+      "cell": "color.D-",
+      "axis": "D",
+      "dir": "-",
+      "want": null,
+      "pc8": null,
+      "area": "item.top",
+      "cost": "free",
+      "effort": "today",
+      "status": "craft",
+      "tip": "검정 상의 대신 회색이나 남색처럼 한 칸 옅은 색을 입어보세요. 얼굴에서 색이 덜 부딪혀요.",
+      "why": "얼굴 가까이 색이 진할수록 대비가 세지고 인상이 강해져요.",
+      "caution": null,
+      "source": "개발팀 초안 2026-08-18 (남성 대응) — 마케팅 검수 대기"
     }
   ],
   "gaps": [
@@ -728,6 +876,7 @@
     "남성 그루밍 문구 분기 없음. 색은 남녀 동일이 원전 확정이고, 차이는 문구·제품 단계뿐(처방DB 성별 보정)."
   ],
   "notes": {
-    "makeup_flag": "makeup:true = 메이크업 전제. 남성 리포트에서 제외한다 (2026-08-18)."
+    "makeup_flag": "makeup:true = 메이크업 전제. 남성 리포트에서 제외한다 (2026-08-18).",
+    "gender_field": "gender:'m'=남성 전용, 없으면 공통. makeup:true=여성 전용(메이크업 전제)."
   }
 }

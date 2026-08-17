@@ -79,14 +79,14 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=258d766"></script>
+<script src="czm-core.js?v=fc69d2e"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
 const LKEY="chugu_lecture";            // {pc8:"romantic", age:"20-39", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=258d766";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=fc69d2e";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -127,7 +127,10 @@ function pickTips(gapAxis, wantName, myPC, gender){
 
   const out=[];
   for(const c of cells){
-    const cand=TIPS.tips.filter(t=>t.cell===c.id && !(t.makeup && gender && gender!=="f"));
+    // makeup=메이크업 전제(여성) · gender=그 성별 전용. 성별을 모르면 전용 팁은 내지 않는다.
+    const cand=TIPS.tips.filter(t=>t.cell===c.id
+      && !(t.makeup && gender && gender!=="f")
+      && !(t.gender && t.gender!==gender));
     if(!cand.length) continue;
     // 구체성 우선: 추구미 일치 > 공통. 무과금을 앞에 둔다(신뢰 보호 4조 — 유과금만 조언하지 않는다).
     cand.sort((a,b)=>((b.want===wantName)-(a.want===wantName)) || ((a.cost==="paid")-(b.cost==="paid")));
@@ -613,7 +616,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=258d766"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=fc69d2e"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
