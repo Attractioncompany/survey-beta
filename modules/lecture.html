@@ -79,14 +79,14 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=22d6faa"></script>
+<script src="czm-core.js?v=b420ffc"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
 const LKEY="chugu_lecture";            // {pc8:"romantic", age:"20-39", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=22d6faa";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=b420ffc";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -220,12 +220,17 @@ function normLines(r,l,age,gender){
 // 링크로 새로 들어오면 **처음부터** 시작한다. 지난 사람 결과가 남아 바로 리포트로 튀면 안 된다.
 // 다만 흐름 중간에 촬영·설문으로 나갔다 오는 것은 같은 회차다 —
 // sessionStorage는 그 왕복에서는 살아 있고, 링크를 새로 열면 사라진다. 딱 맞는 그릇이다.
-const RUN="czm_lec_run";
+const RUN="czm_lec_run", DONE="czm_lec_done";
 function runStart(){
   try{
-    if(sessionStorage.getItem(RUN)) return +sessionStorage.getItem(RUN);
+    const prev=sessionStorage.getItem(RUN);
+    // 리포트까지 본 회차는 **끝난 회차**다. 같은 탭에서 링크를 다시 열면 sessionStorage가
+    // 그대로 살아 있어서, 이걸 안 보면 다음 사람에게 앞사람 결과가 뜬다(현장 제보 2026-08-18).
+    // 강의장은 기기를 돌려쓴다 — 끝난 회차 위에 새로 들어오면 처음부터다.
+    if(prev && !sessionStorage.getItem(DONE)) return +prev;
     const t=Date.now();
     sessionStorage.setItem(RUN, String(t));
+    sessionStorage.removeItem(DONE);
     // 이번 회차 것만 지운다. chugu_diag는 웹 진단과 공유하는 키라 **지우지 않는다** —
     // 대신 "이 회차에 새로 한 설문인가"를 시각으로 가린다(아래 state).
     LS.del(LKEY); LS.del(FKEY);
@@ -316,7 +321,8 @@ function renderStuck(what, href){
 
 function resetAll(){
   [LKEY,FKEY].forEach(k=>LS.del(k));
-  try{ sessionStorage.removeItem(RUN); ["face","diag"].forEach(k=>sessionStorage.removeItem("czm_lec_sent_"+k)); }catch(e){}
+  try{ sessionStorage.removeItem(RUN); sessionStorage.removeItem(DONE);
+       ["face","diag"].forEach(k=>sessionStorage.removeItem("czm_lec_sent_"+k)); }catch(e){}
   location.reload();   // 회차를 새로 연다
 }
 
@@ -500,6 +506,8 @@ function verdicts(r, l, q){
 // 대표 지시: 한 장에 다 쏟지 말고 **페이징으로 끊어서** 읽게. 설문 리포트와 같은 얼굴로 간다.
 let PAGE=0, PAGES=[];
 function renderReport(){
+  // 여기까지 왔으면 이 회차는 끝났다. 다음 진입은 새 사람으로 본다.
+  try{ sessionStorage.setItem(DONE,"1"); }catch(e){}
   const s=state();
   const pcLabel=(CZM.PC8.find(t=>t.key===s.pc.pc8)||{}).label;
   const N=CZM.TYPE_NAMES, r=s.face.ratio, l=s.face.line;
@@ -633,7 +641,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=22d6faa"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=b420ffc"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
