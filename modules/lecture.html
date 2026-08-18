@@ -79,14 +79,14 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=8bf850d"></script>
+<script src="czm-core.js?v=22d6faa"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
 const LKEY="chugu_lecture";            // {pc8:"romantic", age:"20-39", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=8bf850d";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=22d6faa";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -274,7 +274,7 @@ function renderAge(){
   const cur=(state().pc||{}).age;
   app.innerHTML = head("2 / 3") + `<div class="card">
     <p class="lead">연령대만 알려주세요.</p>
-    <p class="note">또래 평균과 견주려고요. 나이대마다 평균이 달라서요.</p>
+    <p class="note">나이대마다 얼굴 평균이 달라서, 또래와 견주려면 필요해요.</p>
     <div class="pcgrid" style="grid-template-columns:1fr">${AGES.map(([k,lbl])=>
       `<button class="pc${cur===k?" sel":""}" data-a="${k}">${lbl}</button>`).join("")}</div>
     </div>`;
@@ -299,7 +299,7 @@ function route(){
   const s=state();
   if(!s.pc)        return renderPC();
   if(!s.pc.age)    return renderAge();
-  if(!s.face){ if(!sent("face")){ mark("face"); location.href="../photo.html?flow=lecture"; return; } return renderStuck("얼굴 촬영","photo-module.html?flow=lecture"); }
+  if(!s.face){ if(!sent("face")){ mark("face"); location.href="../photo.html?flow=lecture&back="+encodeURIComponent(location.pathname); return; } return renderStuck("얼굴 촬영","../photo.html?flow=lecture&back="+encodeURIComponent(location.pathname)); }
   if(!s.diag){ if(!sent("diag")){ mark("diag"); location.href="../index.html?flow=lecture"; return; } return renderStuck("설문","../index.html?flow=lecture"); }
   renderReport();
 }
@@ -633,7 +633,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=8bf850d"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=22d6faa"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
