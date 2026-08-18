@@ -130,6 +130,28 @@
   // photo-module의 DEV 해설표(HINT)에 이미 있던 구간을 **그대로** 옮겼다. 새 문턱을 만들지 않았다.
   // 여기 둔 이유: 강의 리포트와 촬영 화면이 같은 기준으로 말해야 한다. 두 곳에 두면 갈린다.
   // 유저에게 보이는 말이므로 등급이 아니라 **어느 쪽인지**만 말한다("각진 편" O / "3등급" X).
+  /**
+   * 분포 기반 판정 — 관측값이 아래 3분의 1 / 가운데 / 위 3분의 1 중 어디인가.
+   * 왜 이걸 쓰나: 현 밴드 상수로 14명을 갈라보니 **전원이 같은 칸**에 들어갔다(조사 2026-08-18).
+   *   jaw 8.3~10.7 → 전원 "적당히 각진 편" · chin 165.9~173.7 → 전원 "완만" · brow 34.5~45.8 → 전원 "아치형"
+   * 유저 전원이 같은 문장을 받으면 정보가 0이다. D26은 상수 창작을 금하고 분포 백분위를 쓰라고 한다 —
+   * 그래서 상수를 새로 만들지 않고 관측 분포(modules/shape-dist.json)의 삼분위를 읽는다.
+   * ⚠ n=14다. "어느 쪽"까지만 말하고 "상위 몇 %"는 말하지 않는다.
+   */
+  function bandOf(sorted, v, labels) {
+    if (!Array.isArray(sorted) || sorted.length < 6 || typeof v !== "number" || !isFinite(v)) return null;
+    var q = function (p) {
+      var i = (sorted.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i);
+      return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo);
+    };
+    var t1 = q(1 / 3), t2 = q(2 / 3);
+    return { label: v < t1 ? labels[0] : v < t2 ? labels[1] : labels[2],
+             low: +t1.toFixed(3), high: +t2.toFixed(3) };
+  }
+
+  // ⚠ 아래 BANDS는 lineScore(이론 엔진)가 쓰는 구간을 그대로 읽은 것이다. 유저 표시에는
+  //   위 bandOf를 쓴다 — 이 상수들은 전원을 한 칸에 몰아넣어 표시용으로 쓸 수 없다.
+  //   엔진 구간 자체의 재설정은 이론팀 몫이라 여기서 건드리지 않는다(요청서 발행).
   var BANDS = {
     // 얼굴형 — lineScore가 쓰는 구간(7~19 / 115~165)을 그대로 읽는다
     // 라벨은 유저가 그대로 읽는 말이다. "중간"은 아무것도 알려주지 않아 뜻이 통하는 말로 바꿨다
@@ -242,7 +264,7 @@
   }
 
   root.CZM = {
-    BANDS: BANDS, midLowerVerdict: midLowerVerdict, thirdsVerdict: thirdsVerdict,
+    BANDS: BANDS, bandOf: bandOf, midLowerVerdict: midLowerVerdict, thirdsVerdict: thirdsVerdict,
     STAGES: STAGES, trace: trace, diagnose: diagnose, diagnoseText: diagnoseText,
     KEYS: KEYS, store: store,
     TYPE_KEYS: TYPE_KEYS, TYPE_NAMES: TYPE_NAMES, PC8: PC8,

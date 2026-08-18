@@ -79,21 +79,21 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=3cd481e"></script>
+<script src="czm-core.js?v=8bf850d"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
 const LKEY="chugu_lecture";            // {pc8:"romantic", age:"20-39", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=3cd481e";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=8bf850d";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
 //       "어느 쪽"까지만 말하고 **"상위 몇 %"는 말하지 않는다.**
 // 19개 필드 중 15개는 대응 불가로 판정됐다 — 그건 실패가 아니라 정확한 결과다.
 // 억지로 붙이면 강의 현장에서 참석자에게 틀린 말을 하게 된다.
-let NORMS=null, PRESC=null, PALETTE=null, TIPS=null, DICT=null, ENGINE=null;
+let NORMS=null, PRESC=null, PALETTE=null, TIPS=null, DICT=null, ENGINE=null, SHAPE=null;
 // 색 섹션 — 대표 지적 2026-08-17:
 // "겨울 스트롱"이라고만 쓰면 유저는 그게 뭔지 모른다. 이름은 정보가 아니다.
 // ① 추구미가 그 색을 쓰는 이유 → ② 오늘 진단받은 내 색 → ③ 오늘 해볼 것, 순으로 잇는다.
@@ -461,26 +461,38 @@ function partSection(face, surveyHaveKey){
 
 // 측정값을 판정으로 — 대표 지시 2026-08-18 "수치를 받고 있는 부분은 판정을 내리고 보여줘야지".
 // 밴드는 계약층이 소유한다(CZM.BANDS). 여기서 문턱을 만들지 않는다.
-function verdicts(r, l){
-  const B=CZM.BANDS, out=[];
-  // 상·중·하 3분할 — 자기 얼굴 안 비교라 기준이 필요 없다. 규준이 없는 상안부까지 말할 수 있는 유일한 길.
-  const th=CZM.thirdsVerdict(r.upper, r.mid, r.lower);
+function verdicts(r, l, q){
+  const out=[];
+  // 상수 밴드가 아니라 **관측 분포**로 가른다. 현 상수(jaw 7/19 등)는 14명 전원을 같은 칸에
+  // 넣어버려서 누구에게나 같은 문장이 나갔다. shape-dist.json이 없으면 그 줄을 통째로 뺀다 —
+  // 틀린 기준으로 말하느니 말하지 않는다.
+  const D=SHAPE&&SHAPE.dist, L=SHAPE&&SHAPE.labels;
+  const band=(k,v)=>(D&&L&&D[k]&&L[k]) ? CZM.bandOf(D[k], v, L[k]) : null;
+  const push=(group,k,v,key,tail)=>{ const b=band(key,v); if(b) out.push({group,k,v:b.label,own:key,s:tail}); };
+  // 헤어라인 검출이 실패하면 상안부가 이마 중간 기준으로 잡혀 **체계적으로 짧게 나온다**
+  // (조사 2026-08-18: 검출O 0.173~0.314 vs 검출X 0.141~0.161 — 구간이 겹치지도 않는다).
+  // 그 상태로 "하안부가 가장 길어요"를 내면 틀린 말이다. 못 잰 건 말하지 않는다.
+  const hairOK = !q || q.hairline_detected !== false;
+  const th = hairOK ? CZM.thirdsVerdict(r.upper, r.mid, r.lower) : null;
   if(th) out.push({group:"얼굴 비율", k:"상 : 중 : 하", v:th.text,
                    s:`${th.line} — 이마 끝부터 눈썹, 눈썹부터 코밑, 코밑부터 턱끝이에요`});
   const ml=CZM.midLowerVerdict(r.n_mid_pct);
   // 다른 줄과 마찬가지로 **판정이 크고 숫자는 근거로 아래**. 이 줄만 숫자를 앞세우면 눈이 어긋난다.
   if(ml) out.push({group:"얼굴 비율", k:"중안부 : 하안부", v:ml.text.replace("평균보다 ",""),
                    s:`${ml.mid} : ${ml.low} · 또래 평균 ${ml.norm} : ${(100-ml.norm).toFixed(1)}`});
-  if(l.jaw_angular_deg!=null) out.push({group:"얼굴형", k:"턱선", v:B.jaw_angular_deg(l.jaw_angular_deg),
-                   s:`${l.jaw_angular_deg}° — 턱선이 꺾이는 정도예요`});
-  if(l.chin_angle_deg!=null) out.push({group:"얼굴형", k:"턱끝", v:B.chin_angle_deg(l.chin_angle_deg),
-                   s:`${l.chin_angle_deg}° — 턱 끝이 모이는 각도예요`});
-  if(l.eye_angle!=null) out.push({group:"눈", k:"눈매 방향", own:"eye_angle", v:B.eye_angle(l.eye_angle),
-                   s:`눈꼬리가 눈머리보다 ${l.eye_angle>0?"위":"아래"}에 있어요`});
-  if(l.brow_arch_deg!=null) out.push({group:"눈썹", k:"눈썹 모양", v:B.brow_arch_deg(l.brow_arch_deg),
-                   s:`${l.brow_arch_deg}° — 눈썹 산이 꺾이는 정도예요`});
-  if(l.mouth_corner!=null) out.push({group:"입", k:"입꼬리", v:B.mouth_corner(l.mouth_corner),
-                   s:"입꼬리가 향하는 쪽이에요"});
+  // 가로 너비 — 조사에서 사람을 가장 잘 구분한 지표다(사람간SD/사람안SD = 23.8).
+  if(r.face_HW!=null) push("얼굴 비율","얼굴 너비",r.face_HW,"face_HW",
+    `세로가 가로의 ${r.face_HW}배예요`);
+  if(l.jaw_angular_deg!=null) push("얼굴형","턱선",l.jaw_angular_deg,"jaw_angular_deg",
+    `${l.jaw_angular_deg}° — 턱선이 꺾이는 정도예요`);
+  if(l.chin_angle_deg!=null) push("얼굴형","턱끝",l.chin_angle_deg,"chin_angle_deg",
+    `${l.chin_angle_deg}° — 턱 끝이 모이는 각도예요`);
+  if(l.eye_angle!=null) push("눈","눈매",l.eye_angle,"eye_angle",
+    "눈꼬리가 눈머리보다 얼마나 위에 있는지예요");
+  if(l.brow_arch_deg!=null) push("눈썹","눈썹 모양",l.brow_arch_deg,"brow_arch_deg",
+    `${l.brow_arch_deg}° — 눈썹 산이 솟은 정도예요`);
+  if(l.mouth_corner!=null) push("입","입꼬리",l.mouth_corner,"mouth_corner",
+    "입꼬리가 향하는 쪽이에요");
   return out;
 }
 
@@ -509,7 +521,7 @@ function renderReport(){
   const gender=s.diag.gender||null;                       // 설문에서 받은 값(index.html이 chugu_diag에 넣는다)
   const part=partSection(s.face, s.diag.have), norms=normLines(r,l,(s.pc||{}).age,gender);
   const col=colorSection(s.diag.want, pcLabel), tips=pickTips(g, wantName, pcLabel, gender);
-  const vs=verdicts(r,l);
+  const vs=verdicts(r,l,s.face.quality);
   const byGroup=g2=>vs.filter(x=>x.group===g2);
   const vRow=x=>`<div class="vrow"><div class="vk">${x.k}</div>
       <div><div class="vv">${esc(x.v)}</div><div class="vs">${esc(x.s)}</div></div></div>`;
@@ -532,8 +544,8 @@ function renderReport(){
   const faceV=[...byGroup("얼굴 비율"), ...byGroup("얼굴형")];
   if(faceV.length) PAGES.push({t:"얼굴 비율과 형태", html:`
     <div class="card">${faceV.map(vRow).join("")}</div>
-    <p class="note">상안부는 이마 헤어라인을 기준으로 재요 — 앞머리가 이마를 덮으면 조금 달라질 수 있어요.<br>
-    턱선·턱끝은 우리 측정 기준으로 본 것이에요.</p>`});
+    <p class="note">상안부는 이마 헤어라인을 기준으로 재요 — 앞머리가 이마를 덮으면 이 줄이 빠져요.<br>
+    턱선·턱끝·너비는 우리가 지금까지 찍은 얼굴들 안에서 어느 쪽인지 본 것이에요(14명 기준이라 아직 참고용이에요).</p>`});
 
   // ③ 이목구비
   // 규준 줄이 눈매를 이미 말하면(own:"eye_angle") 밴드 줄은 뺀다 — 같은 것을 두 번, 그것도
@@ -621,7 +633,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=3cd481e"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=8bf850d"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
@@ -633,7 +645,8 @@ Promise.all([
   fetch("styling-tips.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
   fetch("quest-dict.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
   import(`./quest-engine.js${MODV}`).catch(()=>null),
-]).then(([a,b,c,d,e,f])=>{ NORMS=a; PRESC=b; PALETTE=c; TIPS=d; DICT=e; ENGINE=f; })
+  fetch("shape-dist.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
+]).then(([a,b,c,d,e,f,g])=>{ NORMS=a; PRESC=b; PALETTE=c; TIPS=d; DICT=e; ENGINE=f; SHAPE=g; })
   .catch(()=>{})
   .finally(route); });
 </script>
