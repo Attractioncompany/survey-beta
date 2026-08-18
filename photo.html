@@ -283,9 +283,9 @@ body.cam-open{overflow:hidden;}
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="czm-core.js?v=918ff87"></script>
-<script src="measure-color.js?v=918ff87"></script>
-<script src="measure-structure.js?v=918ff87"></script>
+<script src="czm-core.js?v=62f1ee2"></script>
+<script src="measure-color.js?v=62f1ee2"></script>
+<script src="measure-structure.js?v=62f1ee2"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -421,7 +421,12 @@ $("consentChk").addEventListener("change", e=>{
   if(CONSENT) pmTrack("photo_consent",{ver:CONSENT_VER});
   $("toStep2Btn").disabled = !CONSENT;
 });
-$("toStep2Btn").addEventListener("click", ()=>{ if(!CONSENT) return; goStep(2); });
+$("toStep2Btn").addEventListener("click", ()=>{ if(!CONSENT) return; goStep(2);
+  // 강의 흐름은 버튼을 한 번이라도 덜 누르게 한다(대표 지시 2026-08-18).
+  // ⚠ 반드시 이 클릭 핸들러 **안에서** 부른다 — liveStart는 iOS 권한 때문에
+  //   사용자 제스처 컨텍스트를 벗어나면 기울기 센서를 못 받는다.
+  if(FLOW_LECTURE) liveStart();
+});
 $("backStep1Btn").addEventListener("click", ()=>goStep(1));
 $("restartBtn").addEventListener("click", ()=>location.reload());
 if(FLOW_FULL) document.getElementById("stepbar").insertAdjacentHTML("beforebegin",
@@ -1098,6 +1103,9 @@ function liveCapture(){
   $("shotPreview").src=shotPending;
   $("shotConfirm").style.display="block";
   $("status").textContent="";
+  // 강의 흐름: 찍었으면 바로 분석으로 넘어간다. 확인 버튼을 한 번 더 누르게 하지 않는다.
+  // 사진이 나쁘면 아래 품질 게이트가 재촬영을 안내하므로 "이상 없으면 진행"이 성립한다.
+  if(FLOW_LECTURE) setTimeout(shotUse, 350);
 }
 function shotUse(){
   if(!shotPending) return;
