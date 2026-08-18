@@ -39,15 +39,15 @@ body{color:var(--ink);min-height:100vh;word-break:keep-all;overflow-wrap:break-w
   padding-bottom:calc(var(--safe-b) + var(--sp-5));}
 .glass{background:var(--glass-bg);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.3);backdrop-filter:blur(var(--glass-blur)) saturate(1.3);border:1px solid var(--glass-brd);}
 @supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){.glass{background:rgba(255,255,255,.92);}}
-.wrap{max-width:480px;margin:0 auto;padding:calc(var(--safe-t) + var(--sp-5)) var(--sp-4) var(--sp-6);}
+.wrap{max-width:480px;margin:0 auto;padding:calc(var(--safe-t) + var(--sp-4)) var(--sp-4) var(--sp-5);}
 
 .hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--sp-4);}
 h1{font-size:var(--fs-h);margin:0;letter-spacing:-.02em;font-weight:800;color:var(--deep)}
 .hd small{color:var(--sub);font-size:var(--fs-cap);font-weight:600}
 
 .card{background:var(--glass-bg);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.3);backdrop-filter:blur(var(--glass-blur)) saturate(1.3);
-  border:1px solid var(--glass-brd);border-radius:16px;padding:var(--sp-5) var(--sp-4);
-  box-shadow:0 8px 26px rgba(120,90,160,.14);margin-bottom:var(--sp-3);}
+  border:1px solid var(--glass-brd);border-radius:16px;padding:var(--sp-4);
+  box-shadow:0 8px 26px rgba(120,90,160,.14);margin-bottom:var(--sp-2);}
 .card h2{font-size:var(--fs-cap);color:var(--accent);margin:0 0 var(--sp-3);font-weight:700;letter-spacing:.04em}
 .lead{font-size:var(--fs-h);line-height:1.45;margin:0 0 var(--sp-2);letter-spacing:-.02em;font-weight:700}
 .note{font-size:var(--fs-sub);color:var(--sub);margin:var(--sp-2) 0 0;line-height:1.7}
@@ -88,7 +88,7 @@ button{font:inherit;cursor:pointer}
 .dots{display:flex;gap:5px;margin:0 0 var(--sp-4)}
 .dots i{flex:1;height:3px;border-radius:99px;background:rgba(74,43,92,.14)}
 .dots i.on{background:var(--accent)}
-.ptitle{font-size:var(--fs-title);font-weight:800;letter-spacing:-.03em;margin:0 0 var(--sp-4);color:var(--deep)}
+.ptitle{font-size:25px;font-weight:800;letter-spacing:-.03em;margin:0 0 var(--sp-3);color:var(--deep)}
 .nav{display:flex;gap:10px;align-items:center;margin-top:var(--sp-5)}
 .nav .btn{margin-top:0}
 .nav span{flex:0 0 0}
@@ -101,7 +101,7 @@ button{font:inherit;cursor:pointer}
 .cbig{font-size:var(--fs-title);font-weight:800;letter-spacing:-.035em;margin:var(--sp-1) 0 var(--sp-2);color:var(--deep)}
 .clead{font-size:var(--fs-body);line-height:1.7;margin:var(--sp-4) 0 0;color:var(--ink)}
 
-.vrow{display:grid;grid-template-columns:82px 1fr;gap:var(--sp-3);padding:var(--sp-3) 0;
+.vrow{display:grid;grid-template-columns:82px 1fr;gap:var(--sp-3);padding:10px 0;
   border-top:1px solid rgba(74,43,92,.10);align-items:baseline}
 .vrow:first-child{border-top:0;padding-top:2px}
 .vk{font-size:var(--fs-cap);color:var(--sub)}
@@ -156,7 +156,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=2061306"></script>
+<script src="czm-core.js?v=cae6e60"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
@@ -165,12 +165,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "2061306";
+const BUILD = "cae6e60";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=2061306";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=cae6e60";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -228,7 +228,9 @@ function pickTips(gapAxis, wantName, myPC, gender){
     }
     if(out.length>=4) break;                             // 통틀어 4건 — 더 늘면 "다 바꾸라"가 된다
   }
-  return out.slice(0,4);
+  // 같은 팁이 두 번 나오지 않게(대표 지적 2026-08-18). 칸이 달라도 본문이 같으면 중복이다.
+  const seen=new Set();
+  return out.filter(t=>{ const k=t.id||t.tip; if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,4);
 }
 
 function colorSection(wantKey, myPC){
@@ -655,7 +657,8 @@ function partSection(face, surveyHaveKey){
         <b>${r.part}</b>
         <div class="pline">${r.line}</div>
       </div>`).join("");
-    return {html:list, narr:narr||"", seen:shown.length, lines:shown.map(r=>r.line)};
+    const byPart={}; shown.forEach(r=>{ byPart[r.part]=r.line; });
+    return {html:list, narr:narr||"", seen:shown.length, lines:shown.map(r=>r.line), byPart};
   }catch(e){ console.warn("부위 리포트 실패", e); return {html:"", narr:"", lines:[]}; }
 }
 
@@ -691,8 +694,8 @@ function verdicts(r, l, q){
   // 그 상태로 "하안부가 가장 길어요"를 내면 틀린 말이다. 못 잰 건 말하지 않는다.
   const hairOK = !q || q.hairline_detected !== false;
   const th = hairOK ? CZM.thirdsGolden(r.upper, r.mid, r.lower) : null;
-  if(th) out.push({group:"황금비율", k:"상 : 중 : 하", v:th.label,
-                   s:`${th.line} — ${th.tell}`});
+  if(th) out.push({group:"얼굴형", k:"상 : 중 : 하", v:th.relLine,
+                   s:`${th.label} · 이상적인 얼굴은 1 : 1 : 1 이에요`});
   // 중·하안부 또래 평균 대조는 뺐다(2026-08-18 대표 판단: 평균 비교는 곧 타인 비교다).
   // 같은 것을 위 황금비 3분할이 미학 기준으로 말한다 — 중복이기도 했다.
   // 좌우 대칭 (대표 지시 2026-08-18). 사람 구분력 확인됨(사람간SD/사람안SD = 3.0).
@@ -734,7 +737,7 @@ function renderReport(){
   // 이어 쓸 때와 끝맺을 때 어미가 다르다 — ["…고", "…한"] 두 벌을 들고 다닌다.
   const AX=[[g.D,["부드럽고","부드러운"],["또렷하고","또렷한"]],
             [g.T,["따뜻하고","따뜻한"],["시원하고","시원한"]],
-            [g.M,["어려 보이고","어려 보이는"],["차분하고","차분한"]]];
+            [g.M,["어려 보이고","어려 보이는"],["성숙하고","성숙한"]]];
   const gp=AX.filter(a=>Number.isFinite(a[0])&&a[0]!==0)
     .sort((a,b)=>Math.abs(b[0])-Math.abs(a[0])).slice(0,2)
     .map(a=>a[0]>0?a[1]:a[2]);
@@ -754,7 +757,7 @@ function renderReport(){
   const asymCare = !!(_av && _av.care);
   const byGroup=g2=>vs.filter(x=>x.group===g2);
   const vRow=x=>`<div class="vrow"><div class="vk">${x.k}</div>
-      <div><div class="vv">${esc(x.v)}</div><div class="vs">${esc(x.s)}</div></div></div>`;
+      <div><div class="vv">${esc(x.v)}</div>${x.s?`<div class="vs">${esc(x.s)}</div>`:``}</div></div>`;
 
   PAGES=[];
   // ① 오늘의 진단 — 지금 나의 매력과 추구미를 **구미 둘로 나란히** 보여준다.
@@ -840,10 +843,10 @@ function renderReport(){
   //    "격차"를 결핍으로 읽히게 두지 않는다. 이미 가진 것을 먼저 적고 방향을 뒤에 붙인다.
   const AXROW=[["부드러움 ↔ 또렷함", g.D, "또렷한 쪽으로", "부드러운 쪽으로"],
                ["따뜻함 ↔ 시원함",   g.T, "시원한 쪽으로", "따뜻한 쪽으로"],
-               ["어려 보임 ↔ 차분함", g.M, "차분한 쪽으로", "어려 보이는 쪽으로"]]
+               ["어려 보임 ↔ 성숙함", g.M, "성숙한 쪽으로", "어려 보이는 쪽으로"]]
     .filter(a=>Number.isFinite(a[1]))
     .map(a=>({k:a[0], v:Math.abs(a[1])<0.15?"이미 가까워요":(a[1]>0?a[2]:a[3]),
-              s:Math.abs(a[1])<0.15?"이 축은 손댈 게 없어요":`벌어진 정도 ${Math.abs(a[1]).toFixed(2)}`}));
+              s:Math.abs(a[1])<0.15?"이 축은 손댈 게 없어요":""}));
   if(AXROW.length) PAGES.push({t:"지금과 추구미, 어디가 다른가",
     draw:{title:"지금과 추구미, 어디가 다른가",
           rows:[{k:"지금",v:haveName},{k:"추구미",v:wantName}].concat(AXROW),
@@ -861,34 +864,26 @@ function renderReport(){
       <p class="note">벌어진 축이 곧 오늘 손볼 자리예요. 이미 가까운 축은 그대로 두면 돼요.</p>
     </div>`});
 
-  // ③ 얼굴 비율·형태 — 숫자가 아니라 판정으로
-  const faceV=[...byGroup("황금비율"), ...byGroup("얼굴 비율"), ...byGroup("좌우 대칭"), ...byGroup("얼굴형")];
-  if(faceV.length) PAGES.push({t:"황금비율과 비교",
-    draw:{title:"황금비율과 비교", rows:faceV.map(x=>({k:x.k,v:x.v,s:x.s})),
-          paras:[]},
-    html:`
-    <div class="card">${faceV.map(vRow).join("")}</div>
-`});
-
-  // ③ 이목구비
-  // 규준 줄이 눈매를 이미 말하면(own:"eye_angle") 밴드 줄은 뺀다 — 같은 것을 두 번, 그것도
-  // 다른 결론처럼 말하게 된다(실측 2026-08-18: "올라간 눈매" 밑에 "평균보다 내려간 쪽").
-  // 규준 섹션을 뺐으므로 중복 걱정이 없다 — 눈매 밴드가 그대로 나온다
-  const partV=[...byGroup("눈"), ...byGroup("눈썹"), ...byGroup("입")];
-  PAGES.push({t:"이목구비",
-    draw:{title:"이목구비", rows:partV.map(x=>({k:x.k,v:x.v,s:x.s}))},
-    html:`
-    ${partV.length?`<div class="card">${partV.map(vRow).join("")}</div>`:``}
-    ${``/* 또래 평균 대조 섹션은 뺐다 — 대표 판단 2026-08-18: "평균과 비교하는 건 오히려
-          타인과 비교하는 것". 얼굴 판정은 황금비율(2쪽)로 일원화했다.
-          normLines()와 face-norms.json은 남겨둔다 — 되살릴 때 쓴다. */}`});
-
-  // ④ 부위별 인상
-  if(part.html) PAGES.push({t:"부위별로 보면",
-    draw:{title:"부위별로 보면", paras:(part.narr?[part.narr]:[]).concat(part.lines||[])},
-    html:`
-    <div class="card">${part.narr?`<p class="lead">${part.narr}</p>`:``}${part.html}
-    <p class="note">사진에서 또렷하게 읽힌 ${part.seen}군데예요.</p></div>`});
+  // ③ 부위별 페이지 — 얼굴형 / 눈 / 코 / 입을 각각 한 쪽씩. 관련된 것끼리 모으고
+  //    그 부위의 해설을 같은 쪽에 붙인다(대표 지시 2026-08-18 ④).
+  //    한 쪽에 한 부위만 담으면 분량이 짧아져 스크롤도 사라진다(②).
+  const P=part.byPart||{};
+  const pick=(...names)=>vs.filter(x=>names.includes(x.k));
+  const PART_PAGES=[
+    {t:"얼굴형", rows:pick("얼굴 가로 : 세로","상 : 중 : 하","턱선","턱끝","좌우 균형"), line:P["윤곽"]},
+    {t:"눈",     rows:pick("눈매","눈 길이 : 눈 사이","눈썹 모양"), line:[P["눈"],P["눈썹"]].filter(Boolean).join(" ")},
+    {t:"코",     rows:pick("코 : 입 너비"), line:P["코"]},
+    {t:"입",     rows:pick("입꼬리","윗입술 : 아랫입술"), line:P["입"]},
+  ];
+  for(const pg of PART_PAGES){
+    if(!pg.rows.length && !pg.line) continue;
+    PAGES.push({t:pg.t,
+      draw:{title:pg.t, rows:pg.rows.map(x=>({k:x.k,v:x.v,s:x.s})), paras:pg.line?[pg.line]:[]},
+      html:`
+      ${pg.rows.length?`<div class="card">${pg.rows.map(vRow).join("")}</div>`:``}
+      ${pg.line?`<div class="card"><h2>${esc(pg.t)}${jong(pg.t)?"이":"가"} 주는 인상</h2>
+        <p style="font-size:var(--fs-body);line-height:1.8">${pg.line}</p></div>`:``}`});
+  }
 
   // ⑤ 색
   // 진단받은 색과 추구미 색이 같은 칸일 때가 있다(예: 겨울 스트롱 = 세련된).
@@ -910,11 +905,21 @@ function renderReport(){
       <p class="note">${esc(col.want.best)}</p></div>`:``}`}`});
 
   // ⑥ 시도 + 주의
+  const TIPS_PER_PAGE=2;
+  for(let i=TIPS_PER_PAGE;i<tips.length;i+=TIPS_PER_PAGE){
+    const chunk=tips.slice(i,i+TIPS_PER_PAGE);
+    PAGES.push({t:"오늘 해볼 것 "+(Math.floor(i/TIPS_PER_PAGE)+1),
+      draw:{title:"오늘 해볼 것", paras:chunk.map(t=>"· "+t.tip+(t.why?" ("+t.why+")":""))},
+      html:chunk.map(t=>`<div class="tip"><div class="tip-t">${esc(t.tip)}</div>
+        ${t.why?`<div class="tip-w">${esc(t.why)}</div>`:``}
+        ${t.caution?`<div class="tip-c">${esc(t.caution)}</div>`:``}</div>`).join("")});
+  }
+  const tipsHead=tips.slice(0,TIPS_PER_PAGE);
   PAGES.push({t:tips.length?"오늘 해볼 것":"색은 이렇게",
     draw:{title:tips.length?"오늘 해볼 것":"색은 이렇게",
-          paras:tips.map(t=>"· "+t.tip+(t.why?" ("+t.why+")":""))},
+          paras:tipsHead.map(t=>"· "+t.tip+(t.why?" ("+t.why+")":""))},
     html:`
-    ${tips.map(t=>`<div class="tip"><div class="tip-t">${esc(t.tip)}</div>
+    ${tipsHead.map(t=>`<div class="tip"><div class="tip-t">${esc(t.tip)}</div>
       ${t.why?`<div class="tip-w">${esc(t.why)}</div>`:``}
       ${t.caution?`<div class="tip-c">${esc(t.caution)}</div>`:``}</div>`).join("")}
     <div class="card"><h2>색은 이렇게</h2>
@@ -938,8 +943,8 @@ function renderReport(){
     tips:tips.map(t=>t.tip)};
 
   // 대표 확정 순서(2026-08-18): 오늘의 진단 → 퍼스널컬러 → 얼굴·이목구비 → 추구미 → 비교 → 오늘 해볼 것
-  const ORDER=["오늘의 진단","내 퍼스널컬러","황금비율과 비교","이목구비","부위별로 보면",
-               "내 추구미","지금과 추구미, 어디가 다른가","색 이야기","오늘 해볼 것","색은 이렇게"];
+  const ORDER=["오늘의 진단","내 퍼스널컬러","얼굴형","눈","코","입","부위별로 보면",
+               "내 추구미","지금과 추구미, 어디가 다른가","색 이야기","오늘 해볼 것","오늘 해볼 것 2","오늘 해볼 것 3","색은 이렇게"];
   PAGES.sort((a,b)=>{ const i=ORDER.indexOf(a.t), j=ORDER.indexOf(b.t);
     return (i<0?99:i)-(j<0?99:j); });
 
@@ -975,7 +980,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=2061306"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=cae6e60"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))

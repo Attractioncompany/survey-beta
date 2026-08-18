@@ -237,8 +237,12 @@
     var far = 0;
     for (var i = 1; i < 3; i++) if (Math.abs(off[i]) > Math.abs(off[far])) far = i;
     var even = Math.abs(off[far]) <= 3;   // 3%p = 세 칸이 고르다고 볼 수 있는 폭
+    // 상대비: 가장 짧은 칸을 1로 둔다. 백분율은 크기 감각이 안 온다(대표 2026-08-18).
+    var mn = Math.min(t.pct[0], t.pct[1], t.pct[2]);
+    var rel = mn > 0 ? t.pct.map(function (v) { return +(v / mn).toFixed(1); }) : null;
     return {
       pct: t.pct, off: off, line: t.line,
+      rel: rel, relLine: rel ? rel.join(" : ") : t.line,
       label: even ? "세 칸이 고른 편이에요"
                   : NAME[far] + (off[far] > 0 ? "가 긴 편이에요" : "가 짧은 편이에요"),
       tell: "이상적인 얼굴은 상·중·하가 1 : 1 : 1 이에요"
