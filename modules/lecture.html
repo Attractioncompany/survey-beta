@@ -108,18 +108,34 @@ button{font:inherit;cursor:pointer}
 .vv{font-size:17px;font-weight:700;letter-spacing:-.02em}
 .vs{font-size:12.5px;color:var(--sub);margin-top:var(--sp-1);line-height:1.65}
 
-/* 인트로 — 설문 모듈의 시작 화면과 같은 형태(구미 150px) */
-.gumi-lg{width:150px;height:150px;object-fit:contain}
-.intro{display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--sp-4);
-  padding:var(--sp-6) var(--sp-4)}
-.intro h1{font-size:var(--fs-title);font-weight:800;letter-spacing:-.03em;color:var(--deep);margin:0}
-.intro p{font-size:var(--fs-body);line-height:1.8;color:var(--ink);margin:0}
+/* 인트로 — 8타입 구미가 둘러싼 풀스크린. 모바일에서 위아래 여백 없이 꽉 찬다. */
+body.intro-mode{padding:0}
+body.intro-mode .wrap{max-width:none;padding:0}
+.intro{height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;
+  justify-content:space-evenly;align-items:center;text-align:center;
+  padding:calc(var(--safe-t) + var(--sp-5)) var(--sp-4) calc(var(--safe-b) + var(--sp-4));gap:var(--sp-4)}
+/* 남는 세로 공간을 그리드가 먹는다 — 위아래로 벌어지지 않고 화면이 찬다 */
+/* 셀을 늘리지 않고 이미지 비율대로 둔다. 남는 세로는 .intro가 균등 배분한다 */
+.gumi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-1);
+  width:100%;max-width:460px;place-items:center}
+.gumi-grid img{width:100%;aspect-ratio:1;object-fit:contain;
+  filter:drop-shadow(0 3px 8px rgba(120,90,160,.18));animation:pop .5s both}
+.gumi-grid img:nth-child(1){animation-delay:.02s} .gumi-grid img:nth-child(2){animation-delay:.06s}
+.gumi-grid img:nth-child(3){animation-delay:.10s} .gumi-grid img:nth-child(4){animation-delay:.14s}
+.gumi-grid img:nth-child(5){animation-delay:.18s} .gumi-grid img:nth-child(6){animation-delay:.22s}
+.gumi-grid img:nth-child(7){animation-delay:.26s} .gumi-grid img:nth-child(8){animation-delay:.30s}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.94)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.gumi-grid img{animation:none}}
+.intro-mid{flex-shrink:0;display:flex;flex-direction:column;gap:var(--sp-2);align-items:center}
+.intro h1{font-size:34px;font-weight:800;letter-spacing:-.04em;color:var(--deep);margin:0}
+.intro p{font-size:var(--fs-body);line-height:1.75;color:var(--ink);margin:0}
+.intro .btn{flex-shrink:0;max-width:440px;margin-top:0}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=a684485"></script>
+<script src="czm-core.js?v=ef3c513"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
@@ -128,15 +144,15 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "a684485";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=a684485";
+const BUILD = "ef3c513";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=ef3c513";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
 //       "어느 쪽"까지만 말하고 **"상위 몇 %"는 말하지 않는다.**
 // 19개 필드 중 15개는 대응 불가로 판정됐다 — 그건 실패가 아니라 정확한 결과다.
 // 억지로 붙이면 강의 현장에서 참석자에게 틀린 말을 하게 된다.
-let NORMS=null, PRESC=null, PALETTE=null, TIPS=null, DICT=null, ENGINE=null, SHAPE=null;
+let NORMS=null, PRESC=null, PALETTE=null, TIPS=null, DICT=null, ENGINE=null, SHAPE=null, TDESC=null;
 // 색 섹션 — 대표 지적 2026-08-17:
 // "겨울 스트롱"이라고만 쓰면 유저는 그게 뭔지 모른다. 이름은 정보가 아니다.
 // ① 추구미가 그 색을 쓰는 이유 → ② 오늘 진단받은 내 색 → ③ 오늘 해볼 것, 순으로 잇는다.
@@ -362,17 +378,24 @@ const mark=k=>{ try{ sessionStorage.setItem("czm_lec_sent_"+k,"1"); }catch(e){} 
 let INTRO_DONE=false;
 try{ if(sessionStorage.getItem(AWAY)){ INTRO_DONE=true; sessionStorage.removeItem(AWAY); } }catch(e){}
 const goAway = url => { try{ sessionStorage.setItem(AWAY,"1"); }catch(e){} location.href=url; };
+// 8타입 구미를 다 띄운다 — "이 중에 내 추구미가 있다"가 한눈에 읽히게(대표 지시 2026-08-18).
+const GUMI8=["romantic","pure","elegant","energetic","gorgeous","classic","charisma","chic"];
 function renderIntro(){
-  app.innerHTML = `<div class="card intro">
-    <img class="gumi-lg" src="../bg/gumi_base.png" alt="">
-    <h1>추구미즘</h1>
-    <p>지금부터 현재 나의 매력과,<br>나의 추구미를 찾아볼게요.</p>
+  document.body.classList.add("intro-mode");
+  app.innerHTML = `<div class="intro">
+    <div class="gumi-grid">${GUMI8.map(k=>
+      `<img src="../bg/char_${k}.png" alt="" loading="eager">`).join("")}</div>
+    <div class="intro-mid">
+      <h1>추구미즘</h1>
+      <p>지금부터 현재 나의 매력과,<br>나의 추구미를 찾아볼게요.</p>
+    </div>
     <button class="btn" id="go">진단 및 설문 시작하기</button>
   </div>`;
-  $("go").onclick=()=>{ INTRO_DONE=true; route(); };
+  $("go").onclick=()=>{ document.body.classList.remove("intro-mode"); INTRO_DONE=true; route(); };
 }
 
 function route(){
+  document.body.classList.remove("intro-mode");
   const s=state();
   // 인트로는 회차마다 한 번. 촬영·설문 왕복에서 다시 뜨면 안 된다.
   if(!INTRO_DONE) return renderIntro();
@@ -566,7 +589,7 @@ function verdicts(r, l, q){
     CZM.goldenOf("interocular", r.interocular)
   ].filter(Boolean);
   for(const g of golds) out.push({group:"황금비율", k:g.name, v:g.label,
-    s:`황금비율 ${g.ideal} · 나 ${g.value} (${g.offPct>0?"+":""}${g.offPct}%)`});
+    s:`${g.a} 1 : ${g.b} ${g.value}  ·  황금비율은 1 : ${+g.ideal.toFixed(2)}`});
 
   // 헤어라인 검출이 실패하면 상안부가 이마 중간 기준으로 잡혀 **체계적으로 짧게 나온다**
   // (조사 2026-08-18: 검출O 0.173~0.314 vs 검출X 0.141~0.161 — 구간이 겹치지도 않는다).
@@ -649,7 +672,27 @@ function renderReport(){
       ${gapLine?`<p class="clead">${esc(gapLine)}</p>`:``}
     </div>`});
 
-  // ② 얼굴 비율·형태 — 숫자가 아니라 판정으로
+  // ② 내 추구미가 뭔지 — 설문 결과를 설명 없이 이름만 던지면 아무 뜻도 안 된다(대표 지적 2026-08-18).
+  //    문구는 이론 자산(index.html TYPES 전사본)에서만 가져온다. 여기서 새로 쓰지 않는다.
+  const td = TDESC && TDESC.types || {};
+  const gsub = t => (t||"").replace(/\{여성스러운\}/g, gender==="m"?"남성적인":"여성스러운")
+                           .replace(/\{여성스러움\}/g, gender==="m"?"남성스러움":"여성스러움");
+  const tw = td[s.diag.want], th_ = td[s.diag.have];
+  if(tw) PAGES.push({t:"내 추구미", html:`
+    <div class="card">
+      <h2>추구미</h2>
+      <p class="lead" style="font-size:26px;margin-bottom:var(--sp-3)">${esc(wantName)}</p>
+      <p style="font-size:var(--fs-body);line-height:1.8">${esc(gsub(tw.one))}</p>
+      <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8;margin-top:var(--sp-3)">${esc(gsub(tw.desc))}</p>
+    </div>
+    <div class="card"><h2>${esc(wantName)} 쪽으로 가려면</h2>
+      <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8">
+      · <b>지키면 좋은 것</b> — ${esc(gender==="m"&&tw.keepM?tw.keepM:tw.keep)}<br>
+      · <b>스타일</b> — ${esc(gender==="m"&&tw.styleM?tw.styleM:tw.style)}</p></div>
+    ${th_&&s.diag.have!==s.diag.want?`<div class="card"><h2>지금 나의 매력 — ${esc(haveName)}</h2>
+      <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8">${esc(gsub(th_.desc))}</p></div>`:``}`});
+
+  // ③ 얼굴 비율·형태 — 숫자가 아니라 판정으로
   const faceV=[...byGroup("황금비율"), ...byGroup("얼굴 비율"), ...byGroup("좌우 대칭"), ...byGroup("얼굴형")];
   if(faceV.length) PAGES.push({t:"황금비율과 견주면", html:`
     <div class="card">${faceV.map(vRow).join("")}</div>
@@ -745,7 +788,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=a684485"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=ef3c513"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
@@ -758,7 +801,8 @@ Promise.all([
   fetch("quest-dict.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
   import(`./quest-engine.js${MODV}`).catch(()=>null),
   fetch("shape-dist.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
-]).then(([a,b,c,d,e,f,g])=>{ NORMS=a; PRESC=b; PALETTE=c; TIPS=d; DICT=e; ENGINE=f; SHAPE=g; })
+  fetch("type-desc.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
+]).then(([a,b,c,d,e,f,g,h])=>{ NORMS=a; PRESC=b; PALETTE=c; TIPS=d; DICT=e; ENGINE=f; SHAPE=g; TDESC=h; })
   .catch(()=>{})
   .finally(route); });
 </script>

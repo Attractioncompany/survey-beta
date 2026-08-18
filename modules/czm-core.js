@@ -178,16 +178,16 @@
    */
   var PHI = 1.618;
   var GOLDEN = {
-    face_HW:   { ideal: PHI, name: "얼굴 세로 : 가로",
+    face_HW:   { ideal: PHI, name: "얼굴 가로 : 세로", a: "가로", b: "세로",
                  low: "가로가 넉넉한 편", high: "세로로 긴 편",
                  tell: "얼굴 길이를 가로폭으로 나눈 값이에요" },
-    mouth_nose:{ ideal: PHI, name: "입 : 코 너비",
+    mouth_nose:{ ideal: PHI, name: "코 : 입 너비", a: "코", b: "입",
                  low: "코 대비 입이 아담한 편", high: "코 대비 입이 시원한 편",
                  tell: "입 너비를 코 너비로 나눈 값이에요" },
-    lip_ul:    { ideal: PHI, name: "아랫입술 : 윗입술",
+    lip_ul:    { ideal: PHI, name: "윗입술 : 아랫입술", a: "윗입술", b: "아랫입술",
                  low: "윗입술이 도톰한 편", high: "아랫입술이 도톰한 편",
                  tell: "아랫입술 두께를 윗입술로 나눈 값이에요" },
-    interocular:{ ideal: 1.0, name: "눈 사이 : 눈 길이",
+    interocular:{ ideal: 1.0, name: "눈 길이 : 눈 사이", a: "눈 길이", b: "눈 사이",
                  low: "눈 사이가 가까운 편", high: "눈 사이가 여유로운 편",
                  tell: "두 눈 사이 거리를 한쪽 눈 길이로 나눈 값이에요 — 이상은 1 : 1이에요" }
   };
@@ -200,6 +200,10 @@
     var ratio = v / g.ideal, off = (ratio - 1) * 100;
     return {
       key: key, name: g.name, value: +v.toFixed(2), ideal: g.ideal, tell: g.tell,
+      a: g.a, b: g.b,
+      // "1 : 1.6" 꼴. 소수 셋째 자리까지 보여줘도 읽는 사람에게 뜻이 없다.
+      idealPair: "1 : " + (+g.ideal.toFixed(2)),
+      myPair: "1 : " + (+v.toFixed(2)),
       offPct: +off.toFixed(1),
       label: Math.abs(ratio - 1) <= GOLDEN_TOL ? "황금비율에 가까워요" : (off < 0 ? g.low : g.high)
     };
