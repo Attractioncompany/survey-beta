@@ -165,6 +165,97 @@
   };
 
   /**
+   * 황금비율 대조 (2026-08-18 대표 지시).
+   *   "평균과 비교하는 건 타인과 비교하는 것이고, 황금비율과 비교하는 건
+   *    미학 기준에 따라 자기 상태를 보는 것이다."
+   *
+   * 기술적으로도 이쪽이 단단하다 — **전부 자기 얼굴 안의 비율**이라
+   * 외부 표본도, 성별·연령 규준도, 우리가 만든 밴드 상수도 필요 없다.
+   * φ = 1.618은 창작 상수가 아니라 수학 상수다(D26 저촉 없음).
+   *
+   * ⚠ 화법: 이건 등급이 아니다. "얼마나 어긋났나"가 아니라 "어느 쪽 특징인가"로 말한다.
+   *   황금비율에 안 맞는 것은 결점이 아니다 — 헌법 §4 "판정이 아닌 방향 제시".
+   */
+  var PHI = 1.618;
+  var GOLDEN = {
+    face_HW:   { ideal: PHI, name: "얼굴 세로 : 가로",
+                 low: "가로가 넉넉한 편", high: "세로로 긴 편",
+                 tell: "얼굴 길이를 가로폭으로 나눈 값이에요" },
+    mouth_nose:{ ideal: PHI, name: "입 : 코 너비",
+                 low: "코 대비 입이 아담한 편", high: "코 대비 입이 시원한 편",
+                 tell: "입 너비를 코 너비로 나눈 값이에요" },
+    lip_ul:    { ideal: PHI, name: "아랫입술 : 윗입술",
+                 low: "윗입술이 도톰한 편", high: "아랫입술이 도톰한 편",
+                 tell: "아랫입술 두께를 윗입술로 나눈 값이에요" },
+    interocular:{ ideal: 1.0, name: "눈 사이 : 눈 길이",
+                 low: "눈 사이가 가까운 편", high: "눈 사이가 여유로운 편",
+                 tell: "두 눈 사이 거리를 한쪽 눈 길이로 나눈 값이에요 — 이상은 1 : 1이에요" }
+  };
+  // ±5%는 측정 오차 수준이다(같은 사람을 조명만 바꿔 찍어도 이 정도는 움직인다).
+  // 그 안이면 "거의 일치"로 본다 — 소수점 아래를 두고 우열을 말하지 않기 위한 폭이다.
+  var GOLDEN_TOL = 0.05;
+  function goldenOf(key, v) {
+    var g = GOLDEN[key];
+    if (!g || typeof v !== "number" || !isFinite(v) || v <= 0) return null;
+    var ratio = v / g.ideal, off = (ratio - 1) * 100;
+    return {
+      key: key, name: g.name, value: +v.toFixed(2), ideal: g.ideal, tell: g.tell,
+      offPct: +off.toFixed(1),
+      label: Math.abs(ratio - 1) <= GOLDEN_TOL ? "황금비율에 가까워요" : (off < 0 ? g.low : g.high)
+    };
+  }
+
+  /**
+   * 황금비 근접도 — 항목별 |어긋남 %|의 평균. 라벨이 전원 같은 방향이어도
+   * 정도는 사람마다 다르다(실측: face_HW가 -9%인 사람과 -34%인 사람이 같은 라벨을 받았다).
+   * 낮을수록 황금비에 가깝다. 등급이 아니라 **자기 상태의 요약**이다.
+   */
+  function goldenSummary(list) {
+    var vals = [];
+    for (var i = 0; i < list.length; i++) if (list[i] && isFinite(list[i].offPct)) vals.push(Math.abs(list[i].offPct));
+    if (!vals.length) return null;
+    var sum = 0;
+    for (var j = 0; j < vals.length; j++) sum += vals[j];
+    var avg = sum / vals.length;
+    var near = list.filter(function (g) { return g && Math.abs(g.offPct) <= GOLDEN_TOL * 100; }).length;
+    return { avgOff: +avg.toFixed(1), near: near, total: vals.length };
+  }
+
+  /**
+   * 3분할의 황금비율판 — 신고전 규범은 상:중:하 = 1:1:1이다.
+   * 셋의 합이 100이므로 33.3에서 얼마나 떨어졌는지로만 말한다. 역시 자기 안 비교다.
+   */
+  function thirdsGolden(u, m, l) {
+    var t = thirdsVerdict(u, m, l);
+    if (!t) return null;
+    var IDEAL = 33.3, NAME = ["상안부", "중안부", "하안부"];
+    var off = t.pct.map(function (v) { return +(v - IDEAL).toFixed(1); });
+    var far = 0;
+    for (var i = 1; i < 3; i++) if (Math.abs(off[i]) > Math.abs(off[far])) far = i;
+    var even = Math.abs(off[far]) <= 3;   // 3%p = 세 칸이 고르다고 볼 수 있는 폭
+    return {
+      pct: t.pct, off: off, line: t.line,
+      label: even ? "세 칸이 고른 편이에요"
+                  : NAME[far] + (off[far] > 0 ? "가 긴 편이에요" : "가 짧은 편이에요"),
+      tell: "이상적인 얼굴은 상·중·하가 1 : 1 : 1 이에요"
+    };
+  }
+
+  /**
+   * 좌우 대칭 — 0에 가까울수록 대칭. 완전 대칭이 자연 기준이라 외부 표본이 필요 없다.
+   * ⚠ 라벨을 "심하다"로 쓰지 않는다. 비대칭은 흠이 아니라 누구에게나 있는 것이고,
+   *   실제로 표정 습관·씹는 쪽 같은 **바꿀 수 있는 원인**이 있어 퀘스트로 이어진다.
+   */
+  function asymVerdict(score, dist, labels) {
+    if (typeof score !== "number" || !isFinite(score)) return null;
+    // 절대 0이 이상이지만 실제 얼굴은 1~7%로 흩어져 있다(실측 13명). 고정 문턱을 두면
+    // 대부분이 "차이가 보인다"로 몰려 겁만 준다 → 분포 삼분위로 가른다.
+    var b = bandOf(dist, score, labels || ["좌우가 고른 편", "좌우 차이가 조금 있는 편", "좌우 차이가 보이는 편"]);
+    if (!b) return { score: +score.toFixed(2), label: null, care: false };
+    return { score: +score.toFixed(2), label: b.label, care: score >= b.high };
+  }
+
+  /**
    * 상·중·하 3분할 — **자기 얼굴 안에서의 비교**라 외부 기준도 밴드 상수도 필요 없다.
    * 셋을 더하면 1이므로 "어디가 가장 긴가"는 그 사람 안에서 항상 참이다(D26 저촉 없음).
    * ⚠ 상안부는 헤어라인이 기준이다. 앞머리가 이마를 덮으면 검출이 흔들린다 — 각주로 밝힌다.
@@ -265,6 +356,7 @@
 
   root.CZM = {
     BANDS: BANDS, bandOf: bandOf, midLowerVerdict: midLowerVerdict, thirdsVerdict: thirdsVerdict,
+    PHI: PHI, GOLDEN: GOLDEN, goldenOf: goldenOf, goldenSummary: goldenSummary, thirdsGolden: thirdsGolden, asymVerdict: asymVerdict,
     STAGES: STAGES, trace: trace, diagnose: diagnose, diagnoseText: diagnoseText,
     KEYS: KEYS, store: store,
     TYPE_KEYS: TYPE_KEYS, TYPE_NAMES: TYPE_NAMES, PC8: PC8,

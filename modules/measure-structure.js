@@ -90,6 +90,40 @@
     // face_taper: temple_w는 «개인차 미검증» — 불변이면 jaw_w의 재척도일 뿐이다(오류대장 §046)
     var faceTaper = templeW > 0 ? +(jawW / templeW).toFixed(3) : null;
 
+    // ── 좌우 대칭 (2026-08-18 대표 지시) ────────────────────
+    // 자기 얼굴 안에서만 재므로 외부 표본도 규준도 필요 없다.
+    // 중앙선 = 미간(168)·코밑(2)·턱끝(152)을 최소제곱으로 맞춘 직선.
+    //   코끝 하나로 세로선을 세우면 고개를 살짝 돌린 사진에서 통째로 기울어 전부 비대칭으로 읽힌다.
+    // 각 대응 쌍의 "중앙선까지 거리 차"를 faceW로 나눈다 → 촬영 거리와 무관한 비율.
+    var midPts = [P(168), P(2), P(152)];
+    var mx = 0, my = 0;
+    for (var mi = 0; mi < 3; mi++) { mx += midPts[mi].x; my += midPts[mi].y; }
+    mx /= 3; my /= 3;
+    var sxy = 0, syy = 0;
+    for (var mj = 0; mj < 3; mj++) {
+      var dx0 = midPts[mj].x - mx, dy0 = midPts[mj].y - my;
+      sxy += dx0 * dy0; syy += dy0 * dy0;
+    }
+    var slope = syy > 0 ? sxy / syy : 0;          // x = mx + slope*(y - my)
+    // 점에서 중앙선까지의 부호 있는 가로 거리
+    var offAxis = function (pt) { return (pt.x - (mx + slope * (pt.y - my))) / Math.sqrt(1 + slope * slope); };
+    var PAIRS = [
+      ["eye_outer", 33, 263], ["eye_inner", 133, 362], ["brow", 105, 334],
+      ["nose_wing", 129, 358], ["mouth_corner", 61, 291], ["jaw", 172, 397], ["temple", 127, 356]
+    ];
+    var asymParts = {}, asymSum = 0, asymMax = 0, asymN = 0;
+    for (var pi = 0; pi < PAIRS.length; pi++) {
+      var La = P(PAIRS[pi][1]), Ra = P(PAIRS[pi][2]);
+      var d = Math.abs(Math.abs(offAxis(La)) - Math.abs(offAxis(Ra))) / faceW * 100;  // %
+      d = +d.toFixed(2);
+      asymParts[PAIRS[pi][0]] = d;
+      asymSum += d; asymN++; if (d > asymMax) { asymMax = d; }
+    }
+    // 높이 차 — 좌우가 같은 높이에 있는가(눈·입꼬리가 대표적으로 티가 난다)
+    var tiltOf = function (a, b) { return +(Math.abs(P(a).y - P(b).y) / faceW * 100).toFixed(2); };
+    var asymTilt = { eye: tiltOf(33, 263), brow: tiltOf(105, 334), mouth: tiltOf(61, 291) };
+    var asymScore = asymN ? +(asymSum / asymN).toFixed(2) : null;   // 평균 어긋남(%). 0 = 완전 대칭
+
     // ── 라인: 직선감·곡선감 ──
     var chain = [172, 136, 150, 149, 176, 148, 152, 377, 400, 378, 379, 365, 397];
     var angSum = 0;
@@ -136,6 +170,8 @@
         brow_eye_gap: browEyeGap, brow_eye_gap_x: browEyeGapX,
         lip_upper: lipUpper, lip_lower: lipLower, lip_ul_ratio: lipUlRatio, mouth_open: mouthOpen,
         temple_w: templeW, chin_len: chinLen, parts_vpos: partsVpos, face_taper: faceTaper,
+        asym_score: asymScore, asym_max: +asymMax.toFixed(2),
+        asym_parts: asymParts, asym_tilt: asymTilt,
         // 미간 기준 — 규준(41.6:58.4)과 직접 견줄 수 있는 유일한 비율
         n_mid_pct: midPct, n_low_pct: midPct == null ? null : +(100 - midPct).toFixed(1)
       },

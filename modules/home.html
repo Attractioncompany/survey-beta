@@ -64,12 +64,12 @@ button{font:inherit;cursor:pointer}
 <div class="wrap" id="app"></div>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 저장 키·좌표·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="czm-core.js?v=34b7ead"></script>
+<script src="czm-core.js?v=918ff87"></script>
 <script type="module">
-// 모듈 캐시 무력화. "?v=34b7ead"는 배포 시 커밋 해시로 치환된다(deploy_survey.sh).
+// 모듈 캐시 무력화. "?v=918ff87"는 배포 시 커밋 해시로 치환된다(deploy_survey.sh).
 // 로컬에서는 매번 다른 값이어야 한다 — 고정값이면 개발 중 고친 코드가 캐시에 가려진다(두 번 겪었다).
-// 정적 import는 변수를 못 받으므로 동적 import를 쓴다. 문자열 "?v=34b7ead"는 sed가 찾을 수 있게 그대로 둔다.
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=34b7ead";
+// 정적 import는 변수를 못 받으므로 동적 import를 쓴다. 문자열 "?v=918ff87"는 sed가 찾을 수 있게 그대로 둔다.
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=918ff87";
 
 // 모듈 격리 (모듈구조 v1 규칙 4) — 하나가 죽어도 페이지는 뜬다.
 // 오늘 quest-engine의 export 하나가 빠졌을 때 화면이 통째로 백지가 됐다.

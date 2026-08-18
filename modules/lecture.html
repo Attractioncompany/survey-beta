@@ -80,7 +80,7 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=34b7ead"></script>
+<script src="czm-core.js?v=918ff87"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
@@ -89,8 +89,8 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "34b7ead";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=34b7ead";
+const BUILD = "918ff87";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=918ff87";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -470,6 +470,8 @@ function partSection(face, surveyHaveKey){
 
 // 측정값을 판정으로 — 대표 지시 2026-08-18 "수치를 받고 있는 부분은 판정을 내리고 보여줘야지".
 // 밴드는 계약층이 소유한다(CZM.BANDS). 여기서 문턱을 만들지 않는다.
+// 받침 유무 — "입꼬리이에요"처럼 조사가 어긋나는 걸 막는다
+const jong = w => { const c=(w||"").charCodeAt((w||"").length-1); return c>=0xAC00&&c<=0xD7A3 ? (c-0xAC00)%28!==0 : false; };
 function verdicts(r, l, q){
   const out=[];
   // 상수 밴드가 아니라 **관측 분포**로 가른다. 현 상수(jaw 7/19 등)는 14명 전원을 같은 칸에
@@ -478,20 +480,40 @@ function verdicts(r, l, q){
   const D=SHAPE&&SHAPE.dist, L=SHAPE&&SHAPE.labels;
   const band=(k,v)=>(D&&L&&D[k]&&L[k]) ? CZM.bandOf(D[k], v, L[k]) : null;
   const push=(group,k,v,key,tail)=>{ const b=band(key,v); if(b) out.push({group,k,v:b.label,own:key,s:tail}); };
+  // ── 황금비율 대조 (대표 지시 2026-08-18) ──────────────────
+  // "평균과 비교하는 건 타인과 비교하는 것이고, 황금비율과 비교하는 건 미학 기준으로 자기 상태를 보는 것."
+  // 전부 자기 얼굴 안의 비율이라 표본도 규준도 필요 없다.
+  // ⚠ 실측(13명)에서 face_HW·눈사이는 **전원이 같은 방향**으로 나왔다 — 한국인 얼굴이 황금비보다
+  //   계통적으로 가로가 넓다. 그래서 라벨만 두면 정보가 0이다. 수치와 어긋난 정도를 함께 낸다.
+  const mouthNose = (r.mouth_w && r.nose_w) ? r.mouth_w / r.nose_w : null;
+  const golds = [
+    CZM.goldenOf("face_HW", r.face_HW),
+    CZM.goldenOf("mouth_nose", mouthNose),
+    CZM.goldenOf("lip_ul", r.lip_ul_ratio),
+    CZM.goldenOf("interocular", r.interocular)
+  ].filter(Boolean);
+  for(const g of golds) out.push({group:"황금비율", k:g.name, v:g.label,
+    s:`황금비율 ${g.ideal} · 나 ${g.value} (${g.offPct>0?"+":""}${g.offPct}%)`});
+
   // 헤어라인 검출이 실패하면 상안부가 이마 중간 기준으로 잡혀 **체계적으로 짧게 나온다**
   // (조사 2026-08-18: 검출O 0.173~0.314 vs 검출X 0.141~0.161 — 구간이 겹치지도 않는다).
   // 그 상태로 "하안부가 가장 길어요"를 내면 틀린 말이다. 못 잰 건 말하지 않는다.
   const hairOK = !q || q.hairline_detected !== false;
-  const th = hairOK ? CZM.thirdsVerdict(r.upper, r.mid, r.lower) : null;
-  if(th) out.push({group:"얼굴 비율", k:"상 : 중 : 하", v:th.text,
-                   s:`${th.line} — 이마 끝부터 눈썹, 눈썹부터 코밑, 코밑부터 턱끝이에요`});
-  const ml=CZM.midLowerVerdict(r.n_mid_pct);
-  // 다른 줄과 마찬가지로 **판정이 크고 숫자는 근거로 아래**. 이 줄만 숫자를 앞세우면 눈이 어긋난다.
-  if(ml) out.push({group:"얼굴 비율", k:"중안부 : 하안부", v:ml.text.replace("평균보다 ",""),
-                   s:`${ml.mid} : ${ml.low} · 또래 평균 ${ml.norm} : ${(100-ml.norm).toFixed(1)}`});
-  // 가로 너비 — 조사에서 사람을 가장 잘 구분한 지표다(사람간SD/사람안SD = 23.8).
-  if(r.face_HW!=null) push("얼굴 비율","얼굴 너비",r.face_HW,"face_HW",
-    `세로가 가로의 ${r.face_HW}배예요`);
+  const th = hairOK ? CZM.thirdsGolden(r.upper, r.mid, r.lower) : null;
+  if(th) out.push({group:"황금비율", k:"상 : 중 : 하", v:th.label,
+                   s:`${th.line} — ${th.tell}`});
+  // 중·하안부 또래 평균 대조는 뺐다(2026-08-18 대표 판단: 평균 비교는 곧 타인 비교다).
+  // 같은 것을 위 황금비 3분할이 미학 기준으로 말한다 — 중복이기도 했다.
+  // 좌우 대칭 (대표 지시 2026-08-18). 사람 구분력 확인됨(사람간SD/사람안SD = 3.0).
+  const D2=SHAPE&&SHAPE.dist, L2=SHAPE&&SHAPE.labels;
+  const av=CZM.asymVerdict(r.asym_score, D2&&D2.asym_score, L2&&L2.asym_score);
+  if(av&&av.label){
+    const t=r.asym_parts||{}, worst=Object.keys(t).sort((a,b)=>t[b]-t[a])[0];
+    const KO={eye_outer:"눈꼬리",eye_inner:"눈머리",brow:"눈썹",nose_wing:"콧방울",
+              mouth_corner:"입꼬리",jaw:"턱선",temple:"관자놀이"};
+    out.push({group:"좌우 대칭", k:"좌우 균형", v:av.label,
+      s: worst&&KO[worst] ? `가장 차이가 큰 곳은 ${KO[worst]}${jong(KO[worst])?"이에요":"예요"}` : "얼굴 중앙선을 기준으로 좌우를 견줬어요"});
+  }
   if(l.jaw_angular_deg!=null) push("얼굴형","턱선",l.jaw_angular_deg,"jaw_angular_deg",
     `${l.jaw_angular_deg}° — 턱선이 꺾이는 정도예요`);
   if(l.chin_angle_deg!=null) push("얼굴형","턱끝",l.chin_angle_deg,"chin_angle_deg",
@@ -552,11 +574,12 @@ function renderReport(){
     </div>`});
 
   // ② 얼굴 비율·형태 — 숫자가 아니라 판정으로
-  const faceV=[...byGroup("얼굴 비율"), ...byGroup("얼굴형")];
-  if(faceV.length) PAGES.push({t:"얼굴 비율과 형태", html:`
+  const faceV=[...byGroup("황금비율"), ...byGroup("얼굴 비율"), ...byGroup("좌우 대칭"), ...byGroup("얼굴형")];
+  if(faceV.length) PAGES.push({t:"황금비율과 견주면", html:`
     <div class="card">${faceV.map(vRow).join("")}</div>
-    <p class="note">상안부는 이마 헤어라인을 기준으로 재요 — 앞머리가 이마를 덮으면 이 줄이 빠져요.<br>
-    턱선·턱끝·너비는 우리가 지금까지 찍은 얼굴들 안에서 어느 쪽인지 본 것이에요(14명 기준이라 아직 참고용이에요).</p>`});
+    <p class="note">황금비율은 남과 견주는 기준이 아니라 <b>미학에서 쓰는 기준</b>이에요. 어긋난 게 흠은 아니고, 그게 그 사람의 특징이에요.<br>
+    상안부는 이마 헤어라인을 기준으로 재요 — 앞머리가 이마를 덮으면 그 줄이 빠져요.<br>
+    턱선·턱끝은 우리가 지금까지 찍은 얼굴들 안에서 본 것이에요(14명 기준이라 아직 참고용이에요).</p>`});
 
   // ③ 이목구비
   // 규준 줄이 눈매를 이미 말하면(own:"eye_angle") 밴드 줄은 뺀다 — 같은 것을 두 번, 그것도
@@ -644,7 +667,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=34b7ead"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=918ff87"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
