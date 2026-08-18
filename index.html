@@ -45,7 +45,7 @@ body.screen-mode .wrap{max-width:none;padding:0;}
    상태를 가진 동반자가 있는 것과 없는 것의 차이가 어워드 수상작들의 공통 승부수다. */
 .prog-row{display:flex;align-items:center;gap:10px;}
 .gumi-sm{width:34px;height:34px;object-fit:contain;flex-shrink:0;}
-.gumi-lg{width:150px;height:150px;object-fit:contain;}
+.gumi-lg{width:150px;height:150px;object-fit:contain;margin:0 auto;}  /* 부모가 flex column이라 auto 없으면 왼쪽으로 붙는다 */
 .prog-shell{position:static;background:transparent;padding:0;}
 .pbar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;}
 .pfill{height:100%;background:linear-gradient(90deg,#F2A9C4,#B76BA3,#4A2B5C);border-radius:3px;transition:width .3s;}
@@ -207,7 +207,7 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=ff45e54"></script>
+<script src="modules/czm-core.js?v=63f4c15"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:

@@ -107,12 +107,19 @@ button{font:inherit;cursor:pointer}
 .vk{font-size:var(--fs-cap);color:var(--sub)}
 .vv{font-size:17px;font-weight:700;letter-spacing:-.02em}
 .vs{font-size:12.5px;color:var(--sub);margin-top:var(--sp-1);line-height:1.65}
+
+/* 인트로 — 설문 모듈의 시작 화면과 같은 형태(구미 150px) */
+.gumi-lg{width:150px;height:150px;object-fit:contain}
+.intro{display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--sp-4);
+  padding:var(--sp-6) var(--sp-4)}
+.intro h1{font-size:var(--fs-title);font-weight:800;letter-spacing:-.03em;color:var(--deep);margin:0}
+.intro p{font-size:var(--fs-body);line-height:1.8;color:var(--ink);margin:0}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=ff45e54"></script>
+<script src="czm-core.js?v=63f4c15"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
@@ -121,8 +128,8 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "ff45e54";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=ff45e54";
+const BUILD = "63f4c15";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=63f4c15";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -256,7 +263,7 @@ function normLines(r,l,age,gender){
 // 링크로 새로 들어오면 **처음부터** 시작한다. 지난 사람 결과가 남아 바로 리포트로 튀면 안 된다.
 // 다만 흐름 중간에 촬영·설문으로 나갔다 오는 것은 같은 회차다 —
 // sessionStorage는 그 왕복에서는 살아 있고, 링크를 새로 열면 사라진다. 딱 맞는 그릇이다.
-const RUN="czm_lec_run", DONE="czm_lec_done";
+const RUN="czm_lec_run", DONE="czm_lec_done", INTRO="czm_lec_intro";
 function runStart(){
   try{
     const prev=sessionStorage.getItem(RUN);
@@ -267,6 +274,7 @@ function runStart(){
     const t=Date.now();
     sessionStorage.setItem(RUN, String(t));
     sessionStorage.removeItem(DONE);
+    sessionStorage.removeItem(INTRO);
     // 이번 회차 것만 지운다. chugu_diag는 웹 진단과 공유하는 키라 **지우지 않는다** —
     // 대신 "이 회차에 새로 한 설문인가"를 시각으로 가린다(아래 state).
     LS.del(LKEY); LS.del(FKEY);
@@ -348,8 +356,20 @@ function renderAge(){
 const sent=k=>{ try{ return sessionStorage.getItem("czm_lec_sent_"+k)==="1"; }catch(e){ return false; } };
 const mark=k=>{ try{ sessionStorage.setItem("czm_lec_sent_"+k,"1"); }catch(e){} };
 
+function renderIntro(){
+  app.innerHTML = `<div class="card intro">
+    <img class="gumi-lg" src="../bg/gumi_base.png" alt="">
+    <h1>추구미즘</h1>
+    <p>지금부터 현재 나의 매력과,<br>나의 추구미를 찾아볼게요.</p>
+    <button class="btn" id="go">진단 및 설문 시작하기</button>
+  </div>`;
+  $("go").onclick=()=>{ try{ sessionStorage.setItem(INTRO,"1"); }catch(e){} route(); };
+}
+
 function route(){
   const s=state();
+  // 인트로는 회차마다 한 번. 촬영·설문 왕복에서 다시 뜨면 안 된다.
+  try{ if(!sessionStorage.getItem(INTRO)) return renderIntro(); }catch(e){}
   if(!s.pc)        return renderPC();
   if(!s.pc.sex)    return renderSex();
   if(!s.pc.age)    return renderAge();
@@ -370,7 +390,7 @@ function renderStuck(what, href){
 
 function resetAll(){
   [LKEY,FKEY].forEach(k=>LS.del(k));
-  try{ sessionStorage.removeItem(RUN); sessionStorage.removeItem(DONE);
+  try{ sessionStorage.removeItem(RUN); sessionStorage.removeItem(DONE); sessionStorage.removeItem(INTRO);
        ["face","diag"].forEach(k=>sessionStorage.removeItem("czm_lec_sent_"+k)); }catch(e){}
   location.reload();   // 회차를 새로 연다
 }
@@ -718,7 +738,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=ff45e54"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=63f4c15"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
