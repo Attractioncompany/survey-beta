@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>추구미즘 · 강의 진단</title>
 <!--
@@ -79,14 +80,17 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=96bf5a2"></script>
+<script src="czm-core.js?v=d022094"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
 const LKEY="chugu_lecture";            // {pc8:"romantic", age:"20-39", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=96bf5a2";
+// 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
+// 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
+const BUILD = "d022094";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=d022094";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -303,8 +307,8 @@ function route(){
   const s=state();
   if(!s.pc)        return renderPC();
   if(!s.pc.age)    return renderAge();
-  if(!s.face){ if(!sent("face")){ mark("face"); location.href="../photo.html?flow=lecture&back="+encodeURIComponent(location.pathname); return; } return renderStuck("얼굴 촬영","../photo.html?flow=lecture&back="+encodeURIComponent(location.pathname)); }
-  if(!s.diag){ if(!sent("diag")){ mark("diag"); location.href="../index.html?flow=lecture"; return; } return renderStuck("설문","../index.html?flow=lecture"); }
+  if(!s.face){ if(!sent("face")){ mark("face"); location.href="../photo.html?flow=lecture&v="+BUILD+"&back="+encodeURIComponent(location.pathname); return; } return renderStuck("얼굴 촬영","../photo.html?flow=lecture&v="+BUILD+"&back="+encodeURIComponent(location.pathname)); }
+  if(!s.diag){ if(!sent("diag")){ mark("diag"); location.href="../index.html?flow=lecture&v="+BUILD; return; } return renderStuck("설문","../index.html?flow=lecture&v="+BUILD); }
   renderReport();
 }
 
@@ -640,7 +644,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=96bf5a2"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=d022094"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
