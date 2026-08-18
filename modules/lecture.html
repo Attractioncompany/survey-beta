@@ -106,7 +106,18 @@ button{font:inherit;cursor:pointer}
 .vrow:first-child{border-top:0;padding-top:2px}
 .vk{font-size:var(--fs-cap);color:var(--sub)}
 .vv{font-size:17px;font-weight:700;letter-spacing:-.02em}
-/* 지금 나의 매력 ↔ 추구미 나란히 보기 */
+/* 지금 나의 매력 → 추구미, 위아래로 */
+.stack{display:flex;flex-direction:column;gap:var(--sp-2)}
+.stack-row{display:flex;align-items:center;gap:var(--sp-4)}
+.stack-row img{flex:0 0 96px;width:96px;height:96px;object-fit:contain;
+  filter:drop-shadow(0 4px 10px rgba(120,90,160,.2))}
+.stack-txt{min-width:0}
+.stack-lab{font-size:var(--fs-cap);color:var(--sub);margin:0}
+.stack-name{font-size:24px;font-weight:800;letter-spacing:-.03em;color:var(--deep);margin:1px 0 5px}
+.stack-desc{font-size:13.5px;line-height:1.65;color:var(--ink);margin:0}
+.stack-arrow{font-size:20px;color:var(--accent);font-weight:700;text-align:center;margin-left:38px}
+
+/* 지금 나의 매력 ↔ 추구미 나란히 보기(비교 페이지) */
 .vs2{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:var(--sp-2);margin:var(--sp-2) 0}
 .vs2-col{text-align:center;min-width:0}
 .vs2-col img{width:100%;max-width:132px;aspect-ratio:1;object-fit:contain;
@@ -145,7 +156,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=3850434"></script>
+<script src="czm-core.js?v=2061306"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
@@ -154,12 +165,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "3850434";
+const BUILD = "2061306";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=3850434";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=2061306";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -728,7 +739,7 @@ function renderReport(){
     .sort((a,b)=>Math.abs(b[0])-Math.abs(a[0])).slice(0,2)
     .map(a=>a[0]>0?a[1]:a[2]);
   const gapLine = gp.length
-    ? `${wantName} 매력과 견주면 지금은 ${gp.map((w,i)=>w[i===gp.length-1?1:0]).join(" ")} 쪽이에요.`
+    ? `${wantName} 매력과 비교하면 지금은 ${gp.map((w,i)=>w[i===gp.length-1?1:0]).join(" ")} 쪽이에요.`
     : "";
 
   const gender=s.diag.gender||null;
@@ -751,30 +762,31 @@ function renderReport(){
   const HAVE_SRC="../bg/char_"+s.diag.have+".png", WANT_SRC="../bg/char_"+s.diag.want+".png";
   PAGES.push({t:"오늘의 진단",
     draw:{title:"오늘의 진단",
-          rows:[{k:"지금 나의 매력",v:haveName,s:"퍼스널컬러와 이목구비, 행동을 종합한 결과예요"},
-                {k:"추구미",v:wantName,s:"설문으로 파악한, 내가 가지고 싶은 매력이에요"}],
+          rows:[{k:"지금 나의 매력",v:haveName,s:"퍼스널컬러와 나의 이목구비, 행동 등을 종합한 결과예요"},
+                {k:"추구미",v:wantName,s:"설문을 통해 파악한, 내가 가지고 싶은 매력이에요"}],
           paras:gapLine?[gapLine]:[]},
     html:`
     <div class="cover">
-      <div class="vs2">
-        <div class="vs2-col">
+      <div class="stack">
+        <div class="stack-row">
           <img src="${HAVE_SRC}" alt="" onerror="this.style.visibility='hidden'">
-          <p class="vs2-lab">지금 나의 매력</p>
-          <p class="vs2-name">${esc(haveName)}</p>
+          <div class="stack-txt">
+            <p class="stack-lab">지금 나의 매력</p>
+            <p class="stack-name">${esc(haveName)}</p>
+            <p class="stack-desc">지금 나의 매력은 퍼스널컬러와 나의 이목구비, 행동 등을 종합한 결과예요.</p>
+          </div>
         </div>
-        <div class="vs2-arrow">→</div>
-        <div class="vs2-col">
+        <div class="stack-arrow">↓</div>
+        <div class="stack-row">
           <img src="${WANT_SRC}" alt="" onerror="this.style.visibility='hidden'">
-          <p class="vs2-lab">추구미</p>
-          <p class="vs2-name">${esc(wantName)}</p>
+          <div class="stack-txt">
+            <p class="stack-lab">추구미</p>
+            <p class="stack-name">${esc(wantName)}</p>
+            <p class="stack-desc">추구미는 설문을 통해 파악한, 내가 가지고 싶은 매력이에요.</p>
+          </div>
         </div>
       </div>
       ${gapLine?`<p class="clead">${esc(gapLine)}</p>`:``}
-    </div>
-    <div class="card">
-      <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.85">
-      · <b>지금 나의 매력</b>은 퍼스널컬러와 나의 이목구비, 행동 등을 종합한 결과예요.<br>
-      · <b>추구미</b>는 설문을 통해 파악한, 내가 가지고 싶은 매력이에요.</p>
     </div>`});
 
   // ② 내 퍼스널컬러와 그 매력 — 퍼스널컬러는 8타입과 1:1이다. 이름만 주면 뜻이 안 온다.
@@ -851,14 +863,12 @@ function renderReport(){
 
   // ③ 얼굴 비율·형태 — 숫자가 아니라 판정으로
   const faceV=[...byGroup("황금비율"), ...byGroup("얼굴 비율"), ...byGroup("좌우 대칭"), ...byGroup("얼굴형")];
-  if(faceV.length) PAGES.push({t:"황금비율과 견주면",
-    draw:{title:"황금비율과 견주면", rows:faceV.map(x=>({k:x.k,v:x.v,s:x.s})),
-          paras:["황금비율은 남과 견주는 기준이 아니라 미학에서 쓰는 기준이에요. 어긋난 게 흠은 아니고, 그게 그 사람의 특징이에요."]},
+  if(faceV.length) PAGES.push({t:"황금비율과 비교",
+    draw:{title:"황금비율과 비교", rows:faceV.map(x=>({k:x.k,v:x.v,s:x.s})),
+          paras:[]},
     html:`
     <div class="card">${faceV.map(vRow).join("")}</div>
-    <p class="note">황금비율은 남과 견주는 기준이 아니라 <b>미학에서 쓰는 기준</b>이에요. 어긋난 게 흠은 아니고, 그게 그 사람의 특징이에요.<br>
-    상안부는 이마 헤어라인을 기준으로 재요 — 앞머리가 이마를 덮으면 그 줄이 빠져요.<br>
-    턱선·턱끝은 우리가 지금까지 찍은 얼굴들 안에서 본 것이에요(14명 기준이라 아직 참고용이에요).</p>`});
+`});
 
   // ③ 이목구비
   // 규준 줄이 눈매를 이미 말하면(own:"eye_angle") 밴드 줄은 뺀다 — 같은 것을 두 번, 그것도
@@ -915,12 +925,10 @@ function renderReport(){
     ${asymCare?`<div class="card"><h2>좌우 균형은 이렇게</h2>
       <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8">
       · 한쪽으로만 씹거나, 턱을 괴거나, 늘 같은 쪽으로 자는 습관이 있는지 한번 살펴보세요.<br>
-      · 사진은 고개가 조금만 돌아가도 좌우가 달라 보여요. 정면으로 한 번 더 찍어보면 더 정확해요.<br>
-      · 좌우가 완전히 같은 얼굴은 없어요. 차이가 있다고 고쳐야 하는 건 아니에요.</p></div>`:``}
+      · 정면으로 한 번 더 찍어보면 더 정확해요.<br>
+      · 좌우가 완전히 같은 얼굴은 없어요.</p></div>`:``}
     <div class="card"><h2>다만 이건 주의하세요</h2>
       <p class="note" style="font-size:14px;line-height:1.8">
-      · 황금비율은 서양 미술에서 온 기준이라, 한국 사람 얼굴은 대체로 가로가 조금 더 넉넉해요.
-        어긋난 게 흠이 아닌 이유예요 — 기준이 하나뿐인 것도 아니고요.<br>
       · 사진은 조명과 각도에 따라 값이 조금씩 달라져요. 오늘 한 장의 결과예요.</p></div>`});
 
   const CARD={pc:pcLabel, have:haveName, want:wantName, gapLine,
@@ -930,7 +938,7 @@ function renderReport(){
     tips:tips.map(t=>t.tip)};
 
   // 대표 확정 순서(2026-08-18): 오늘의 진단 → 퍼스널컬러 → 얼굴·이목구비 → 추구미 → 비교 → 오늘 해볼 것
-  const ORDER=["오늘의 진단","내 퍼스널컬러","황금비율과 견주면","이목구비","부위별로 보면",
+  const ORDER=["오늘의 진단","내 퍼스널컬러","황금비율과 비교","이목구비","부위별로 보면",
                "내 추구미","지금과 추구미, 어디가 다른가","색 이야기","오늘 해볼 것","색은 이렇게"];
   PAGES.sort((a,b)=>{ const i=ORDER.indexOf(a.t), j=ORDER.indexOf(b.t);
     return (i<0?99:i)-(j<0?99:j); });
@@ -967,7 +975,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=3850434"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=2061306"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
