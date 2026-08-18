@@ -142,6 +142,27 @@
     mouth_corner:    function (v) { return v > 0.5 ? "올라간 입꼬리" : v < -0.5 ? "내려간 입꼬리" : "수평에 가까운 입꼬리"; }
   };
 
+  /**
+   * 상·중·하 3분할 — **자기 얼굴 안에서의 비교**라 외부 기준도 밴드 상수도 필요 없다.
+   * 셋을 더하면 1이므로 "어디가 가장 긴가"는 그 사람 안에서 항상 참이다(D26 저촉 없음).
+   * ⚠ 상안부는 헤어라인이 기준이다. 앞머리가 이마를 덮으면 검출이 흔들린다 — 각주로 밝힌다.
+   */
+  function thirdsVerdict(u, m, l) {
+    if (![u, m, l].every(function (v) { return typeof v === "number" && isFinite(v); })) return null;
+    var sum = u + m + l;
+    if (!(sum > 0)) return null;
+    var pct = [u, m, l].map(function (v) { return +(v / sum * 100).toFixed(1); });
+    var NAME = ["상안부", "중안부", "하안부"];
+    var max = 0, min = 0;
+    for (var i = 1; i < 3; i++) { if (pct[i] > pct[max]) max = i; if (pct[i] < pct[min]) min = i; }
+    return {
+      pct: pct, longest: NAME[max], shortest: NAME[min],
+      // 순위만 말한다. "고른 편"의 경계를 여기서 만들면 그게 곧 창작 상수다.
+      text: pct[max] === pct[min] ? "세 부분 길이가 같아요" : NAME[max] + "가 가장 길어요",
+      line: pct[0] + " : " + pct[1] + " : " + pct[2]
+    };
+  }
+
   // 중·하안부 — 규준(한국 여성 41.6 : 58.4)과 직접 견준다. 밴드가 아니라 평균 대비다.
   // ±2%p 안이면 "평균과 비슷"으로 본다 — SD가 없어 그 이상은 말할 수 없다(규준 조사 §usage_rule).
   function midLowerVerdict(midPct) {
@@ -221,7 +242,7 @@
   }
 
   root.CZM = {
-    BANDS: BANDS, midLowerVerdict: midLowerVerdict,
+    BANDS: BANDS, midLowerVerdict: midLowerVerdict, thirdsVerdict: thirdsVerdict,
     STAGES: STAGES, trace: trace, diagnose: diagnose, diagnoseText: diagnoseText,
     KEYS: KEYS, store: store,
     TYPE_KEYS: TYPE_KEYS, TYPE_NAMES: TYPE_NAMES, PC8: PC8,
