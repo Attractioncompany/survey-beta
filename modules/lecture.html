@@ -70,9 +70,13 @@ button{font:inherit;cursor:pointer}
 
 /* 선택지 — 설문의 .opt와 같은 형태 */
 .pcgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:var(--sp-2)}
-.pc{display:flex;align-items:center;justify-content:center;width:100%;background:rgba(255,255,255,.72);
+.pc-lab{display:block;font-size:var(--fs-body);font-weight:600}
+.pc-chips{display:flex;gap:3px;margin-top:7px;justify-content:center}
+.pc-chips i{width:19px;height:19px;border-radius:5px;border:1px solid rgba(255,255,255,.7);
+  box-shadow:0 1px 3px rgba(74,43,92,.18)}
+.pc{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;background:rgba(255,255,255,.72);
   border:2px solid transparent;border-radius:12px;padding:16px 10px;min-height:52px;
-  font-size:var(--fs-body);line-height:1.4;color:var(--ink);transition:all .15s}
+  font-size:var(--fs-body);line-height:1.3;color:var(--ink);transition:all .15s;padding:13px 8px}
 .pc:active{transform:scale(.98)}
 .pc.sel{border-color:var(--accent);background:var(--soft);font-weight:700}
 
@@ -115,6 +119,15 @@ button{font:inherit;cursor:pointer}
 .vrow:first-child{border-top:0;padding-top:2px}
 .vk{font-size:var(--fs-cap);color:var(--sub)}
 .vv{font-size:17px;font-weight:700;letter-spacing:-.02em}
+/* 첫 쪽: 두 박스가 본문 높이를 꽉 채운다(대표 2026-08-18) */
+.twin{height:100%;display:flex;flex-direction:column;gap:var(--sp-1)}
+.twin-box{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;gap:2px;padding:var(--sp-3)}
+.twin-box img{flex:1;min-height:0;max-height:130px;object-fit:contain;
+  filter:drop-shadow(0 4px 10px rgba(120,90,160,.2))}
+.twin-arrow{flex-shrink:0;text-align:center;font-size:19px;color:var(--accent);font-weight:700}
+.twin-box .stack-desc{max-width:300px}
+
 /* 지금 나의 매력 → 추구미, 위아래로 */
 .stack{display:flex;flex-direction:column;gap:var(--sp-2)}
 .stack-row{display:flex;align-items:center;gap:var(--sp-4)}
@@ -165,7 +178,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=e61f6ba"></script>
+<script src="czm-core.js?v=efd6693"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
@@ -174,12 +187,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "e61f6ba";
+const BUILD = "efd6693";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=e61f6ba";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=efd6693";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -364,8 +377,13 @@ function renderPC(){
   app.innerHTML = shell("1 / 3", `<div class="card">
     <p class="lead">진단받은 퍼스널컬러를 골라주세요.</p>
     <p class="note">서로 봐준 결과 그대로 눌러주시면 바로 다음으로 넘어가요.</p>
-    <div class="pcgrid">${CZM.PC8.map(t=>
-      `<button class="pc${cur===t.key?" sel":""}" data-k="${t.key}">${esc(t.label)}</button>`).join("")}</div>
+    <div class="pcgrid">${CZM.PC8.map(t=>{
+      const pal=PALETTE&&PALETTE.palettes&&(PALETTE.palettes[t.label]||PALETTE.palettes[t.master]);
+      const hex=(pal&&pal.best||[]).slice(0,4);
+      return `<button class="pc${cur===t.key?" sel":""}" data-k="${t.key}">
+        <span class="pc-lab">${esc(t.label)}</span>
+        ${hex.length?`<span class="pc-chips">${hex.map(h=>`<i style="background:${h}"></i>`).join("")}</span>`:``}
+      </button>`;}).join("")}</div>
     </div>`);
   app.querySelectorAll(".pc").forEach(b=>b.onclick=()=>{
     LS.set(LKEY,{pc8:b.dataset.k, at:new Date().toISOString()});
@@ -781,33 +799,26 @@ function renderReport(){
   // ① 오늘의 진단 — 지금 나의 매력과 추구미를 **구미 둘로 나란히** 보여준다.
   //    이름만 두 줄 적으면 뭐가 다른지 안 읽힌다. 각각이 어디서 나온 판정인지도 밝힌다.
   const HAVE_SRC="../bg/char_"+s.diag.have+".png", WANT_SRC="../bg/char_"+s.diag.want+".png";
-  PAGES.push({t:"오늘의 진단",
-    draw:{title:"오늘의 진단",
+  PAGES.push({t:"지금 나의 매력과 나의 추구미",
+    draw:{title:"지금 나의 매력과 나의 추구미",
           rows:[{k:"지금 나의 매력",v:haveName,s:"퍼스널컬러와 나의 이목구비, 행동 등을 종합한 결과예요"},
                 {k:"추구미",v:wantName,s:"설문을 통해 파악한, 내가 가지고 싶은 매력이에요"}],
           paras:gapLine?[gapLine]:[]},
     html:`
-    <div class="cover">
-      <div class="stack">
-        <div class="stack-row">
-          <img src="${HAVE_SRC}" alt="" onerror="this.style.visibility='hidden'">
-          <div class="stack-txt">
-            <p class="stack-lab">지금 나의 매력</p>
-            <p class="stack-name">${esc(haveName)}</p>
-            <p class="stack-desc">지금 나의 매력은 퍼스널컬러와 나의 이목구비, 행동 등을 종합한 결과예요.</p>
-          </div>
-        </div>
-        <div class="stack-arrow">↓</div>
-        <div class="stack-row">
-          <img src="${WANT_SRC}" alt="" onerror="this.style.visibility='hidden'">
-          <div class="stack-txt">
-            <p class="stack-lab">추구미</p>
-            <p class="stack-name">${esc(wantName)}</p>
-            <p class="stack-desc">추구미는 설문을 통해 파악한, 내가 가지고 싶은 매력이에요.</p>
-          </div>
-        </div>
+    <div class="twin">
+      <div class="cover twin-box">
+        <p class="stack-lab">지금 나의 매력</p>
+        <img src="${HAVE_SRC}" alt="" onerror="this.style.visibility='hidden'">
+        <p class="stack-name">${esc(haveName)}</p>
+        <p class="stack-desc">퍼스널컬러와 나의 이목구비, 행동 등을 종합한 결과예요.</p>
       </div>
-      ${gapLine?`<p class="clead">${esc(gapLine)}</p>`:``}
+      <div class="twin-arrow">↓</div>
+      <div class="cover twin-box">
+        <p class="stack-lab">추구미</p>
+        <img src="${WANT_SRC}" alt="" onerror="this.style.visibility='hidden'">
+        <p class="stack-name">${esc(wantName)}</p>
+        <p class="stack-desc">설문을 통해 파악한, 내가 가지고 싶은 매력이에요.</p>
+      </div>
     </div>`});
 
   // ② 내 퍼스널컬러와 그 매력 — 퍼스널컬러는 8타입과 1:1이다. 이름만 주면 뜻이 안 온다.
@@ -961,7 +972,7 @@ function renderReport(){
     tips:tips.map(t=>t.tip)};
 
   // 대표 확정 순서(2026-08-18): 오늘의 진단 → 퍼스널컬러 → 얼굴·이목구비 → 추구미 → 비교 → 오늘 해볼 것
-  const ORDER=["오늘의 진단","내 퍼스널컬러","얼굴형","눈","코","입","부위별로 보면",
+  const ORDER=["지금 나의 매력과 나의 추구미","내 퍼스널컬러","얼굴형","눈","코","입","부위별로 보면",
                "내 추구미","지금과 추구미, 어디가 다른가","색 이야기","오늘 해볼 것","오늘 해볼 것 2","오늘 해볼 것 3","색은 이렇게"];
   PAGES.sort((a,b)=>{ const i=ORDER.indexOf(a.t), j=ORDER.indexOf(b.t);
     return (i<0?99:i)-(j<0?99:j); });
@@ -1004,7 +1015,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=e61f6ba"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=efd6693"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
