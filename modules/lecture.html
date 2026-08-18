@@ -112,7 +112,7 @@ button{font:inherit;cursor:pointer}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=4537b78"></script>
+<script src="czm-core.js?v=ff45e54"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 const K=CZM.KEYS, LS=CZM.store;
@@ -121,8 +121,8 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "4537b78";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=4537b78";
+const BUILD = "ff45e54";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=ff45e54";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -601,6 +601,9 @@ function renderReport(){
   const part=partSection(s.face, s.diag.have), norms=normLines(r,l,(s.pc||{}).age,gender);
   const col=colorSection(s.diag.want, pcLabel), tips=pickTips(g, wantName, pcLabel, gender);
   const vs=verdicts(r,l,s.face.quality);
+  const _av=CZM.asymVerdict(r.asym_score, SHAPE&&SHAPE.dist&&SHAPE.dist.asym_score,
+                            SHAPE&&SHAPE.labels&&SHAPE.labels.asym_score);
+  const asymCare = !!(_av && _av.care);
   const byGroup=g2=>vs.filter(x=>x.group===g2);
   const vRow=x=>`<div class="vrow"><div class="vk">${x.k}</div>
       <div><div class="vv">${esc(x.v)}</div><div class="vs">${esc(x.s)}</div></div></div>`;
@@ -630,15 +633,13 @@ function renderReport(){
   // ③ 이목구비
   // 규준 줄이 눈매를 이미 말하면(own:"eye_angle") 밴드 줄은 뺀다 — 같은 것을 두 번, 그것도
   // 다른 결론처럼 말하게 된다(실측 2026-08-18: "올라간 눈매" 밑에 "평균보다 내려간 쪽").
-  const normOwns=new Set(norms.map(x=>x.own).filter(Boolean));
-  const partV=[...byGroup("눈"), ...byGroup("눈썹"), ...byGroup("입")]
-    .filter(x=>!normOwns.has(x.own));
+  // 규준 섹션을 뺐으므로 중복 걱정이 없다 — 눈매 밴드가 그대로 나온다
+  const partV=[...byGroup("눈"), ...byGroup("눈썹"), ...byGroup("입")];
   PAGES.push({t:"이목구비", html:`
     ${partV.length?`<div class="card">${partV.map(vRow).join("")}</div>`:``}
-    ${norms.length?`<div class="card"><h2>또래 평균과 견주면</h2>
-      ${norms.map(x=>`<div class="vrow"><div class="vk">${x.t}</div>
-        <div><div class="vv">${x.v}</div><div class="vs">${esc(x.s)}</div></div></div>`).join("")}
-      <p class="note">한국 여성 계측 연구 기준이에요.</p></div>`:``}`});
+    ${``/* 또래 평균 대조 섹션은 뺐다 — 대표 판단 2026-08-18: "평균과 비교하는 건 오히려
+          타인과 비교하는 것". 얼굴 판정은 황금비율(2쪽)로 일원화했다.
+          normLines()와 face-norms.json은 남겨둔다 — 되살릴 때 쓴다. */}`});
 
   // ④ 부위별 인상
   if(part.html) PAGES.push({t:"부위별로 보면", html:`
@@ -668,11 +669,15 @@ function renderReport(){
       ${col&&col.mine?`· <b>얼굴 가까이</b>(${gender&&gender!=="f"?"셔츠 목선·스카프·모자":"립·스카프·상의 목선"})엔 잘 받는 색을 두세요. 얼굴이 사는 자리예요.<br>`:``}
       ${col&&col.want&&!sameColor?`· <b>얼굴에서 먼 곳</b>(하의·가방·신발)엔 ${esc(wantName)} 색을 써보세요. 얼굴은 편하고, 전체 느낌은 ${esc(wantName)} 쪽으로 가요.<br>`:``}
       · 한 번에 하나만 바꿔보세요. 여러 개를 같이 바꾸면 어느 게 통했는지 몰라요.</p></div>
+    ${asymCare?`<div class="card"><h2>좌우 균형은 이렇게</h2>
+      <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8">
+      · 한쪽으로만 씹거나, 턱을 괴거나, 늘 같은 쪽으로 자는 습관이 있는지 한번 살펴보세요.<br>
+      · 사진은 고개가 조금만 돌아가도 좌우가 달라 보여요. 정면으로 한 번 더 찍어보면 더 정확해요.<br>
+      · 좌우가 완전히 같은 얼굴은 없어요. 차이가 있다고 고쳐야 하는 건 아니에요.</p></div>`:``}
     <div class="card"><h2>다만 이건 주의하세요</h2>
       <p class="note" style="font-size:14px;line-height:1.8">
-      ${gender&&gender!=="f"
-        ? `· 지금 가진 얼굴 계측 자료가 한국 <b>여성</b> 표본뿐이라, 평균과 견주는 부분은 빼고 우리 측정 기준으로만 봤어요.<br>`
-        : `· 또래 평균과 견줄 수 있는 건 <b>눈 쪽과 얼굴 비율</b>뿐이에요. 코·입·턱은 연구마다 재는 방법이 달라서, 지금 견주면 틀린 말이 돼요.<br>`}
+      · 황금비율은 서양 미술에서 온 기준이라, 한국 사람 얼굴은 대체로 가로가 조금 더 넉넉해요.
+        어긋난 게 흠이 아닌 이유예요 — 기준이 하나뿐인 것도 아니고요.<br>
       · 사진은 조명과 각도에 따라 값이 조금씩 달라져요. 오늘 한 장의 결과예요.</p></div>`});
 
   const CARD={pc:pcLabel, have:haveName, want:wantName, gapLine,
@@ -713,7 +718,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=4537b78"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=ff45e54"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
