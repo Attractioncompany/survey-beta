@@ -175,7 +175,7 @@ const RETURN_GAP_DAYS = 3;
 // ── 처음 온 사람 ─────────────────────────────────────────────
 // 설계서 §3-3. 카드 문구는 설계서에서 그대로 가져온다.
 const PREVIEW = [
-  { h:"35문항이면 여기까지 나와요",
+  { h:"몇 분이면 여기까지 나와요",
     body:`<div class="demo"><div class="demo-l">추구미</div><div class="demo-v">로맨틱</div>
           <div class="demo-l">지금</div><div class="demo-v">클래식</div>
           <div class="demo-l">벌어진 쪽</div><div class="demo-v">웜·곡선</div></div>
@@ -204,7 +204,9 @@ function renderPreview(i = 0){
 }
 
 // 가입·로그인 — 대표 결정 2026-08-17로 여기가 관문이 됐다. 건너뛰기가 없다.
-// 애플은 승인 대기라 버튼을 두지 않는다 — 눌러도 안 되는 버튼은 두지 않는다.
+// 애플 승인 2026-08-20. 버튼을 연다.
+// ⚠ Supabase 대시보드에서 Apple provider를 켜지 않으면 눌러도 에러 화면으로 간다 —
+//    켜져 있는지 확인하고 배포할 것.
 function renderSignup(mode = "up"){
   track(mode === "up" ? "signup_shown" : "signin_shown");
   const up = mode === "up";
@@ -213,11 +215,16 @@ function renderSignup(mode = "up"){
     <p class="note">${up ? "결과와 쌓은 걸 계속 이어가려면 계정이 필요해요. 이름도 나이도 안 물어봐요."
                          : "쓰시던 계정으로 들어오시면 그대로 이어져요."}</p>
     <button class="btn" id="kakao" style="background:#FEE500;color:#191600">카카오로 ${up ? "시작하기" : "로그인"}</button>
+    <button class="btn" id="apple" style="background:#000;color:#fff;display:flex;align-items:center;justify-content:center;gap:7px">
+      <svg width="15" height="18" viewBox="0 0 170 200" fill="currentColor" aria-hidden="true"><path d="M140 106c0-25 20-37 21-38-11-17-29-19-36-19-15-2-29 9-37 9-8 0-20-9-32-9-17 0-32 10-41 25-17 30-4 74 13 98 8 12 18 25 31 25 12 0 17-8 32-8s19 8 32 8c13 0 22-12 30-24 9-14 13-27 13-28-1 0-26-10-26-39zM117 33c7-8 11-19 10-30-10 0-21 6-28 14-6 7-12 18-10 29 11 1 22-6 28-13z"/></svg>
+      Apple로 ${up ? "시작하기" : "로그인"}
+    </button>
     <input class="field" id="em" type="email" inputmode="email" autocomplete="email" placeholder="이메일로 하기">
     <button class="btn ghost" id="go">메일로 링크 받기</button>
     <button class="btn quiet" id="swap">${up ? "이미 계정이 있어요" : "처음이에요"}</button>
     <p class="note" id="msg"></p></div>`;
   $("kakao").onclick = () => { track("signup_started", {method:"kakao", mode}); oauthStart("kakao"); };
+  $("apple").onclick = () => { track("signup_started", {method:"apple", mode}); oauthStart("apple"); };
   $("swap").onclick  = () => renderSignup(up ? "in" : "up");
   $("go").onclick = async () => {
     const em = $("em").value.trim(); if (!em.includes("@")) return $("em").focus();
@@ -230,7 +237,7 @@ function renderSignup(mode = "up"){
 
 // 허브의 기능 진입로. 지금까지 옷 색 판정·타입별 추천은 어디서도 링크가 없는 고아 페이지였다.
 const HUB = [
-  { href: "../index.html?view=start", label: "설문 진단", desc: "35문항 · 3~4분" },
+  { href: "../index.html?view=start", label: "설문 진단", desc: "24문항 · 3~4분" },   // ⚠ index.html의 Q를 줄이면 여기도 고쳐야 한다
   { href: "photo-module.html",        label: "촬영 진단", desc: "사진으로 색·형태 재기" },
   { href: "cloth-check.html",         label: "옷 색 판정", desc: "가진 옷이 내 쪽인지" },
   { href: "pick.html",                label: "타입별 추천", desc: "내 타입이 자주 쓰는 것" },
