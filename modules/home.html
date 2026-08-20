@@ -98,7 +98,7 @@ if (!UID) { UID = crypto.randomUUID(); try{ localStorage.setItem(K.uid, UID); }c
 // 문항이 늘면 코드를 안 고쳐도 학습 칸이 는다. (배포 시 경로는 deploy_survey.sh가 고친다)
 const [DICT0, QUIZ] = await Promise.all([
   fetch("quest-dict.json", {cache:"no-store"}).then(r => r.json()),
-  fetch("../theory/quest_quiz_v1.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).catch(() => null),
+  fetch("quest-quiz.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).catch(() => null),
 ]);
 const DICT = (QUIZ && withKnowledge) ? withKnowledge(DICT0, QUIZ) : DICT0;
 
