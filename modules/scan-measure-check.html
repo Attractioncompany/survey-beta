@@ -1,0 +1,111 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>스캔 측정 점검</title>
+<style>
+ body{font:15px -apple-system,'Pretendard Variable',system-ui;margin:0;padding:20px;
+      background:#FAF7FB;color:#2B2233;line-height:1.6}
+ h1{font-size:19px;margin:0 0 4px} p.sub{color:#6E6478;font-size:13px;margin:0 0 14px}
+ button{padding:11px 18px;border:0;border-radius:10px;background:#B76BA3;color:#fff;font-weight:700}
+ input{padding:9px;border:1px solid #E4DCE9;border-radius:8px;width:150px}
+ table{border-collapse:collapse;margin-top:12px;font-size:13px;width:100%}
+ td,th{border:1px solid #E4DCE9;padding:5px 9px;text-align:right}
+ th:first-child,td:first-child{text-align:left}
+ .ok{color:#0a7c4a;font-weight:700} .ng{color:#c0392b;font-weight:700}
+ #log{margin-top:14px;font:12px ui-monospace,monospace;white-space:pre-wrap;
+      background:#fff;border:1px solid #E4DCE9;border-radius:10px;padding:11px}
+ .big{font-size:26px;font-weight:800;margin:6px 0}
+</style></head><body>
+<h1>스캔 측정 점검</h1>
+<p class="sub">실제 스캔 세션에서 지표를 뽑아 8타입까지 내본다. 앱에 넣기 전에 로컬 데이터로 확인하는 자리다.</p>
+
+세션 <input id="sess" value="C1_1"> <button onclick="go()">측정</button>
+<div id="log">대기 중</div>
+<div id="out"></div>
+
+<script type="module">
+import { measureScan, coverage, ENGINE_KEYS } from "./scan-measure.js";
+import * as AS from "./asset-score.js";
+
+const $=id=>document.getElementById(id);
+const log=(s,cls="")=>{ $("log").innerHTML += `\n${cls?`<span class="${cls}">`:""}${s}${cls?"</span>":""}`; };
+
+// 검증 페이지는 CDN을 쓴다 — 앱 번들(mp/)은 여기 없다. 모듈·wasm·모델 경로가 각각 달라
+// scan-measure의 mpBase 하나로 접히지 않으므로 여기서 만들어 넘긴다.
+const MP="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+let LMK=null;
+async function getLmk(){
+  if(LMK) return LMK;
+  const { FaceLandmarker, FilesetResolver } = await import(MP);
+  const fs = await FilesetResolver.forVisionTasks(`${MP}/wasm`);
+  LMK = await FaceLandmarker.createFromOptions(fs, {
+    baseOptions:{ modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task" },
+    runningMode:"IMAGE", numFaces:1 });
+  return LMK;
+}
+
+/** 세션 폴더의 프레임 태그 목록 — 앱에서는 native.latestScan()이 준다.
+ *  여기서는 파일이 나올 때까지 f001부터 훑는다(정적 서버라 디렉터리 목록이 없다). */
+async function frameTags(base){
+  const out=[];
+  for(let i=1;i<=60;i++){
+    const t="f"+String(i).padStart(3,"0");
+    if((await fetch(`${base}/${t}.json`,{method:"HEAD"})).ok) out.push(t); else if(out.length) break;
+  }
+  return out;
+}
+
+window.go = async function(){
+  $("log").innerHTML="시작"; $("out").innerHTML="";
+  const base=`../scans/${$("sess").value.trim()}`;
+  try{
+    const frames=await frameTags(base);
+    log(`프레임 ${frames.length}장`, frames.length?"ok":"ng");
+    if(!frames.length) return;
+
+    log("MediaPipe 로드 중…");
+    const lmk=await getLmk();
+
+    const t0=performance.now();
+    const r=await measureScan({base, frames}, {lmk});
+    log(`측정 ${Math.round(performance.now()-t0)}ms`);
+    if(!r.m){ log(`실패 — ${r.reason}\n${JSON.stringify(r.tried)}`,"ng"); return; }
+    log(`사용 프레임 ${r.frameTag}`,"ok");
+
+    const cov=coverage(r.m);
+    log(`엔진 입력 커버리지 ${cov.have.length}/15  · 빠진 것: ${cov.miss.join(", ")||"없음"}`,
+        cov.have.length>=10?"ok":"ng");
+
+    // 8타입 판정 — 백분위 공간이라 표본이 필요하다(엔진 §판정①). 분포 스냅샷을 쓴다.
+    const dist=await fetch("./dist-snapshot.json").then(x=>x.ok?x.json():null).catch(()=>null);
+    let verdict="";
+    if(dist && dist.ref && dist.dist){
+      const one=AS.scoreOne(r.m, dist.ref, dist.dist);
+      const t=one.overallType;   // {type, second, adjacent, label}
+      verdict = t
+        ? `<div class="big">${t.label}</div>
+           <div style="color:#6E6478;font-size:13px">
+             1위 ${t.type} · 2위 ${t.second}${t.adjacent?" (근접)":""}<br>
+             T ${fmt(one.overall.T)} · D ${fmt(one.overall.D)} · M ${fmt(one.overall.M)}
+             · 순위공간 ${one.rankSpace===false?"미적용":"적용"} · 부위비중 ${fmt(one.weightUsed)}
+           </div>`
+        : `<div class="ng">판정 없음 — 부위 비중이 0이다(기여한 지표가 하나도 없음).</div>`;
+      log(t?`8타입 판정: ${t.label}`:"판정 없음", t?"ok":"ng");
+    } else {
+      verdict=`<div class="ng">분포 스냅샷(dist-snapshot.json)이 없거나 형식이 달라 8타입을 못 낸다 —
+               백분위는 표본이 있어야 정의된다(엔진 판정①).</div>`;
+      log("분포 스냅샷 없음 — 지표만 표시","ng");
+    }
+
+    const rows=ENGINE_KEYS.map(k=>{
+      const v=r.m[k];
+      const der={eye_round:["eye_open","eye_len"],lip_thickness:["lip_upper","lip_lower"]}[k];
+      const shown = v!=null ? v : (der && der.every(x=>r.m[x]!=null) ? `파생(${der.map(x=>r.m[x]).join(" , ")})` : "—");
+      return `<tr><td>${k}</td><td>${shown}</td></tr>`;
+    }).join("");
+    $("out").innerHTML = verdict +
+      `<table><tr><th>엔진 입력</th><th>값</th></tr>${rows}</table>`;
+  }catch(e){ log("오류 — "+(e&&e.message||e),"ng"); }
+};
+const fmt=v=>v==null?"—":(+v).toFixed(3);
+</script>
+</body></html>

@@ -1,0 +1,78 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>브릿지 왕복 점검</title>
+<style>
+ body{font:15px -apple-system,'Pretendard Variable',system-ui;margin:0;padding:18px;background:#FAF7FB;color:#2B2233}
+ h1{font-size:18px;margin:0 0 4px} p{color:#6E6478;font-size:13px;margin:0 0 16px}
+ button{display:block;width:100%;padding:14px;margin:8px 0;border:0;border-radius:12px;
+        background:#B76BA3;color:#fff;font-size:15px;font-weight:700}
+ #log{margin-top:16px;font:12px ui-monospace,monospace;white-space:pre-wrap;
+      background:#fff;border:1px solid #E4DCE9;border-radius:10px;padding:10px;min-height:120px}
+ .ok{color:#0a7c4a} .ng{color:#c0392b}
+</style></head><body>
+<h1>브릿지 왕복 점검</h1>
+<p>window.native 의 각 메서드가 셸까지 갔다가 응답을 들고 돌아오는지 확인합니다.</p>
+
+<button onclick="camCheck()">카메라 가능 여부 — photo-module이 앱에서 도는가</button>
+<button onclick="run('latestScan')">latestScan()</button>
+<button onclick="run('platform')">platform()</button>
+<button onclick="run('haptic')">haptic()</button>
+<button onclick="run('share')">share() — 시트가 떠야 정상</button>
+<button onclick="run('saveImage')">saveImage() — 사진앱에 저장</button>
+<div id="log">플랫폼: <b id="plat">?</b></div>
+
+<script>
+// 브릿지 정본은 index.html 안에 인라인돼 있다. 이 점검 페이지는 앱 번들에만 들어가므로
+// 여기서는 계약(webkit.messageHandlers.chugumism ↔ window.__nativeReply)만 그대로 다시 쓴다.
+const cbs=new Map(); let seq=0;
+const isIOS=()=>!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.chugumism);
+function call(method,params){
+  return new Promise((res,rej)=>{
+    if(!isIOS()) return rej(new Error("no-native (브라우저에서 연 것 같아요)"));
+    const id=++seq; cbs.set(id,{res,rej});
+    window.webkit.messageHandlers.chugumism.postMessage({id,method,params:params||{}});
+    setTimeout(()=>{ if(cbs.has(id)){ cbs.delete(id); rej(new Error("응답 없음 (5초)")); } },5000);
+  });
+}
+window.__nativeReply=(id,ok,payload)=>{
+  const cb=cbs.get(id); if(!cb) return; cbs.delete(id);
+  ok?cb.res(payload):cb.rej(new Error((payload&&payload.error)||"native-error"));
+};
+document.getElementById('plat').textContent = isIOS() ? "ios (셸 있음)" : "web (셸 없음)";
+
+// 1×1 빨간 점 PNG — 저장·공유가 실제 이미지를 받는지 보려면 무언가 있어야 한다
+const PNG="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+function say(s,ok){ const l=document.getElementById('log');
+  l.innerHTML += `\n<span class="${ok?'ok':'ng'}">${ok?'OK ':'NG '}</span>${s}`; }
+
+async function camCheck(){
+  // WKWebView 커스텀 스킴이 보안 컨텍스트로 인정되지 않으면 navigator.mediaDevices 자체가
+  // 없다 — 그러면 사진 촬영을 앱 안에서 돌릴 수 없다.
+  say("isSecureContext = "+window.isSecureContext, window.isSecureContext);
+  say("navigator.mediaDevices = "+(navigator.mediaDevices?"있음":"없음 ← 촬영 불가"), !!navigator.mediaDevices);
+  if(!navigator.mediaDevices) return;
+  try{
+    const st = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}});
+    st.getTracks().forEach(t=>t.stop());
+    say("getUserMedia 성공 — 앱에서 촬영 가능", true);
+  }catch(e){
+    // 시뮬레이터엔 카메라가 없어 NotFoundError가 정상이다. 권한 거부(NotAllowed)와 구분한다.
+    say("getUserMedia — "+e.name+" ("+(e.name==="NotFoundError"?"시뮬엔 카메라가 없어 정상. 실기기에서 재확인":"확인 필요")+")",
+        e.name==="NotFoundError");
+  }
+}
+
+async function run(m){
+  try{
+    let r;
+    if(m==='platform')      { say("platform() = " + (isIOS()?"ios":"web"), true); return; }
+    else if(m==='haptic')   r = await call("haptic",{kind:"medium"});
+    else if(m==='share')    r = await call("share",{title:"브릿지 점검",text:"추구미즘 브릿지 왕복 확인",imageDataUrl:PNG});
+    else if(m==='saveImage')r = await call("saveImage",{dataUrl:PNG,name:"bridge-check.png"});
+    else if(m==='latestScan') r = await call("latestScan",{});
+    say(m+"() → "+JSON.stringify(r), true);
+  }catch(e){ say(m+"() 실패 — "+e.message, false); }
+}
+</script>
+</body></html>

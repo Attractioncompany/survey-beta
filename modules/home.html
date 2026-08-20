@@ -64,12 +64,12 @@ button{font:inherit;cursor:pointer}
 <div class="wrap" id="app"></div>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 저장 키·좌표·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="czm-core.js?v=dc6f0ab"></script>
+<script src="czm-core.js"></script>
 <script type="module">
-// 모듈 캐시 무력화. "?v=dc6f0ab"는 배포 시 커밋 해시로 치환된다(deploy_survey.sh).
+// 모듈 캐시 무력화. "?v=dev"는 배포 시 커밋 해시로 치환된다(deploy_survey.sh).
 // 로컬에서는 매번 다른 값이어야 한다 — 고정값이면 개발 중 고친 코드가 캐시에 가려진다(두 번 겪었다).
-// 정적 import는 변수를 못 받으므로 동적 import를 쓴다. 문자열 "?v=dc6f0ab"는 sed가 찾을 수 있게 그대로 둔다.
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=dc6f0ab";
+// 정적 import는 변수를 못 받으므로 동적 import를 쓴다. 문자열 "?v=dev"는 sed가 찾을 수 있게 그대로 둔다.
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=dev";
 
 // 모듈 격리 (모듈구조 v1 규칙 4) — 하나가 죽어도 페이지는 뜬다.
 // 오늘 quest-engine의 export 하나가 빠졌을 때 화면이 통째로 백지가 됐다.
@@ -98,7 +98,7 @@ if (!UID) { UID = crypto.randomUUID(); try{ localStorage.setItem(K.uid, UID); }c
 // 문항이 늘면 코드를 안 고쳐도 학습 칸이 는다. (배포 시 경로는 deploy_survey.sh가 고친다)
 const [DICT0, QUIZ] = await Promise.all([
   fetch("quest-dict.json", {cache:"no-store"}).then(r => r.json()),
-  fetch("quest-quiz.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).catch(() => null),
+  fetch("../theory/quest_quiz_v1.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).catch(() => null),
 ]);
 const DICT = (QUIZ && withKnowledge) ? withKnowledge(DICT0, QUIZ) : DICT0;
 
@@ -322,7 +322,7 @@ function renderHome(){
   $("drop")?.addEventListener("click", () => { st.active = null; renderList(); });
   $("toReg")?.addEventListener("click", renderRegister);
   $("toQuiz")?.addEventListener("click", renderQuiz);
-  $("toShot")?.addEventListener("click", () => location.href = "../photo.html?flow=verify");
+  $("toShot")?.addEventListener("click", () => location.href = "photo-module.html?flow=verify");
   $("tryDone")?.addEventListener("click", () => {
     // 세지 않는 칸이다(§3-5). 기록만 남기고 스탯은 올리지 않는다.
     track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"skill",

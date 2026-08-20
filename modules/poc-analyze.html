@@ -1,0 +1,422 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<title>트루뎁스 PoC 분석</title>
+<style>
+ body{font-family:-apple-system,'Pretendard',sans-serif;margin:24px;color:#2B2233;}
+ table{border-collapse:collapse;margin-top:12px;font-size:13px;} td,th{border:1px solid #E4DCE9;padding:5px 9px;text-align:right;}
+ th:first-child,td:first-child{text-align:left;} h2{font-size:17px;margin-top:26px;}
+ .ok{color:#0a7c4a;font-weight:700;} .bad{color:#c0392b;font-weight:700;} .warn{color:#b8860b;font-weight:700;}
+ #log{white-space:pre-wrap;font:12px ui-monospace,monospace;background:#FAF7FB;padding:10px;border-radius:8px;max-height:220px;overflow:auto;}
+</style></head><body>
+<h1>트루뎁스 PoC 분석</h1>
+<p>아래에서 <b>captures 폴더</b>를 통째로 선택하세요.</p>
+<input type="file" id="pick" webkitdirectory directory multiple>
+<div id="log"></div>
+<div id="out"></div>
+<script type="module">
+import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+import { D, SUB, NRM, DOT, ANG, JAW_CHAIN, shapeMetrics, depthAt, depthAtExpanding, usedLandmarkIndices, unproject } from "./poc-metrics.js";
+window.shapeMetrics=shapeMetrics;
+const $=id=>document.getElementById(id);
+const log=m=>{ $("log").textContent += m+"\n"; $("log").scrollTop=1e9; };
+window.__poc={sets:[]};
+
+// 3D 건전성 문턱 — 성인 얼굴 폭(234↔454, 광대 바깥)은 보통 130~150mm 대역이다.
+// 이 범위를 크게 벗어나면 깊이 조회가 얼굴이 아니라 배경을 봤다는 뜻이라 그 세트를 집계에서 뺀다.
+const FACE_W_MIN=100, FACE_W_MAX=180;
+const DEPTH_XCHECK_PCT=30; // 코끝 깊이 vs ARKit 얼굴거리 불일치 경고 문턱(%)
+
+let engine=null;
+async function initEngine(){
+  const fs=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  engine=await FaceLandmarker.createFromOptions(fs,{
+    baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"},
+    runningMode:"IMAGE", numFaces:1, outputFaceBlendshapes:false
+  });
+  log("MediaPipe 준비 완료");
+}
+
+/** 선택된 파일 목록을 세트 단위로 묶는다: {cond_n: {rgb:File, meta:File, depth:File, mesh:File}} */
+function groupSets(files){
+  const g={};
+  for(const f of files){
+    const parts=f.webkitRelativePath.split("/");
+    const dir=parts[parts.length-2], name=parts[parts.length-1];
+    if(!/^C\d_\d+$/.test(dir)) continue;
+    (g[dir] ||= {}).dir=dir;
+    if(name==="rgb.jpg") g[dir].rgb=f;
+    else if(name==="meta.json") g[dir].meta=f;
+    else if(name==="depth.bin") g[dir].depth=f;
+    else if(name==="mesh.json") g[dir].mesh=f;
+  }
+  return g;
+}
+
+async function fileToImage(file){
+  const url=URL.createObjectURL(file);
+  const img=new Image();
+  await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; img.src=url; });
+  return img;
+}
+
+$("pick").addEventListener("change", async e=>{
+  if(!engine) await initEngine();
+  const groups=groupSets([...e.target.files]);
+  const keys=Object.keys(groups).sort();
+  log(`세트 ${keys.length}개 발견`);
+  window.__poc.sets=[];
+  for(const k of keys){
+    const s=groups[k];
+    if(!s.rgb||!s.meta){ log(`${k}: rgb/meta 없음 — 건너뜀`); continue; }
+    const meta=JSON.parse(await s.meta.text());
+    const img=await fileToImage(s.rgb);
+    const res=engine.detect(img);
+    if(!res.faceLandmarks||!res.faceLandmarks.length){ log(`${k}: 얼굴 미검출 — 건너뜀`); continue; }
+    window.__poc.sets.push({
+      key:k, condition:k.split("_")[0], index:+k.split("_")[1],
+      lm:res.faceLandmarks[0], meta, files:s, W:img.naturalWidth, H:img.naturalHeight
+    });
+    log(`${k}: 랜드마크 ${res.faceLandmarks[0].length}점 · ${img.naturalWidth}x${img.naturalHeight}`);
+  }
+  log(`로드 완료 — ${window.__poc.sets.length}/${keys.length} 세트`);
+
+  // ── 지표 계산 (2D·3D 공용) ───────────────────────────────────────────
+  // pts: 인덱스로 접근하는 점 배열 {x,y,z}. 2D는 z=0. 단위는 호출자가 통일.
+  // scale: 정규화 기준 길이(2D=faceW 픽셀, 3D=faceW mm)
+  for(const st of window.__poc.sets){
+    const pts=st.lm.map(p=>({x:p.x*st.W, y:p.y*st.H, z:0}));
+    const faceW=Math.hypot(pts[454].x-pts[234].x, pts[454].y-pts[234].y);
+    st.m2d=shapeMetrics(pts, faceW, "2d");
+  }
+  log("2D 지표 산출 완료");
+
+  const usedIdx=usedLandmarkIndices();
+  for(const st of window.__poc.sets){
+    if(!st.files.depth){ log(`${st.key}: depth.bin 없음 — 3D 건너뜀`); continue; }
+    const depth=await loadDepth(st.files.depth);
+    const {depthW:dW, depthH:dH, intrinsics:K} = st.meta;
+    let miss=0;
+    const radiusHist={1:0,3:0,5:0};
+    // 좌표를 지어내지 않는다: 못 찾은 점은 null로 남긴다(인접 인덱스는 공간적으로 이웃이 아니므로 보간 금지).
+    const pts3=st.lm.map(p=>{
+      const px=p.x*st.W, py=p.y*st.H;
+      const found=depthAtExpanding(depth,dW,dH,px,py,st.W,st.H);
+      if(!found){ miss++; return null; }
+      radiusHist[found.radius]++;
+      return unproject(px,py,found.z,K,st.W,st.H);
+    });
+    const missingUsed=usedIdx.filter(i=>pts3[i]==null);
+    st.depthStats={
+      validRate:+(1-miss/pts3.length).toFixed(3), missLandmarks:miss,
+      missUsed:missingUsed.length, radiusHist
+    };
+    if(miss/pts3.length > 0.2){ log(`${st.key}: 깊이 결측 ${miss}점(>20%) — 3D 신뢰 낮음`); }
+    if(missingUsed.length>0){
+      st.m3d=null;
+      st.m3dSkipReason=`shapeMetrics 사용 인덱스 결측: [${missingUsed.join(",")}]`;
+      log(`${st.key}: ${st.m3dSkipReason} — m3d=null(스킵)`);
+      continue;
+    }
+    const faceWmm=Math.hypot(pts3[454].x-pts3[234].x, pts3[454].y-pts3[234].y, pts3[454].z-pts3[234].z);
+    st.faceWmm=+faceWmm.toFixed(1);
+
+    // 무료 교차검증: 코끝(landmark 1)의 깊이와 ARKit이 준 얼굴-카메라 거리를 대조한다.
+    // 서로 다른 두 경로가 같은 물리량을 말하므로, 크게 어긋나면 깊이 조회가 얼굴이 아닌 곳을 봤다는 신호다.
+    const lensMm = (typeof st.meta.lensDistanceCm==="number") ? st.meta.lensDistanceCm*10 : null;
+    if(lensMm && pts3[1]){
+      const diffPct=Math.abs(pts3[1].z-lensMm)/lensMm*100;
+      st.depthCheck={noseZmm:+pts3[1].z.toFixed(1), lensMm:+lensMm.toFixed(1), diffPct:+diffPct.toFixed(1),
+                     ok:diffPct<=DEPTH_XCHECK_PCT};
+      if(diffPct>DEPTH_XCHECK_PCT){
+        log(`${st.key}: 코끝 깊이 ${st.depthCheck.noseZmm}mm vs ARKit 거리 ${st.depthCheck.lensMm}mm — ${st.depthCheck.diffPct}% 불일치(경고)`);
+      }
+    }
+
+    // [리뷰 반영: Important] 반경 확장 탐색의 11×11 창이 얼굴 경계(234/454=광대 바깥)에서 얼굴 밖으로
+    // 넘쳐 배경 깊이(1.0~1.5m, <2.0 필터를 통과)를 중앙값으로 잡을 수 있다. 그러면 faceWmm이 정상 ~140mm
+    // 대신 수백 mm가 되고 그 세트의 3D 정규화 지표가 전부 축소되는데, missUsed=0이라 조용히 통과한다.
+    if(faceWmm<FACE_W_MIN || faceWmm>FACE_W_MAX){
+      st.m3d=null;
+      st.m3dSkipReason=`faceWmm ${st.faceWmm}mm — 정상 범위(${FACE_W_MIN}~${FACE_W_MAX}mm) 밖(깊이 조회가 얼굴 밖을 봤을 가능성)`;
+      log(`${st.key}: ${st.m3dSkipReason} — m3d=null(스킵)`);
+      continue;
+    }
+    st.m3d=shapeMetrics(pts3, faceWmm, "3d");
+  }
+  log("3D 지표 산출 완료");
+
+  window.dispatchEvent(new Event("poc:loaded"));
+});
+
+// ── 깊이 조회 & 역투영 ───────────────────────────────────────────────
+/** depth.bin(Float32 리틀엔디안, depthW×depthH, 단위 m)을 Float32Array로 */
+async function loadDepth(file){ return new Float32Array(await file.arrayBuffer()); }
+
+// ── 재현성 집계 ──────────────────────────────────────────────────────
+const METRICS=["jaw_angular_deg","chin_angle_deg","brow_arch_deg","face_HW","mouth_w","nose_w","jaw_w",
+  "temple_w","interocular","eye_len","eye_open","brow_eye_gap","lip_upper","lip_lower","lip_ul_ratio",
+  "eye_angle","mouth_corner","line_score"];
+const CORE=["line_score"]; // 파생축 = 필수 충족 대상
+const MIN_N=6;    // 분석 가능 세트가 이 미만이면 PASS/FAIL 대신 판정 보류
+const MIN_COND=3; // 생존 조건이 이 미만이면(=흔들려던 축이 빠졌으면) 마찬가지로 판정 보류
+
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const sd=a=>{const m=mean(a);return Math.sqrt(mean(a.map(v=>(v-m)**2)));};
+/** 오름차순 배열의 분위수(선형 보간) */
+const quantile=(sorted,q)=>{
+  if(!sorted.length) return NaN;
+  const pos=(sorted.length-1)*q, lo=Math.floor(pos), hi=Math.ceil(pos);
+  return sorted[lo]+(sorted[hi]-sorted[lo])*(pos-lo);
+};
+/** 지표 하나(2D·3D 공통)에 쓸 단위를 "한 번만" 정한다 — 2D 평균과 3D 평균 중 하나라도
+ *  0 근처(<1e-3)면 둘 다 절대 표준편차(abs)로, 아니면 둘 다 변동계수(%)로 통일한다.
+ *  [리뷰 반영: Critical] 예전엔 2D·3D가 각자 독립적으로 단위를 골라 %÷abs 같은 서로 다른
+ *  척도의 나눗셈이 "비율"로 둔갑해 통과/미달 판정에 그대로 쓰이는 결함이 있었다.
+ *  이 지표들은 전부 scale(2D=faceW px, 3D=faceW mm)로 정규화된 무차원 값이라
+ *  절대 표준편차 기준으로 통일해도 2D·3D 간 비교가 성립한다. */
+function unitFor(vals2, vals3){
+  const m2=mean(vals2), m3=mean(vals3);
+  return (Math.abs(m2)<1e-3 || Math.abs(m3)<1e-3) ? "abs" : "%";
+}
+/** 지정된 unit으로 변동 통계 하나를 계산 */
+function statAt(vals, unit){
+  const m=mean(vals), s=sd(vals);
+  return unit==="abs" ? s : s/Math.abs(m)*100;
+}
+/** 조건 내 변동(순수 노이즈) — 조건(C1~C5)마다 반복 촬영 값의 변동을 구해 평균한다.
+ *  반복이 2개 미만인 조건은 변동을 정의할 수 없어 그 조건은 평균에서 뺀다.
+ *  [리뷰 반영: Important] unit이 %인데 그 조건의 로컬 평균이 0 근처면 나눗셈이 폭주하는데,
+ *  예전엔 여기서 몰래 abs로 폴백해 계산하면서 화면엔 전역 unit(%)을 그대로 찍어 라벨과
+ *  실제 계산이 어긋났다. 이제는 단위를 몰래 바꾸지 않고, 그런 조건 자체를 평균에서 뺀다
+ *  (표본을 지어내지 않는다는 3D 결측 처리와 같은 원칙). 반환값에 실제 쓰인 unit을 함께 담아
+ *  화면이 항상 계산과 같은 라벨을 쓰게 한다. 전 조건이 빠지면(=조건 내 변동을 낼 수 없으면) null. */
+function withinConditionCV(sets, key, mode, unit){
+  const groups={};
+  for(const s of sets){ (groups[s.condition] ||= []).push(s[mode][key]); }
+  const perCond=[];
+  for(const vals of Object.values(groups)){
+    if(vals.length<2) continue;
+    if(unit==="%" && Math.abs(mean(vals))<1e-3) continue; // 로컬 평균 0 근처 — 값을 지어내지 않고 제외
+    perCond.push(statAt(vals, unit));
+  }
+  if(!perCond.length) return null;
+  return {v:mean(perCond), unit};
+}
+
+/** 조건 간 변동(거리·기울기 같은 조건 변화에 대한 민감도) — 조건별 평균을 먼저 구한 뒤
+ *  그 평균들 사이의 변동을 잰다. 단위 규칙은 withinConditionCV와 동일하게 호출자가 정한 unit을 따른다.
+ *  [리뷰 반영: Important] 예전엔 15세트를 한 덩어리로 본 "총변동(풀링)"을 조건 간 변동이라 부르며
+ *  판정에 썼다. 총변동에는 조건 내 노이즈가 섞여 있어, 트루뎁스가 노이즈만 줄이고 거리·기울기
+ *  민감도는 그대로여도 통과가 뜰 수 있었다. 이제 1차 판정은 이 함수의 값으로 한다.
+ *  조건이 2개 미만이면(=조건 간 변동을 정의할 수 없으면) null. */
+function betweenConditionCV(sets, key, mode, unit){
+  const groups={};
+  for(const s of sets){ (groups[s.condition] ||= []).push(s[mode][key]); }
+  const condMeans=Object.values(groups).map(mean);
+  if(condMeans.length<2) return null;
+  if(unit==="%" && Math.abs(mean(condMeans))<1e-3) return null; // 평균 0 근처 — 값을 지어내지 않고 제외
+  return {v:statAt(condMeans, unit), unit};
+}
+
+/** 3D 지표를 얻지 못해 비교에서 빠진 세트 — 조용히 숨기지 않고 표로 드러낸다. */
+function excludedSets(){
+  return window.__poc.sets.filter(s=>!(s.m2d&&s.m3d)).map(s=>({
+    key:s.key,
+    reason: s.m3dSkipReason || (s.files && !s.files.depth ? "depth.bin 없음" : (!s.m2d ? "2D 지표 산출 실패" : "3D 지표 없음(원인 미기록)")),
+    missUsed: (s.depthStats && typeof s.depthStats.missUsed==="number") ? s.depthStats.missUsed : "-"
+  }));
+}
+
+function aggregate(){
+  const all=window.__poc.sets;
+  const sets=all.filter(s=>s.m2d&&s.m3d);
+  const excluded=excludedSets();
+  if(!sets.length){
+    window.__poc.report={rows:[], passN:0, total:0, excludedMetrics:0, coreStatus:"UNKNOWN",
+      verdict:"NO_DATA", n:0, totalN:all.length, excluded};
+    return window.__poc.report;
+  }
+  const rows=METRICS.map(k=>{
+    const all2=sets.map(s=>s.m2d[k]), all3=sets.map(s=>s.m3d[k]);
+    const unit=unitFor(all2, all3);           // 2D·3D 공통 단위 — 한 번만 결정
+    // 전체(풀링) 변동 — 조건 내 노이즈 + 조건 간 민감도가 섞인 값. 참고용.
+    const pooled2=statAt(all2, unit), pooled3=statAt(all3, unit);
+    const within2=withinConditionCV(sets,k,"m2d",unit);
+    const within3=withinConditionCV(sets,k,"m3d",unit);
+    // 1차 판정 기준 = 조건 간 변동 (스펙의 "조건 간 변동"과 일치)
+    const btw2=betweenConditionCV(sets,k,"m2d",unit);
+    const btw3=betweenConditionCV(sets,k,"m3d",unit);
+    let ratio=null, comparable=false, pass=false, uncomparableReason="";
+    if(!btw2 || !btw3){
+      uncomparableReason = "조건 간 변동 산출 불가";
+    } else if(btw2.v===0 && btw3.v===0){
+      uncomparableReason = "변동 없음";           // 비율 정의 불가(0/0)
+    } else {
+      comparable = true;
+      ratio = btw2.v>0 ? btw3.v/btw2.v : Infinity; // 2D=0·3D>0 이면 "무한히 나쁨"이지 NaN이 아니다
+      pass = ratio<=0.5;                            // 0.5 문턱 — verbatim
+    }
+    return {metric:k, unit, btw2, btw3, within2, within3, pooled2, pooled3,
+            ratio, comparable, pass, uncomparableReason};
+  });
+  const comparableRows=rows.filter(r=>r.comparable);
+  const passN=comparableRows.filter(r=>r.pass).length;   // 과반 통과 — verbatim(분모만 판정 가능 지표 수로)
+  const totalComparable=comparableRows.length;
+  const excludedMetrics=rows.length-totalComparable;
+  // 파생축 필수 — verbatim(단, 파생축 자체가 비교 불가면 "미달"로 단정하지 않고 UNKNOWN)
+  const coreComparable=CORE.every(k=>rows.find(r=>r.metric===k)?.comparable);
+  const coreStatus = !coreComparable ? "UNKNOWN"
+    : (CORE.every(k=>rows.find(r=>r.metric===k)?.pass) ? "OK" : "FAIL");
+  // 조건 커버리지 — 어느 조건이 몇 세트 살아남았는지
+  const condCounts={};
+  for(const s of sets){ condCounts[s.condition]=(condCounts[s.condition]||0)+1; }
+  const condN=Object.keys(condCounts).length;
+  // 비율 분포 — PASS/FAIL보다 먼저 읽어야 할 값(C3)
+  const finiteRatios=rows.filter(r=>r.comparable && Number.isFinite(r.ratio)).map(r=>r.ratio).sort((a,b)=>a-b);
+  const infRatios=rows.filter(r=>r.comparable && r.ratio===Infinity).length;
+  const ratioStats=finiteRatios.length ? {
+    n:finiteRatios.length, infN:infRatios,
+    median:quantile(finiteRatios,0.5), q1:quantile(finiteRatios,0.25), q3:quantile(finiteRatios,0.75),
+    min:finiteRatios[0], max:finiteRatios[finiteRatios.length-1]
+  } : null;
+
+  // 표본 부족 판단 — 세트 수와 "조건 커버리지"를 함께 본다.
+  // [리뷰 반영: Important] 깊이 결측은 어려운 조건(C3 멀리·C4 기울임)에 몰리는 게 자연스러운데,
+  // C1·C2에서만 6세트가 살아남아도 판정이 나가면 "조건 변화에 덜 흔들린다"고 잘못 읽힌다.
+  let insufficientReason="";
+  if(sets.length<MIN_N) insufficientReason=`분석 가능 세트 ${sets.length}개 < ${MIN_N}개`;
+  else if(condN<MIN_COND) insufficientReason=`생존 조건 ${condN}종 < ${MIN_COND}종 — 조건 간 변동을 논할 수 없음`;
+  const insufficient=!!insufficientReason;
+
+  let verdict;
+  if(insufficient) verdict="INSUFFICIENT";
+  else if(coreStatus==="UNKNOWN") verdict="CORE_UNKNOWN";
+  else if(totalComparable===0) verdict="NO_COMPARABLE"; // CORE=[]로 바뀌는 미래 대비 방어(현재 CORE 구성에서는 도달 안 함)
+  else verdict=(passN/totalComparable>=0.5 && coreStatus==="OK") ? "PASS" : "FAIL";
+  window.__poc.report={rows, passN, total:totalComparable, excludedMetrics, coreStatus,
+    verdict, n:sets.length, totalN:all.length, excluded, insufficient, insufficientReason,
+    condCounts, condN, ratioStats};
+  return window.__poc.report;
+}
+
+function render(){
+  const rep=aggregate();
+  const f=(v,u)=>u==="%"?v.toFixed(1)+"%":v.toFixed(4);
+  const fw=(w)=>w==null?"-":f(w.v,w.unit);
+  const num=(v,d=1)=>(typeof v==="number"&&isFinite(v))?v.toFixed(d):"-";
+
+  // ── 세트 현황 ─────────────────────────────────────────────────────
+  // [리뷰 반영: Important] faceWmm·조회 반경·깊이 지연은 3D가 얼굴을 제대로 봤는지 판단하는 근거인데
+  // 예전엔 화면에 아예 나오지 않아 폭주를 눈으로도 못 잡았다. 전 세트를 한 표로 드러낸다.
+  let h=`<h2>세트 현황</h2>
+  <p>분석 <b>${rep.n}</b> / 전체 <b>${rep.totalN}</b>, 제외 <b>${rep.excluded.length}</b>건</p>`;
+  const allSets=window.__poc.sets;
+  if(allSets.length){
+    const reasonOf=k=>(rep.excluded.find(e=>e.key===k)||{}).reason||"";
+    h+=`<table><tr><th>세트</th><th>faceWmm</th><th>유효율</th><th>사용인덱스 결측</th>
+      <th>조회반경(1/3/5)</th><th>ARKit 거리(cm)</th><th>깊이지연(ms)</th><th>상태</th></tr>`;
+    for(const s of allSets){
+      const ds=s.depthStats||{}, rh=ds.radiusHist||{};
+      const used=!!(s.m2d&&s.m3d);
+      const fwOut = typeof s.faceWmm==="number" && (s.faceWmm<FACE_W_MIN||s.faceWmm>FACE_W_MAX);
+      const lag=s.meta && typeof s.meta.depthLagMs==="number" ? s.meta.depthLagMs : null;
+      const xchk=s.depthCheck;
+      let state = used ? `<span class="ok">분석</span>`
+                       : `<span class="bad">제외</span> ${reasonOf(s.key)}`;
+      if(used && xchk && !xchk.ok){
+        state += ` <span class="warn">· 깊이 교차검증 ${xchk.diffPct}% 불일치(코끝 ${xchk.noseZmm}mm vs ARKit ${xchk.lensMm}mm)</span>`;
+      }
+      h+=`<tr><td>${s.key}</td>
+        <td class="${fwOut?'bad':''}">${s.faceWmm==null?"-":s.faceWmm}</td>
+        <td>${ds.validRate==null?"-":ds.validRate}</td>
+        <td>${ds.missUsed==null?"-":ds.missUsed}</td>
+        <td>${ds.radiusHist?`${rh[1]||0}/${rh[3]||0}/${rh[5]||0}`:"-"}</td>
+        <td>${s.meta&&typeof s.meta.lensDistanceCm==="number"?num(s.meta.lensDistanceCm):"-"}</td>
+        <td>${lag==null?"-":num(lag)}</td>
+        <td style="text-align:left">${state}</td></tr>`;
+    }
+    h+=`</table>
+    <p style="font-size:12px;color:#6B5E76">faceWmm이 ${FACE_W_MIN}~${FACE_W_MAX}mm 밖이면 깊이 조회가 얼굴 밖(배경)을 봤을 가능성이 커 집계에서 뺀다.
+    깊이지연은 RGB 프레임과 그때 딸려온 깊이 프레임의 시각차이며, 클수록 그 사이 움직임이 3D에만 잡음으로 실린다.
+    ARKit 거리 칸이 비어 있으면 그 세트는 meta에 값이 없는 구버전 캡처다.</p>`;
+  }
+
+  if(rep.verdict==="NO_DATA"){
+    h+=`<h2>안내</h2><p class="bad">3D 지표를 산출한 세트가 없습니다 — 깊이 결측 원인을 먼저 확인하세요.</p>`;
+    $("out").innerHTML=h; return;
+  }
+
+  // ── 조건 커버리지 ─────────────────────────────────────────────────
+  h+=`<h2>조건 커버리지</h2><table><tr><th>조건</th>${
+      ["C1","C2","C3","C4","C5"].map(c=>`<th>${c}</th>`).join("")}</tr>
+    <tr><td>생존 세트</td>${
+      ["C1","C2","C3","C4","C5"].map(c=>`<td>${rep.condCounts[c]||0}</td>`).join("")}</tr></table>
+    <p style="font-size:12px;color:#6B5E76">생존 조건 <b>${rep.condN}</b>종 (판정에는 ${MIN_COND}종 이상 필요).
+    조건 간 변동은 조건별 평균들 사이의 흔들림이므로, 조건이 빠지면 그 축의 민감도는 애초에 측정되지 않는다.</p>`;
+
+  // ── 지표 표 ───────────────────────────────────────────────────────
+  h+=`<h2>재현성 비교 (n=${rep.n}세트)</h2>
+  <p><b>판정 기준은 조건 간 변동</b>이다 — 조건(C1~C5)별 평균을 먼저 구한 뒤 그 평균들 사이의 흔들림을 잰다.
+  거리·기울기 같은 조건 변화에 얼마나 덜 흔들리는지가 이 실험의 질문이기 때문이다.
+  <b>비율</b>=3D 조건간÷2D 조건간(2D·3D 동일 단위로 통일해서 계산) — <b>0.5 이하면 통과</b>.
+  <b>조건 내</b>는 같은 조건 반복 촬영 사이의 순수 노이즈, <b>전체(풀링)</b>는 15세트를 한 덩어리로 본 총변동으로
+  둘 다 참고값이며 판정에는 쓰이지 않는다. 2D·3D 조건 간 변동이 둘 다 0이면 비율이 정의되지 않아 판정에서 뺀다.</p>
+  <table><tr><th>지표</th><th>2D 조건간</th><th>3D 조건간</th><th>비율(판정)</th>
+    <th>2D 조건내</th><th>3D 조건내</th><th>2D 전체(풀링)</th><th>3D 전체(풀링)</th><th>판정</th></tr>`;
+  for(const r of rep.rows){
+    const ratioCell = !r.comparable ? "-" : (r.ratio===Infinity ? "∞" : r.ratio.toFixed(2));
+    const passCell = !r.comparable
+      ? `<td class="warn">${r.uncomparableReason} — 비교 불가</td>`
+      : `<td class="${r.pass?'ok':'bad'}">${r.pass?"통과":"미달"}</td>`;
+    h+=`<tr><td>${r.metric}${CORE.includes(r.metric)?" ★":""}</td>
+        <td>${fw(r.btw2)}</td><td>${fw(r.btw3)}</td>
+        <td><b>${ratioCell}</b></td>
+        <td>${fw(r.within2)}</td><td>${fw(r.within3)}</td>
+        <td>${f(r.pooled2,r.unit)}</td><td>${f(r.pooled3,r.unit)}</td>
+        ${passCell}</tr>`;
+  }
+  h+=`</table><h2>종합</h2>`;
+
+  // ── 비율 분포를 먼저·크게 ─────────────────────────────────────────
+  // [리뷰 반영: Important] PASS/FAIL을 헤드라인으로 쓰면 오해를 부른다. 몬테카를로 2만 회 기준
+  // 참값 비율이 0.5(흔들림 절반)일 때 PASS 확률은 52.9%로 동전던지기이고, 0.65(실무적으로 큰 개선)면
+  // 10.4%다. 반대로 트루뎁스가 전혀 낫지 않을 때 PASS가 뜰 확률은 0.0%다.
+  // 즉 PASS는 강한 증거지만 FAIL은 "소용없다"가 아니다 — 연속값인 비율 분포를 먼저 읽게 한다.
+  const rs=rep.ratioStats;
+  if(rs){
+    h+=`<p style="font-size:15px;color:#6B5E76;margin-bottom:2px">3D÷2D 조건 간 변동 비율 (1.0 미만이면 트루뎁스가 덜 흔들림)</p>
+    <p style="font-size:34px;font-weight:800;margin:0 0 4px">중앙값 ${rs.median.toFixed(2)}</p>
+    <p style="font-size:15px;margin-top:0">사분위 ${rs.q1.toFixed(2)} ~ ${rs.q3.toFixed(2)} ·
+      전체 범위 ${rs.min.toFixed(2)} ~ ${rs.max.toFixed(2)} · 비교 가능 ${rs.n}개 지표${
+      rs.infN?` (∞ ${rs.infN}개는 분포에서 제외)`:""}</p>`;
+  } else {
+    h+=`<p class="warn">비율을 낼 수 있는 지표가 없어 분포를 표시할 수 없다.</p>`;
+  }
+
+  const coreLabel = rep.coreStatus==='OK' ? '충족' : (rep.coreStatus==='FAIL' ? '미달' : '비교 불가');
+  if(rep.insufficient){
+    h+=`<p>지표 통과 ${rep.passN}/${rep.total}(비교 불가 ${rep.excludedMetrics}건 제외) · 파생축(★) ${coreLabel} →
+        <b class="warn">표본 부족 — 판정 보류</b></p>
+        <p>${rep.insufficientReason}. 변동계수가 표본 노이즈에 좌우되거나 흔들려던 축이 빠진 상태라 PASS/FAIL을 내리지 않는다.</p>`;
+  } else if(rep.verdict==="CORE_UNKNOWN"){
+    h+=`<p>지표 통과 ${rep.passN}/${rep.total}(비교 불가 ${rep.excludedMetrics}건 제외) →
+        <b class="warn">판정 보류(파생축 비교 불가)</b></p>
+        <p>파생축(line_score ★)의 2D·3D 조건 간 변동이 모두 0이라 안정성을 비교할 수 없다. FAIL로 단정하지 않는다 — 모르는 것과 미달은 다르다.</p>`;
+  } else if(rep.verdict==="NO_COMPARABLE"){
+    h+=`<p class="warn">판정 가능한 지표가 없습니다(전 지표 변동 없음) — 판정 보류.</p>`;
+  } else {
+    h+=`<p>지표 통과 <b>${rep.passN}/${rep.total}</b>(비교 불가 ${rep.excludedMetrics}건 제외, 과반 필요) ·
+        파생축(★) ${rep.coreStatus==='OK'?'<span class="ok">충족</span>':'<span class="bad">미달</span>'} →
+        <b class="${rep.verdict==='PASS'?'ok':'bad'}">${rep.verdict}</b></p>`;
+    if(rep.verdict==="FAIL"){
+      h+=`<p style="background:#FFF6E5;border-left:3px solid #b8860b;padding:10px 12px;font-size:13px;line-height:1.6">
+        <b>FAIL 해석 주의.</b> FAIL은 "트루뎁스가 개선을 못 한다"는 뜻이 아니다.
+        이 판정 규칙은 실제 개선이 절반 수준일 때도 약 47% 확률로 FAIL을 낸다(몬테카를로 2만 회 기준 PASS 확률 52.9%,
+        개선이 0.65 수준이면 PASS 확률 10.4%). 반대로 트루뎁스가 전혀 낫지 않을 때 PASS가 뜰 확률은 0.0%이므로
+        PASS는 강한 증거다. 위의 비율 중앙값이 1.0보다 뚜렷이 작으면 개선은 있는 것이며, 표본을 늘려 재판정하는 것이 적절하다.</p>`;
+    }
+  }
+  $("out").innerHTML=h;
+}
+window.addEventListener("poc:loaded", render);
+window.__pocRender=render; // 검증용 — 데이터 직접 주입 후 재렌더 확인에 사용(리뷰 대응 (d)(e) 케이스)
+</script></body></html>

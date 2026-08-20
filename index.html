@@ -213,7 +213,7 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=dc6f0ab"></script>
+<script src="modules/czm-core.js?v=21e3620"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -480,8 +480,9 @@ const Q = [
    {t:"순하고 부드러워 보인대요",w:{romantic:1.5,elegant:1.5},tag:"soft"},
    {t:"맑고 깨끗해 보인대요",w:{pure:3},tag:"pure"},
    {t:"밝고 에너지 넘쳐 보인대요",w:{energetic:3},tag:"energy"},
-   {t:"화려하고 강해 보인대요",w:{gorgeous:1.5,charisma:1.5},tag:"strong"},
-   {t:"차분하고 지적으로 보인대요",w:{classic:1.5,chic:1.5},tag:"calm"}]},
+   {t:"화려하고 눈에 띈대요",w:{gorgeous:3},tag:"strong"},
+   {t:"차분하고 지적으로 보인대요",w:{classic:1.5,chic:1.5},tag:"calm"},
+   {t:"차갑고 강해 보인대요",w:{charisma:3},tag:"strong"}]},
  {part:"D",id:"D1",kind:"choice",txt:"<b>스스로 생각하는</b> 내 분위기는?",meta:"first_self",opts:[
    {t:"순하고 부드러운 편",tag:"soft"},{t:"맑고 깨끗한 편",tag:"pure"},{t:"밝고 에너지 넘치는 편",tag:"energy"},
    {t:"화려하고 강한 편",tag:"strong"},{t:"차분하고 지적인 편",tag:"calm"}]},

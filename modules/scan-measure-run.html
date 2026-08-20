@@ -1,0 +1,89 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>측정 중</title>
+<style>
+ :root{--bg:#FAF7FB;--ink:#2B2233;--sub:#6E6478;--accent:#B76BA3}
+ *{box-sizing:border-box}
+ body{margin:0;min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+      align-items:center;padding:32px;background:var(--bg);color:var(--ink);
+      font:16px -apple-system,'Pretendard Variable',system-ui;line-height:1.7;text-align:center}
+ .dot{width:56px;height:56px;border-radius:50%;background:var(--accent);opacity:.25;
+      animation:pulse 1.3s ease-in-out infinite}
+ @keyframes pulse{0%,100%{transform:scale(.85);opacity:.25}50%{transform:scale(1.1);opacity:.6}}
+ h1{font-size:19px;font-weight:800;margin:22px 0 6px}
+ p{color:var(--sub);font-size:14px;margin:0}
+ .btn{margin-top:26px;padding:15px 28px;border:0;border-radius:12px;background:var(--accent);
+      color:#fff;font-size:16px;font-weight:700;min-width:200px}
+ .quiet{margin-top:14px;font-size:12.5px;color:var(--sub);text-decoration:underline}
+ #err{display:none;margin-top:10px;font-size:13px;color:#c0392b}
+</style></head><body>
+
+<div class="dot" id="dot"></div>
+<h1 id="t">얼굴을 재고 있어요</h1>
+<p id="s">방금 찍은 3방향 사진을 이 기기 안에서만 계산해요.</p>
+<div id="err"></div>
+<button class="btn" id="next" style="display:none">결과 보러 가기</button>
+<a class="quiet" id="skip" style="display:none" href="#">건너뛰고 설문으로</a>
+
+<script type="module">
+import { measureScan, coverage } from "./scan-measure.js";
+
+const $ = id => document.getElementById(id);
+
+// 앱 셸 호출 — 이 페이지는 앱 번들에만 들어가므로 계약(messageHandlers ↔ __nativeReply)을
+// 여기서 그대로 쓴다. index.html의 인라인 브릿지와 같은 규약이다.
+const cbs = new Map(); let seq = 0;
+const isIOS = () => !!(window.webkit?.messageHandlers?.chugumism);
+function call(method, params) {
+  return new Promise((res, rej) => {
+    if (!isIOS()) return rej(new Error("no-native"));
+    const id = ++seq; cbs.set(id, { res, rej });
+    window.webkit.messageHandlers.chugumism.postMessage({ id, method, params: params || {} });
+  });
+}
+window.__nativeReply = (id, ok, payload) => {
+  const cb = cbs.get(id); if (!cb) return; cbs.delete(id);
+  ok ? cb.res(payload) : cb.rej(new Error(payload?.error || "native-error"));
+};
+
+const goSurvey = () => { location.href = "../index.html?flow=full"; };
+$("skip").onclick = e => { e.preventDefault(); goSurvey(); };
+$("next").onclick = goSurvey;
+
+/** 측정이 실패해도 진단은 계속된다. 스캔은 사진에 없는 자리를 채우는 보조라
+ *  여기서 막으면 유저는 아무 결과도 못 받는다. 실패는 조용히 넘기지 않고 화면에 적는다. */
+function fail(msg) {
+  $("dot").style.animation = "none"; $("dot").style.opacity = ".15";
+  $("t").textContent = "이번엔 못 쟀어요";
+  $("s").textContent = "설문 결과는 그대로 나와요. 다음에 다시 찍어볼 수 있어요.";
+  $("err").style.display = "block"; $("err").textContent = msg;
+  $("next").style.display = "block"; $("next").textContent = "설문으로";
+}
+
+(async () => {
+  try {
+    const scan = await call("latestScan", {});
+    if (!scan?.frames?.length) return fail("스캔 파일을 찾지 못했어요");
+
+    const r = await measureScan(scan, { mpBase: "../../mp" });
+    if (!r.m) return fail(`측정 실패 (${r.reason})`);
+
+    const cov = coverage(r.m);
+    localStorage.setItem("chugu_scan_result", JSON.stringify({
+      v: 1, ts: Date.now(), session: scan.session, frame: r.frameTag,
+      have: cov.have, m: r.m,
+    }));
+
+    console.log(`scan-measure ok · session=${scan.session} frame=${r.frameTag} 커버리지=${cov.have.length}/15 · nose_projection=${r.m.nose_projection}`);
+    $("dot").style.animation = "none"; $("dot").style.opacity = ".55";
+    $("t").textContent = "다 쟀어요";
+    $("s").textContent = "이제 몇 가지만 물어볼게요.";
+    $("next").style.display = "block";
+    // 사용자가 버튼을 누르기 전에 넘어가면 "뭐가 지나간 거지"가 된다. 잠깐 보여주고 자동 진행.
+    setTimeout(goSurvey, 1400);
+  } catch (e) {
+    fail(String(e?.message || e));
+  }
+})();
+</script>
+</body></html>
