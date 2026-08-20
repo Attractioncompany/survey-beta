@@ -213,7 +213,7 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=90d1be5"></script>
+<script src="modules/czm-core.js?v=1f14aa1"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -362,14 +362,10 @@ const Q = [
  {part:"A",id:"A2",kind:"mood",set:"r2",txt:"<b>입어보고 싶은 스타일</b>을 모두 골라주세요",multi:true,want:true},
  {part:"A",id:"A3",kind:"mood",set:"r3",txt:"<b>이 장면 속의 나</b>, 상상만 해도 좋다! 싶은 걸 모두 골라주세요",multi:true,want:true},
  {part:"A",id:"A4",kind:"mood",set:"r4",txt:"<b>따라 해보고 싶은 포인트</b>를 모두 골라주세요",txtm:"끌리는 <b>색감·분위기</b>를 모두 골라주세요 <span style='font-weight:400;font-size:12.5px;color:var(--sub)'>(스타일링에 쓰고 싶은 색이라 생각하고)</span>",multi:true,want:true},
- {part:"A",id:"A5",kind:"choice",txt:"되고 싶은 느낌, 굳이 하나를 고른다면?",want:true,opts:[
-   {t:"따뜻하고 포근한 느낌",axis:{warm:1}},{t:"시원하고 깔끔한 느낌",axis:{cool:1}}]},
  {part:"A",id:"A6",kind:"choice",txt:"어느 쪽 분위기에 더 가까워지고 싶어요?",want:true,opts:[
    {t:"부드럽고 편안해 보이는 사람",axis:{soft:1}},{t:"또렷하고 당차 보이는 사람",axis:{deep:1}}]},
  {part:"A",id:"A7",kind:"choice",txt:"옷장을 싹 비우고 새로 채운다면, 어떤 <b>색</b>이 많을까요?",want:true,opts:[
    {t:"크림·베이지·코랄처럼 온기 있는 색",axis:{warm:1},chip:{c:["#FFF1DC","#E3CDA9","#F4907F"],b:true}},{t:"화이트·네이비·블랙처럼 선명한 색",axis:{cool:1},chip:{c:["#F5F6F8","#24365C","#14161A"],b:true}}]},
- {part:"A",id:"A8",kind:"choice",txt:"듣고 싶은 첫인상 칭찬은?",want:true,opts:[
-   {t:"\u201c분위기가 참 부드러우세요\u201d",axis:{soft:1}},{t:"\u201c존재감이 확실하시네요\u201d",axis:{deep:1}}]},
  {part:"A",id:"A9",kind:"choice",txt:"어떤 순간의 내가 되고 싶어요?",want:true,opts:[
    {t:"\u201c사랑스럽다, 다정하다\u201d는 말을 듣는 순간",w:{romantic:2,energetic:1}},
    {t:"\u201c맑고 단정하다\u201d는 말을 듣는 순간",w:{pure:2,elegant:1}},
