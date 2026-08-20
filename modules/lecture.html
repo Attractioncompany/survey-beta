@@ -178,21 +178,41 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=35c2244"></script>
+<script src="czm-core.js?v=7c8c63e"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
+
+// ── 계측 ───────────────────────────────────────────────────
+// 강의 리포트가 서버로 아무것도 보내지 않았다. 퍼스널컬러 입력값은 현장 상호진단 결과라
+// 다른 어디에도 없는 자료다 — 남겨야 "이 색인 사람은 어떤 추구미를 갖나"를 볼 수 있다.
+// 개인 식별 정보는 보내지 않는다(기기 단위 익명 번호만).
+const LSB_URL="https://qngylynylgqlbidvtbci.supabase.co";
+const LSB_KEY="sb_publishable_bGVbZ31O7OX_rnkLVb0i5Q_SDa8JEri";
+function lecUid(){
+  try{ let u=localStorage.getItem("czm_uid");
+       if(!u){ u=(crypto.randomUUID?crypto.randomUUID():String(Date.now())); localStorage.setItem("czm_uid",u); }
+       return u; }catch(e){ return null; }
+}
+function lecTrack(event, props){
+  if(/^(localhost|127\.|$)/.test(location.hostname)) return;   // 로컬 테스트가 실계측에 섞이지 않게
+  try{
+    fetch(`${LSB_URL}/rest/v1/events`,{method:"POST", keepalive:true,
+      headers:{"Content-Type":"application/json","apikey":LSB_KEY,"Authorization":`Bearer ${LSB_KEY}`},
+      body:JSON.stringify({user_id:lecUid(), event, props, app_version:"lecture_v1"})}).catch(()=>{});
+  }catch(e){}
+}
 const K=CZM.KEYS, LS=CZM.store;
 const LKEY="chugu_lecture";            // {pc8:"romantic", age:"20-39", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "35c2244";
+const BUILD = "7c8c63e";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=35c2244";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=7c8c63e";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -387,6 +407,7 @@ function renderPC(){
     </div>`);
   app.querySelectorAll(".pc").forEach(b=>b.onclick=()=>{
     LS.set(LKEY,{pc8:b.dataset.k, at:new Date().toISOString()});
+    lecTrack("lecture_pc_selected",{pc8:b.dataset.k, src:SRC||null});
     // 고른 게 눈에 보이게 잠깐 두고 넘어간다 — 바로 화면이 바뀌면 뭘 눌렀는지 모른다
     app.querySelectorAll(".pc").forEach(x=>x.classList.toggle("sel", x===b));
     setTimeout(route, 420);
@@ -762,6 +783,7 @@ function verdicts(r, l, q){
 let PAGE=0, PAGES=[];
 function renderReport(){
   // 여기까지 왔으면 이 회차는 끝났다. 다음 진입은 새 사람으로 본다.
+  const _first = !sessionStorage.getItem(DONE);
   try{ sessionStorage.setItem(DONE,"1"); }catch(e){}
   const s=state();
   const pcLabel=(CZM.PC8.find(t=>t.key===s.pc.pc8)||{}).label;
@@ -782,6 +804,10 @@ function renderReport(){
     : "";
 
   const gender=s.diag.gender||null;
+  // 한 사람의 결과를 한 줄로 묶어 남긴다 — 퍼스널컬러·성별·추구미·현재 매력·얼굴 측정 유무.
+  // 조인 없이 바로 집계할 수 있어야 색↔타입 관계를 볼 수 있다.
+  if(_first) lecTrack("lecture_report",{ pc8:s.pc.pc8, gender,
+    want:s.diag.want, have:s.diag.have, face:!!(s.face&&s.face.ratio), src:SRC||null});
   // 성별 자리표시자 치환 — 표지·퍼스널컬러 페이지에서도 쓰므로 위에서 선언한다
   function gsubLater(t){ return (t||"").replace(/\{여성스러운\}/g, gender==="m"?"남성적인":"여성스러운")
                                        .replace(/\{여성스러움\}/g, gender==="m"?"남성스러움":"여성스러움"); }                       // 설문에서 받은 값(index.html이 chugu_diag에 넣는다)
@@ -1015,7 +1041,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=35c2244"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=7c8c63e"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
