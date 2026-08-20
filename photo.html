@@ -284,9 +284,9 @@ body.cam-open{overflow:hidden;}
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="czm-core.js?v=b348dfa"></script>
-<script src="measure-color.js?v=b348dfa"></script>
-<script src="measure-structure.js?v=b348dfa"></script>
+<script src="czm-core.js?v=2a2deb1"></script>
+<script src="measure-color.js?v=2a2deb1"></script>
+<script src="measure-structure.js?v=2a2deb1"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -728,7 +728,7 @@ const T8LINE=Object.fromEntries(T8.map(t=>[t.name,t.line]));
 // 좌우 위치는 라운드마다 교차합니다 — "왼쪽을 더 고르는" 습관이 웜쿨 신호에 섞이지 않게.
 const ROUNDS = {
   // Lab 등명도 페어(확정서 2026-07-22)·강사검수 전 초기값 — 목표 R1 L62/C50/h55·h280. 화면 '실버'는 C*3.0 무채색=채도를 잼이라 폐기(§1.3)
-  r1:{step:"1/2 단계", hint:"둘 다 마음에 안 들어도 괜찮아요. 얼굴이 더 환해 보이는 쪽이면 돼요 화면 야간 모드(노랗게 보이는 설정)는 잠깐 꺼주세요",
+  r1:{step:"1/2 단계", hint:"둘 다 마음에 안 들어도 괜찮아요. 얼굴이 더 환해 보이는 쪽이면 돼요. 화면 야간 모드(노랗게 보이는 설정)는 잠깐 꺼주세요",
       opts:[{v:"orange",name:"주황",color:"#D6804E"},{v:"blue",name:"파랑",color:"#6296ED"}]},
   r2:{step:"2/2 단계", hint:"비슷해 보이면 턱·눈 밑 그늘이 옅은 쪽으로 봐주세요",
       opts:[{v:"white",name:"퓨어 화이트",color:"#FFFFFF"},{v:"ivory",name:"아이보리",color:"#F5EDDC"}]},

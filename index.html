@@ -213,7 +213,7 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=b348dfa"></script>
+<script src="modules/czm-core.js?v=2a2deb1"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -274,7 +274,7 @@ const VIEW = new URLSearchParams(location.search).get("view");
 // ?flow=lecture — 강의용 흐름(modules/lecture.html)에서 온 경우. 결과 뒤 그리로 돌려보낸다.
 const FLOW_LECTURE = new URLSearchParams(location.search).get("flow")==="lecture";
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.33+b348dfa"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(귀품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.33+2a2deb1"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(귀품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -357,7 +357,7 @@ const MOODS = {
 };
 /* 문항: t=여성/공용 텍스트, tm=남성 텍스트, opts/optsm=성별별 선택지 */
 const Q = [
- {part:"A",intro:"먼저, <b>되고 싶은 모습</b>부터 찾아볼게요.<br>지금의 나와 달라도 괜찮아요 — 끌리는 대로 골라주세요 💫"},
+ {part:"A",intro:"<b>되고 싶은 모습</b>부터 찾아볼게요.<br>지금의 나와 달라도 괜찮아요 — 끌리는 대로 골라주세요"},
  {part:"A",id:"A1",kind:"mood",set:"r1",txt:"보자마자 <b>마음이 가는 사진</b>을 모두 골라주세요",multi:true,want:true},
  {part:"A",id:"A2",kind:"mood",set:"r2",txt:"<b>입어보고 싶은 스타일</b>을 모두 골라주세요",multi:true,want:true},
  {part:"A",id:"A3",kind:"mood",set:"r3",txt:"<b>이 장면 속의 나</b>, 상상만 해도 좋다! 싶은 걸 모두 골라주세요",multi:true,want:true},
@@ -371,7 +371,7 @@ const Q = [
    {t:"\u201c맑고 단정하다\u201d는 말을 듣는 순간",w:{pure:2,elegant:1}},
    {t:"\u201c화려하다, 멋있다\u201d는 말을 듣는 순간",w:{gorgeous:2,charisma:1}},
    {t:"\u201c세련됐다, 품격 있다\u201d는 말을 듣는 순간",w:{chic:2,classic:1}}]},
- {part:"B",intro:"좋아요! 이제 <b>지금의 나</b>를 볼게요.<br>'가장 자주'가 기준이에요 — 잘 보이려고 고르지 않아도 돼요 😊"},
+ {part:"B",intro:"좋아요! 이제 <b>지금의 나</b>를 봅니다.<br>기준은 '가장 자주' — 잘 보이려고 고르지 않아도 돼요"},
  {part:"B",id:"B1",kind:"eyelid",txt:"내 <b>쌍꺼풀</b>과 가장 비슷한 건?",opts:[
    {t:"얇고 선명한 라인",w:{romantic:2,pure:1},svg:"thin"},
    {t:"두껍고 뚜렷한 라인",w:{gorgeous:2,charisma:1},svg:"thick"},
@@ -459,7 +459,7 @@ const Q = [
    {t:"미니멀한 실버 포인트",w:{chic:1,pure:1}},
    {t:"크고 존재감 있게 (볼드 체인)",w:{gorgeous:1,charisma:1}},
    {t:"여러 개 겹쳐서 개성 있게",w:{gorgeous:1,energetic:1}}]},
- {part:"C",intro:"거의 다 왔어요! 마지막으로 <b>나의 표현</b>이에요 🙌"},
+ {part:"C",intro:"거의 다 왔어요! 마지막은 <b>나의 표현</b>이에요"},
  {part:"C",id:"C1",kind:"choice",txt:"웃을 때 나는?",opts:[
    {t:"입을 가리거나 조용히 미소 지어요",w:{romantic:1,elegant:1}},
    {t:"환하게, 부담 없이 웃어요",w:{pure:2}},
@@ -570,8 +570,8 @@ function renderStart(){
        <button id="gF" onclick="setG('f')">👩 여성</button>
        <button id="gM" onclick="setG('m')">👨 남성</button>
      </div>
-     <button class="btn" id="startBtn" disabled onclick="start()">시작하기</button>
-     <p class="small" id="startHint" style="color:var(--accent);font-weight:600;margin-top:var(--sp-2);text-align:center">위에서 성별을 먼저 골라주세요</p>
+     <button class="btn" id="startBtn" disabled onclick="start()">진단 시작하기</button>
+     <p class="small" id="startHint" style="color:var(--accent);font-weight:600;margin-top:var(--sp-2);text-align:center">위에서 성별을 골라주세요</p>
      <p class="small" style="text-align:center">추구미즘 · 응답은 익명으로 진단 개선에만 쓰여요</p>
    </div>
   </div>`;
@@ -759,7 +759,7 @@ function pick(id,i){
    진단을 마친 사람이 앱을 다시 열면 결과표가 아니라 **지금 할 것 하나**가 먼저 온다.
    VOC ② "뭐부터 해야 할지 모르겠다"는 정보가 없어서가 아니라 순서가 없어서였다.
 
-   ⚠ 문구는 [마케팅 검수 전]이다. 이론팀 P5 템플릿을 그대로 옮겼고 확정본이 오면
+   ⚠ 문구는 [마케팅 검수 통과 2026-08-21]이다. 이론팀 P5 템플릿을 그대로 옮겼고 확정본이 오면
      STEP_LINE 표만 교체한다 — 로직은 건드리지 않는다. */
 let STEP = null;              // 지금 발행된 걸음
 let STEP_ENGINE = null;       // modules/step-engine.js (비동기 로드)
@@ -767,7 +767,7 @@ let STEP_ENGINE = null;       // modules/step-engine.js (비동기 로드)
 /* 항목 × 축방향 → **구체적인 미션**.
    "시원한 색 하나만 걸쳐보세요"는 방향이지 미션이 아니다 — 유저가 "뭘?"이라고 묻는다
    (대표 지적 2026-08-12). 무엇을(상의·립·눈썹) 어떻게(색은 칩으로 보여준다)까지 말한다.
-   ⚠ [마케팅 검수 전] — 확정본이 오면 이 표만 교체한다. */
+   ⚠ [마케팅 검수 통과 2026-08-21] — 확정본이 오면 이 표만 교체한다. */
 const STEP_LINE = {
   "눈썹":    {"T+":"눈썹 산을 아주 조금만 낮춰보세요",  "T-":"눈썹을 아주 살짝만 둥글려보세요",
               "D+":"눈썹을 조금만 또렷하게 그려보세요", "D-":"눈썹 끝을 살짝만 흐려보세요"},
@@ -882,10 +882,10 @@ function renderStep(){
        <p class="small" style="margin-top:6px;opacity:.7">이 중 아무거나 골라도 같은 방향이에요</p>`
       : `<p class="small" style="margin-top:12px;color:var(--sub)"><b>${W.name}</b>에 한 걸음 가까워져요.</p>`}
      <div class="sec" style="width:100%;margin-top:22px">
-       <h3 style="font-size:13px">왜 이걸 먼저 하냐면</h3>
+       <h3 style="font-size:13px">이걸 먼저 하는 이유</h3>
        <p style="font-size:13.5px">지금 ${STEP.category}${jong(STEP.category)?"은":"는"} <b>${Hv.name}</b> 쪽이에요.
        ${STEP.category}${jong(STEP.category)?"은":"는"} <b>${STEP._how}</b>로 바꿀 수 있어서, 오늘 당장 해볼 수 있는 것 중
-       ${W.name} 쪽으로 가장 크게 움직여요.</p>
+       ${W.name} 쪽으로 가장 크게 움직입니다.</p>
        <p style="font-size:13px;opacity:.75;margin-top:10px">한 번에 다 바꾸지 않아요. 한 칸씩만 옮겨도 충분해요.</p>
      </div>
    </div>
@@ -1046,8 +1046,8 @@ function renderExtraIntro(){
   app.innerHTML=`<div class="card break-card glass"><div class="em">✨</div>
    <h2>결과가 거의 나왔어요!</h2>
    <img class="gumi-lg" src="bg/gumi_think.png" alt="" style="margin:0 auto 6px">
-   <p style="color:var(--sub);font-size:14px;margin:10px 0">더 정확한 분석을 위해<br><b>${extraQ.length}가지만</b> 더 여쭤볼게요</p>
-   <button class="btn" onclick="extraIdx=0;render()">좋아요</button></div>`;
+   <p style="color:var(--sub);font-size:14px;margin:10px 0">딱 <b>${extraQ.length}가지만</b> 더 물어볼게요.<br>답이 더 정확해져요</p>
+   <button class="btn" onclick="extraIdx=0;render()">이어서 답하기</button></div>`;
 }
 function renderExtra(){
   if(extraIdx>=extraQ.length){ phase="result"; render(); return; }
@@ -1070,7 +1070,7 @@ function pickExtra(i){
 // 금지(정본): 결핍 화법("부족해요"·"멀어요"·"안 어울려요") / gap_dist 수치 노출 / 부위 격차 서열 나열
 // 축 방향은 **부호만** 쓴다. "얼마나 멀면 먼가"의 임계를 만들면 밴드 창작(D26)이 된다.
 // 전체 거리 분기도 gap_flag(1위 타입 일치)로만 — 정본 "gap_flag만 있을 땐 same/diff 2분기".
-// ⚠ 문구는 정본 예문 기반 [마케팅 검수 전]. 검수본이 오면 문자열만 교체한다.
+// ⚠ 문구는 정본 예문 기반 [마케팅 검수 통과 2026-08-21]. 검수본이 오면 문자열만 교체한다.
 function gapSection(sw, sh, W, Hv){
   const w=coordOf(sw), h=coordOf(sh);
   if(!w||!h) return "";
@@ -1154,7 +1154,7 @@ function photoBornPage(d, W){
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
        <div class="cp-title">📷 퍼스널컬러</div>
        <div class="sec" style="width:100%">
-         <p>촬영된 사진으로 진단해볼 때, 퍼스널컬러는 <b>${wc?wc+" · ":""}${ieyo(d.pc.primary)}</b>
+         <p>찍은 사진으로 보면, 퍼스널컬러는 <b>${wc?wc+" · ":""}${ieyo(d.pc.primary)}</b>
          ${d.pc.borderline&&d.pc.secondary?`<span style="opacity:.75">${d.pc.secondary}도 살짝 걸쳐 있어요.</span>`:""}</p>
        </div>
        ${best?`<div class="sec" style="width:100%">
@@ -1166,7 +1166,7 @@ function photoBornPage(d, W){
          ${swatchRow(second)}
        </div>`:""}
        <p class="small" style="margin-top:16px;opacity:.6;line-height:1.65">
-         * 사진 촬영 환경에 따라 오진단이 있을 수 있어요. 정확한 진단은 컨설턴트 진단을 권장해요.
+         * 촬영 환경에 따라 결과가 다르게 나올 수 있어요. 정확하게 보려면 전문가 대면 진단을 권해요.
          <span style="opacity:.75">(측정 신뢰도 ${conf}%)</span></p>
      </div></div>`;
 }
@@ -1270,11 +1270,11 @@ function renderResult(){
   const othersTag=answers["C5"]!==undefined?c5.opts[answers["C5"]].tag:null;
   const selfTag=answers["D1"]!==undefined?d1.opts[answers["D1"]].tag:null;
   const gapNote=(othersTag&&selfTag&&othersTag!==selfTag)?
-    `<div class="sec"><h3>👀 재미있는 발견</h3><p>스스로는 "<b>${d1.opts[answers["D1"]].t}</b>"이라고 느끼시지만, 주변에서는 "<b>${c5.opts[answers["C5"]].t}</b>"라는 말을 듣고 계세요. 이 간극이 바로 스타일링의 힌트가 될 수 있어요!</p></div>`:"";
+    `<div class="sec"><h3>👀 재미있는 발견</h3><p>스스로는 "<b>${d1.opts[answers["D1"]].t}</b>"이라고 느끼지만, 주변에서는 "<b>${c5.opts[answers["C5"]].t}</b>"라는 말을 들어요. 이 간극이 스타일링의 힌트가 될 수 있어요.</p></div>`:"";
   const wStyle=GENDER==="m"?(W.styleM||W.style):W.style;
   const wKeep=GENDER==="m"?(W.keepM||W.keep):W.keep;
   const bridge=same?
-    `<p>추구미와 지금의 매력이 <b>같은 방향</b>이에요! 이미 잘 가고 있어요. 지금 방향을 더 선명하게 다듬으면 돼요.</p>`:
+    `<p>추구미와 지금의 매력이 <b>같은 방향</b>이에요. 이미 잘 가고 있다는 뜻이죠. 지금 방향을 더 선명하게 다듬으면 됩니다.</p>`:
     `<p>지금 스타일은 <b>${Hv.name}</b>, 되고 싶은 모습은 <b>${W.name}</b> — 이 <b>격차를 잇는 것</b>이 스타일링의 핵심이에요. ${W.name}의 컬러와 매력을 하나씩 더해보세요: <b>${wStyle}</b></p>`;
   let bars="";
   wr.slice(0,4).forEach(([k,v])=>{
@@ -1415,7 +1415,7 @@ function joinWaitlist(){
   if(!c){ $("wlContact").focus(); $("wlContact").style.borderColor="#B76BA3"; return; }
   track("coaching_waitlist",{contact:c, want:topTwo(scoreWant)[0][0]});
   const w=$("waitSec");
-  w.innerHTML=`<summary>🫧 신청 완료!</summary><p class="small">코칭이 열리면 가장 먼저 알려드릴게요. 그때까지 구미가 준비하고 있을게요 💫</p>`;
+  w.innerHTML=`<summary>🫧 신청 완료!</summary><p class="small">코칭이 열리면 가장 먼저 알려드릴게요. 그때까지 구미가 준비하고 있을게요</p>`;
   if("open" in w) w.open=true;
 }
 function saveLog(){
@@ -1533,7 +1533,7 @@ function resultModel(){
   const same=wr[0][0]===hr[0][0];
   const wStyle=GENDER==="m"?(W.styleM||W.style):W.style, wKeep=GENDER==="m"?(W.keepM||W.keep):W.keep;
   const bridge=same
-    ? "추구미와 지금의 매력이 같은 방향이에요! 이미 잘 가고 있어요. 지금 방향을 더 선명하게 다듬으면 돼요."
+    ? "추구미와 지금의 매력이 같은 방향이에요. 이미 잘 가고 있다는 뜻이죠. 지금 방향을 더 선명하게 다듬으면 됩니다."
     : `지금 스타일은 ${Hv.name}, 되고 싶은 모습은 ${W.name} — 이 격차를 잇는 것이 스타일링의 핵심이에요. ${W.name}의 컬러와 매력을 하나씩 더해보세요: ${wStyle}`;
   const c5=Q.find(q=>q.id==="C5"), d1=Q.find(q=>q.id==="D1");
   const othersTag=answers["C5"]!==undefined?c5.opts[answers["C5"]].tag:null;

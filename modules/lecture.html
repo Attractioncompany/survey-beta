@@ -178,7 +178,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=b348dfa"></script>
+<script src="czm-core.js?v=2a2deb1"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -207,12 +207,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "b348dfa";
+const BUILD = "2a2deb1";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=b348dfa";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=2a2deb1";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -457,9 +457,9 @@ function renderIntro(){
       `<img src="../bg/char_${k}.png" alt="" loading="eager">`).join("")}</div>
     <div class="intro-mid">
       <h1>추구미즘</h1>
-      <p>지금부터 현재 나의 매력과,<br>나의 추구미를 찾아볼게요.</p>
+      <p>지금 나의 매력과 추구미를<br>같이 찾아볼게요.</p>
     </div>
-    <button class="btn" id="go">진단 및 설문 시작하기</button>
+    <button class="btn" id="go">진단 시작하기</button>
   </div>`;
   $("go").onclick=()=>{ document.body.classList.remove("intro-mode"); INTRO_DONE=true; route(); };
 }
@@ -760,7 +760,7 @@ function verdicts(r, l, q){
   const hairOK = !q || q.hairline_detected !== false;
   const th = hairOK ? CZM.thirdsGolden(r.upper, r.mid, r.lower) : null;
   if(th) out.push({group:"얼굴형", k:"상 : 중 : 하", v:th.relLine,
-                   s:`${th.label} · 이상적인 얼굴은 1 : 1 : 1 이에요`});
+                   s:`${th.label} · 황금비율 기준은 1 : 1 : 1이에요`});
   // 중·하안부 또래 평균 대조는 뺐다(2026-08-18 대표 판단: 평균 비교는 곧 타인 비교다).
   // 같은 것을 위 황금비 3분할이 미학 기준으로 말한다 — 중복이기도 했다.
   // 좌우 대칭 (대표 지시 2026-08-18). 사람 구분력 확인됨(사람간SD/사람안SD = 3.0).
@@ -833,10 +833,10 @@ function renderReport(){
   // ① 오늘의 진단 — 지금 나의 매력과 추구미를 **구미 둘로 나란히** 보여준다.
   //    이름만 두 줄 적으면 뭐가 다른지 안 읽힌다. 각각이 어디서 나온 판정인지도 밝힌다.
   const HAVE_SRC="../bg/char_"+s.diag.have+".png", WANT_SRC="../bg/char_"+s.diag.want+".png";
-  PAGES.push({t:"지금 나의 매력과 나의 추구미",
-    draw:{title:"지금 나의 매력과 나의 추구미",
-          rows:[{k:"지금 나의 매력",v:haveName,s:"퍼스널컬러와 나의 이목구비, 행동 등을 종합한 결과예요"},
-                {k:"추구미",v:wantName,s:"설문을 통해 파악한, 내가 가지고 싶은 매력이에요"}],
+  PAGES.push({t:"지금 나의 매력과 추구미",
+    draw:{title:"지금 나의 매력과 추구미",
+          rows:[{k:"지금 나의 매력",v:haveName,s:"퍼스널컬러와 이목구비, 행동까지 종합한 결과예요"},
+                {k:"추구미",v:wantName,s:"설문으로 알아본, 내가 가지고 싶은 매력이에요"}],
           paras:gapLine?[gapLine]:[]},
     html:`
     <div class="twin">
@@ -844,14 +844,14 @@ function renderReport(){
         <p class="stack-lab">지금 나의 매력</p>
         <img src="${HAVE_SRC}" alt="" onerror="this.style.visibility='hidden'">
         <p class="stack-name">${esc(haveName)}</p>
-        <p class="stack-desc">퍼스널컬러와 나의 이목구비, 행동 등을 종합한 결과예요.</p>
+        <p class="stack-desc">퍼스널컬러와 이목구비, 행동까지 종합한 결과예요.</p>
       </div>
       <div class="twin-arrow">↓</div>
       <div class="cover twin-box">
         <p class="stack-lab">추구미</p>
         <img src="${WANT_SRC}" alt="" onerror="this.style.visibility='hidden'">
         <p class="stack-name">${esc(wantName)}</p>
-        <p class="stack-desc">설문을 통해 파악한, 내가 가지고 싶은 매력이에요.</p>
+        <p class="stack-desc">설문으로 알아본, 내가 가지고 싶은 매력이에요.</p>
       </div>
     </div>`});
 
@@ -910,8 +910,8 @@ function renderReport(){
     .filter(a=>Number.isFinite(a[1]))
     .map(a=>({k:a[0], v:Math.abs(a[1])<0.15?"이미 가까워요":(a[1]>0?a[2]:a[3]),
               s:Math.abs(a[1])<0.15?"이 축은 손댈 게 없어요":""}));
-  if(AXROW.length) PAGES.push({t:"지금과 추구미, 어디가 다른가",
-    draw:{title:"지금과 추구미, 어디가 다른가",
+  if(AXROW.length) PAGES.push({t:"지금과 추구미, 벌어진 곳",
+    draw:{title:"지금과 추구미, 벌어진 곳",
           rows:[{k:"지금",v:haveName},{k:"추구미",v:wantName}].concat(AXROW),
           paras:[gapLine, "벌어진 축이 곧 오늘 손볼 자리예요. 이미 가까운 축은 그대로 두면 돼요."].filter(Boolean)},
     html:`
@@ -1025,8 +1025,8 @@ function renderReport(){
 
   // 대표 확정 순서(2026-08-18): 오늘의 진단 → 퍼스널컬러 → 얼굴·이목구비 → 추구미 → 비교 → 오늘 해볼 것
   // ⚠ 새 페이지를 만들면 여기에도 제목을 넣어야 한다. 없으면 조용히 맨 뒤로 밀린다.
-  const ORDER=["지금 나의 매력과 나의 추구미","내 퍼스널컬러","이렇게 쟀어요","얼굴형","눈","코","입","부위별로 보면",
-               "내 추구미","지금과 추구미, 어디가 다른가","색 이야기","오늘 해볼 것","오늘 해볼 것 2","오늘 해볼 것 3","색은 이렇게"];
+  const ORDER=["지금 나의 매력과 추구미","내 퍼스널컬러","이렇게 쟀어요","얼굴형","눈","코","입","부위별로 보면",
+               "내 추구미","지금과 추구미, 벌어진 곳","색 이야기","오늘 해볼 것","오늘 해볼 것 2","오늘 해볼 것 3","색은 이렇게"];
   PAGES.sort((a,b)=>{ const i=ORDER.indexOf(a.t), j=ORDER.indexOf(b.t);
     return (i<0?99:i)-(j<0?99:j); });
 
@@ -1068,7 +1068,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=b348dfa"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=2a2deb1"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
