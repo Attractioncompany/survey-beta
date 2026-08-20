@@ -155,13 +155,13 @@ body.cam-open{overflow:hidden;}
     <div class="small" style="margin-top:8px;line-height:1.9">
     ⓪ <b>촬영 전 렌즈를 한 번 닦아주세요</b> — 뿌연 막이 색을 다 씻어내요<br>
     ① <b>흰 배경</b>에서 — 흰 종이·A4를 얼굴 옆에 들면 최고예요<br>
-    ② <b>정면 · 자연광(백색등)</b> — 얼굴 기울이지 않기<br>
-    ③ <b>후면 카메라(2배줌) 권장</b> — 다른 분이 찍어주거나 폰을 세워두면 색이 더 정확해요</div>
+    ② <b>폰을 눈높이로</b> — 아래에서 올려 찍으면 다시 찍게 돼요 (지난 강의 재촬영의 대부분이 이것)<br>
+    ③ <b>정면 · 자연광(백색등)</b> — 얼굴 기울이지 않기<br>
+    ④ <b>후면 카메라(2배줌) 권장</b> — 다른 분이 찍어주거나 폰을 세워두면 색이 더 정확해요</div>
     <details style="border-top:none;padding-top:6px;margin-top:8px">
       <summary>자세한 팁 펼치기</summary>
       <div class="small" style="margin-top:6px;line-height:1.9">
       · 머리카락이 이마·볼을 가리지 않게 넘겨주세요<br>
-      · 카메라는 눈높이에<br>
       · 민낯 권장 (베이스 메이크업은 색 판정을 바꿔요)<br>
       · 안경 벗기 · 무표정 (입꼬리·눈매 측정)<br>
       · <b>필터·뷰티 모드는 꼭 꺼주세요</b> — 피부색이 실제와 달라져서 판정이 흔들려요 (기본 카메라 앱 권장)<br>
@@ -284,9 +284,9 @@ body.cam-open{overflow:hidden;}
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="czm-core.js?v=7c8c63e"></script>
-<script src="measure-color.js?v=7c8c63e"></script>
-<script src="measure-structure.js?v=7c8c63e"></script>
+<script src="czm-core.js?v=ed7ae31"></script>
+<script src="measure-color.js?v=ed7ae31"></script>
+<script src="measure-structure.js?v=ed7ae31"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -359,11 +359,14 @@ const PM_SB_KEY="sb_publishable_bGVbZ31O7OX_rnkLVb0i5Q_SDa8JEri";
 // 퍼널 계측 (events 테이블 — 설문 track()과 동일 스키마, insert-only RLS)
 // 최소 6종: enter / consent / shot / gate_fail / draping / result — 촬영 구간 이탈률 측정용 (오너: 고객팀)
 function pmTrack(event, props={}){
+  if(/^(localhost|127\.|$)/.test(location.hostname)) return;   // 로컬 계측 차단(2026-08-20, index.html과 같은 기준)
   try{ fetch(`${PM_SB_URL}/rest/v1/events`,{method:"POST",headers:{"Content-Type":"application/json","apikey":PM_SB_KEY,"Authorization":`Bearer ${PM_SB_KEY}`},
     body:JSON.stringify({user_id:PM_UID, event, props:Object.assign({src:new URLSearchParams(location.search).get("src")||null}, props)})}); }catch(e){}
 }
 let PM_UID=null; try{ PM_UID=localStorage.getItem("czm_uid"); if(!PM_UID){ PM_UID=(crypto.randomUUID?crypto.randomUUID():'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid",PM_UID);} }catch(e){ PM_UID='u'+Date.now(); }
 async function sendMeasurement(out){
+  // 개발 중 테스트가 photo_measurements에 그대로 섞여 있었다(2026-08-20 리허설 1건 확인 후 삭제).
+  if(/^(localhost|127\.|$)/.test(location.hostname)) return;
   try{
     // 동의 없이는 전송하지 않는다 — 법률 요건(백엔드 요청 2026-08-08). 게이트로 이미 막히지만 전송단에서 한 번 더 잠근다.
     if(!CONSENT) return;
