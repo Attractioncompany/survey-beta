@@ -213,7 +213,7 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=656bdb5"></script>
+<script src="modules/czm-core.js?v=001caa7"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -969,7 +969,31 @@ function scoreAll(){
   // renderResult 등 grep(axisHave|웜쿨|중립) 결과: HAVE 웜쿨을 축/수치로 노출하는 표시처 없음 확인(2026-07-22).
   Object.entries(axisHave).forEach(([ax,v])=>{ axMap[ax].forEach(k=>scoreHave[k]+=v*0.8); });
 }
-function topTwo(sc){ return TKEYS.map(k=>[k,sc[k]]).sort((a,b)=>b[1]-a[1]); }
+// HAVE 문항은 타입마다 받을 수 있는 최대 점수가 다르다 — 청순청량 25점, 클래식 16.5점.
+// 만점이 다른 시험 점수를 그대로 줄 세우는 셈이었다. 무작위로 답해도 청순청량이
+// 클래식보다 14.6배 자주 나왔다(2만 건 시뮬레이션, 2026-08-20).
+// 그래서 원점수 대신 "그 타입에서 채운 비율"로 견준다.
+// WANT는 손대지 않는다 — mood 문항이 8타입에 고르게 깔려 이미 평평하다(1.14배).
+// 문항이 바뀌면 천장도 따라 바뀌어야 하므로 상수로 박지 않고 Q에서 계산한다.
+const _ceilCache={};
+function ceilHave(){
+  const g=GENDER||"f";
+  if(_ceilCache[g]) return _ceilCache[g];
+  const c={}; TKEYS.forEach(t=>c[t]=0);
+  Q.forEach(q=>{ if(q.want||!q.opts) return;
+    const n=q.max||1, opts=qOpts(q);
+    TKEYS.forEach(t=>{ const w=opts.map(o=>(o.w&&o.w[t])||0).sort((a,b)=>b-a);
+      c[t]+=w.slice(0,n).reduce((a,b)=>a+b,0); }); });
+  return _ceilCache[g]=c;
+}
+// ⚠ 좌표(coordOf)는 아직 원점수 가중평균이다. 타입 판정만 비율로 바꿨으므로
+//    1·2위가 뒤집히는 건(실측 72건 중 5건, 6.9%) 타입명과 좌표 방향이 갈릴 수 있다.
+//    좌표는 이론 값이라 개발팀이 임의로 못 바꾼다 — 이론팀 판단 대기. (2026-08-20)
+function topTwo(sc){
+  // 원점수와 비슷한 크기로 되돌려 놓는다(×20). 화면·저장값 스케일이 흔들리지 않게.
+  const cap = sc===scoreHave ? ceilHave() : null;
+  return TKEYS.map(k=>[k, cap&&cap[k] ? sc[k]/cap[k]*20 : sc[k]]).sort((a,b)=>b[1]-a[1]);
+}
 /* PAIRS는 12쌍뿐이라 28쌍 중 16쌍에 구분 질문이 없다. 그 쌍에서 1·2위가 붙으면
    질문도 없이 TKEYS 선언 순서로 확정된다 — 앞에 선 타입이 늘 이긴다.
    타입 한 줄 소개를 그대로 써서 직접 묻는다. 새 문구를 만들지 않는다. */
@@ -1032,7 +1056,7 @@ function pickExtra(i){
 function gapSection(sw, sh, W, Hv){
   const w=coordOf(sw), h=coordOf(sh);
   if(!w||!h) return "";
-  const top=sc=>TKEYS.map(k=>[k,sc[k]]).sort((a,b)=>b[1]-a[1])[0][0];
+  const top=sc=>topTwo(sc)[0][0];
   if(top(sw)===top(sh))
     return `<div class="sec" style="width:100%"><p class="verdict-line">이미 <b>같은 방향</b>이에요 — 지금 매력을 그대로 살리면 돼요.</p></div>`;
   const dT=w[0]-h[0], dD=w[1]-h[1];   // WANT − HAVE. dT>0=추구미가 더 시원 / dD>0=추구미가 더 또렷
