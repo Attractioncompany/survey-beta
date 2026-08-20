@@ -219,8 +219,8 @@ function renderSignup(mode = "up"){
   track(mode === "up" ? "signup_shown" : "signin_shown");
   const up = mode === "up";
   app.innerHTML = head(up ? "시작하기" : "로그인") + `<div class="card">
-    <p class="lead">${up ? "추구미즘 시작하기" : "다시 오셨네요"}</p>
-    <p class="note">${up ? "결과와 쌓은 걸 계속 이어가려면 계정이 필요해요. 이름도 나이도 안 물어봐요."
+    <p class="lead">${up ? "기록이 남으려면 로그인이 필요해요." : "다시 오셨네요"}</p>
+    <p class="note">${up ? "다음에 열었을 때 지난 진단이 그대로 있어요. 이름도 나이도 안 물어봐요."
                          : "쓰시던 계정으로 들어오시면 그대로 이어져요."}</p>
     <button class="btn" id="kakao" style="background:#FEE500;color:#191600">카카오로 ${up ? "시작하기" : "로그인"}</button>
     <button class="btn" id="google" style="background:#fff;color:#1F1F1F;border:1px solid #DADCE0;display:flex;align-items:center;justify-content:center;gap:9px">
