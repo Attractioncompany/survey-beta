@@ -178,7 +178,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=985a188"></script>
+<script src="czm-core.js?v=6b81948"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -207,12 +207,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "985a188";
+const BUILD = "6b81948";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=985a188";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=6b81948";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -299,50 +299,7 @@ function colorSection(wantKey, myPC){
            mineHex:hexOf(myPC), wantHex:hexOf(wantPC.label), wantLabel:wantPC.label };
 }
 
-function normLines(r,l,age,gender){
-  if(!NORMS) return [];
-  // 규준 원전이 전부 한국 **여성** 표본이다(S1 여성 40 · S2 여성 192 · S3 여성 31).
-  // 남성에게 이 평균을 들이대면 틀린 말을 하게 된다 — 없는 것은 없다고 다룬다.
-  if(gender && gender!=="f") return [];
-  const F=k=>NORMS.fields.find(f=>f.field===k);
-  const out=[];
-
-  // ① 눈 사이 — 유일한 직접 대응. 유저가 고른 연령대 행을 쓴다.
-  // 대표 지시 2026-08-18: 수치를 그대로 두지 말고 **판정을 앞세운다.**
-  //   유저에게 "0.204"는 아무 뜻도 없다. 판정이 먼저고 숫자는 근거로 뒤에 붙인다.
-  const io=F("interocular");
-  if(io && r.interocular!=null){
-    const m=io.norm_mean[age] ?? io.norm_mean[io.recommended_row];
-    const d=r.interocular-m;
-    out.push({t:"눈 사이", v:Math.abs(d)<0.05?"또래 평균과 거의 같아요":d>0?"조금 넓은 편이에요":"조금 좁은 편이에요",
-      s:`측정값 ${r.interocular.toFixed(2)} · 또래 평균 ${m}`});
-  }
-
-  // ② 눈꼬리 — 변환 필요. 유일하게 SD가 있어 "평균 범위"를 말할 수 있다.
-  //    ⚠ 밴드 판정(eye_angle)과 **같은 것을 잰다.** 둘을 나란히 두면
-  //    "올라간 눈매"와 "평균보다 내려간 쪽" 이 모순으로 읽힌다(실측 2026-08-18).
-  //    그래서 방향과 평균 대비를 한 문장으로 합치고, 밴드 줄은 리포트에서 뺀다.
-  const ea=F("eye_angle");
-  if(ea && l.eye_angle!=null && r.eye_len){
-    const deg=Math.asin((l.eye_angle/100)/r.eye_len)*180/Math.PI;
-    const within=Math.abs(deg-ea.norm_mean)<=ea.norm_sd;
-    const dir=deg>1?"올라간 눈매":deg<-1?"내려간 눈매":"수평에 가까운 눈매";
-    const cmp = within ? `또래 평균(${ea.norm_mean.toFixed(1)}°)과 비슷한 정도예요`
-      : deg < 0 ? `또래 평균은 ${ea.norm_mean.toFixed(1)}° 올라간 쪽인데, 반대로 내려가 있어요`
-      : deg > ea.norm_mean ? `또래 평균 ${ea.norm_mean.toFixed(1)}°보다 더 올라간 편이에요`
-      : `올라가 있긴 한데 또래 평균 ${ea.norm_mean.toFixed(1)}°보다는 완만해요`;
-    out.push({t:"눈매", v:dir, own:"eye_angle", s:`${deg.toFixed(1)}° — ${cmp}`});
-  }
-
-  // ③ 눈 길이 — 변환값, SD 없음. "비슷한 수준"까지만.
-  const el=F("eye_len");
-  if(el && r.eye_len!=null){
-    const d=r.eye_len-el.norm_mean;
-    out.push({t:"눈 길이", v:Math.abs(d)<0.01?"또래 평균과 비슷해요":d>0?"긴 편이에요":"짧은 편이에요",
-      s:`측정값 ${r.eye_len.toFixed(3)} · 또래 평균 ${el.norm_mean}`});
-  }
-  return out;
-}
+// normLines(또래 평균 비교)는 삭제했다 — 규준참조 화법이 대표 판단(2026-08-18)·방향 제시 체계와 이중 충돌(이론 R6, 되살리기 금지).
 
 // ── 회차 관리 ───────────────────────────────────────────────
 // 링크로 새로 들어오면 **처음부터** 시작한다. 지난 사람 결과가 남아 바로 리포트로 튀면 안 된다.
@@ -969,6 +926,14 @@ function renderReport(){
   // ⑤ 색
   // 진단받은 색과 추구미 색이 같은 칸일 때가 있다(예: 겨울 스트롱 = 세련된).
   // 그걸 두 카드로 나눠 똑같은 색을 두 번 내면 유저는 뭐가 다른지 찾다가 지친다. 합쳐서 한 번만.
+  // "곁들이면 좋은 색: 인디핑크·… ※블랙은…"처럼 색 목록과 각주가 붙어 나오던 것을
+  // ※ 기준으로 갈라 각주를 제 줄에 앉힌다. 데이터(pc-prescription)는 손대지 않는다.
+  const splitNote = t => { const i=String(t).indexOf("※");
+    return i<0 ? {main:t, foot:""} : {main:t.slice(0,i).trim(), foot:t.slice(i)}; };
+  const secondLine = sec => { if(!sec) return "";
+    const {main,foot}=splitNote(sec);
+    return `<br>곁들이면 좋은 색: ${esc(main)}`
+         + (foot?`</p><p class="note" style="opacity:.75;font-size:.92em">${esc(foot)}`:``); };
   const sameColor = col && col.mine && col.want && col.mine.best===col.want.best;
   if(col&&(col.mine||col.want)) PAGES.push({t:"색 이야기",
     draw:{title:"색 이야기",
@@ -978,10 +943,10 @@ function renderReport(){
                    ].filter(Boolean)},
     html:`
     ${sameColor?`<div class="card"><h2>${esc(pcLabel)}에 잘 받는 색 = ${esc(wantName)} 매력을 만드는 색</h2>${col.mineChips}
-      <p class="note">${esc(col.mine.best)}${col.mine.second?`<br>곁들이면 좋은 색: ${esc(col.mine.second)}`:``}${col.mine.accessory?`<br>소품: ${esc(col.mine.accessory)}`:``}</p>
+      <p class="note">${esc(col.mine.best)}${secondLine(col.mine.second)}${col.mine.accessory?`<br>소품: ${esc(col.mine.accessory)}`:``}</p>
       <p class="note">두 색이 같은 칸이에요. 색은 이미 맞춰져 있으니 다른 데를 손보면 돼요.</p></div>`
     :`${col.mine?`<div class="card"><h2>${esc(pcLabel)}에 잘 받는 색</h2>${col.mineChips}
-      <p class="note">${esc(col.mine.best)}${col.mine.second?`<br>곁들이면 좋은 색: ${esc(col.mine.second)}`:``}${col.mine.accessory?`<br>소품: ${esc(col.mine.accessory)}`:``}</p></div>`:``}
+      <p class="note">${esc(col.mine.best)}${secondLine(col.mine.second)}${col.mine.accessory?`<br>소품: ${esc(col.mine.accessory)}`:``}</p></div>`:``}
     ${col.want?`<div class="card"><h2>${esc(wantName)} 매력을 만드는 색</h2>${col.wantChips}
       <p class="note">${esc(col.want.best)}</p></div>`:``}`}`});
 
@@ -1068,7 +1033,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=985a188"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=6b81948"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))

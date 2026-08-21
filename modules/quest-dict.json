@@ -110,12 +110,12 @@
     { "id": "eye.M-", "item": "eye", "kind": "skill", "axis": "M", "dir": "-",
       "field": "eye_openness", "field_dir": "+", "grade": "scale", "offer": true, "countable": true,
       "ready": true, "cost": "free",
-      "step": "눈매를 조금 더 크게", "copy": "눈매를 조금 더 크게 떠 보이도록 해보세요",
+      "step": "눈매를 조금 더 크게", "copy": "눈매를 조금 더 크게 떠 보이게 해보세요",
       "note": "eye_openness = eye_open ÷ eye_len. 0.22는 게이트값이지 밴드가 아니다(🔴3) — 부호만 판정.", "src": "§3-4" },
     { "id": "eye.M+", "item": "eye", "kind": "skill", "axis": "M", "dir": "+",
       "field": "eye_openness", "field_dir": "-", "grade": "scale", "offer": true, "countable": true,
       "ready": true, "cost": "free",
-      "step": "눈매를 조금 가늘게", "copy": "눈매를 조금 가늘어 보이도록 해보세요",
+      "step": "눈매를 조금 가늘게", "copy": "눈매를 조금 가늘어 보이게 해보세요",
       "note": "동상", "src": "§3-4" },
     { "id": "eye.fold", "item": "eye", "kind": "skill", "axis": null, "dir": null,
       "field": null, "grade": "blocked", "offer": false, "countable": false, "ready": false, "cost": "free",
@@ -168,9 +168,9 @@
       "step": "얼굴 가까이 오는 색을 담아본다", "copy": "가진 것 중 얼굴 가까이 오는 색 아이템을 옷장에 담아보세요",
       "note": "뒤따라 열리는 것: 처방DB 베스트 컬러와 교집합", "src": "§3-9" },
     { "id": "item.acc", "item": "wardrobe", "kind": "item", "axis": null, "dir": null,
-      "slot": "악세서리", "grade": "ok", "offer": true, "countable": true, "ready": true, "cost": "free",
+      "slot": "액세서리", "grade": "ok", "offer": true, "countable": true, "ready": true, "cost": "free",
       "step": "자주 쓰는 액세서리를 담아본다", "copy": "자주 쓰는 액세서리를 옷장에 담아보세요",
-      "note": "뒤따라 열리는 것: 처방DB 악세서리 열과 교집합", "src": "§3-9" }
+      "note": "뒤따라 열리는 것: 처방DB 액세서리 열과 교집합", "src": "§3-9" }
   ],
   "knowledge_pairing": {
     "rule": "§3-8 — 실행 칸마다 1:1로 붙는 짝. ⛔ 칸에도 붙는다(실행을 못 세도 학습은 센다). 서열을 두지 않는다 — 비용 라벨로 구분하되 순위를 매기지 않는다.",
@@ -181,7 +181,7 @@
     "not_yet": "실행이 봉인된 칸(헤어 T·D, 윤곽, 옷, 표현)의 짝은 아직 없다. §3-8 규칙 2에 따라 붙을 수 있으나 문항이 없다.",
     "source_assets": [
       "8타입 매력 키워드 — 마스터 §1-1 표",
-      "12타입_처방DB_v1.md 베스트/보조/악세서리 열",
+      "12타입_처방DB_v1.md 베스트/보조/액세서리 열",
       "리포트 정본 P1~P5 · 8타입 해설 20문안"
     ]
   }
