@@ -58,6 +58,34 @@ button{font:inherit;cursor:pointer}
 .chk{font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap}
 .chk .p{color:var(--ok)} .chk .f{color:#B4443A;font-weight:700}
 .banner{background:#FFF6E8;border:1px solid #F0DEC0;border-radius:12px;padding:11px 13px;font-size:13px;color:#7A5C2E;margin-bottom:14px}
+
+/* ── 프리즘 홈 (고객팀 리디자인 1차, 시안=스펙 2026-08-21) ─────────────
+   여백 토큰(시트①): 화면 좌우24 · 섹션22 · 카드 안쪽 22~30 · CTA 위 14 */
+.ph-bg{background:radial-gradient(circle at 12% 6%,rgba(242,169,196,.38) 0%,rgba(242,169,196,0) 42%),radial-gradient(circle at 92% 22%,rgba(156,200,232,.32) 0%,rgba(156,200,232,0) 46%),radial-gradient(circle at 50% 105%,rgba(185,175,209,.30) 0%,rgba(185,175,209,0) 55%),#FAF7FB;margin:-16px -16px 0;padding:20px 24px 8px;}
+.ph-head{display:flex;flex-direction:column;gap:6px;padding:4px 0 2px;}
+.ph-h1{font-size:24px;font-weight:800;letter-spacing:-.015em;margin-left:-1px;color:#2B2233;}
+.ph-sub{font-size:13.5px;color:#6E6478;}
+.ph-glass{background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.66);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);border-radius:20px;box-shadow:0 8px 24px rgba(74,43,92,.08);}
+.ph-prism{display:flex;flex-direction:column;gap:12px;padding:22px 22px 20px;margin-top:22px;}
+.ph-prism .row{display:flex;justify-content:space-between;align-items:baseline;}
+.ph-prism .t{font-size:13.5px;font-weight:700;color:#4A2B5C;}
+.ph-prism .d{font-size:12px;color:#6E6478;}
+.ph-bar{position:relative;height:14px;border-radius:7px;}
+.ph-dot{position:absolute;top:-5px;width:24px;height:24px;border-radius:12px;background:rgba(255,255,255,.9);border:2px solid #B76BA3;box-shadow:0 2px 8px rgba(74,43,92,.25);transform:translateX(-12px);}
+.ph-ends{display:flex;justify-content:space-between;font-size:12px;font-weight:600;}
+.ph-hero{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:14px;border-radius:24px;padding:28px 24px;margin-top:22px;box-shadow:0 12px 32px rgba(74,43,92,.10);min-height:264px;}
+.ph-hero .ph-ctas{margin-top:auto;}
+.ph-gumi{position:absolute;right:10px;top:64px;width:136px;height:136px;pointer-events:none;}
+.ph-gumi .pad{position:absolute;left:50%;top:50%;width:132px;height:132px;transform:translate(-50%,-50%);border-radius:999px;background:radial-gradient(circle,rgba(255,255,255,.95) 0%,rgba(255,255,255,.7) 55%,rgba(255,255,255,0) 78%);}
+.ph-gumi img{position:absolute;inset:0;width:136px;height:136px;object-fit:contain;transform:rotate(-6deg);filter:drop-shadow(0 8px 14px rgba(183,107,163,.3));}
+.ph-title{font-size:24px;font-weight:800;line-height:1.35;letter-spacing:-.015em;margin-left:-1px;color:#2B2233;padding-right:120px;word-break:keep-all;}
+.ph-why{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:#2B2233;min-height:44px;background:none;border:none;padding:0;cursor:pointer;}
+.ph-whytxt{font-size:14px;color:#6E6478;line-height:1.6;padding-right:120px;}
+.ph-ctas{display:flex;gap:12px;margin-top:14px;}
+.ph-jelly{flex:1;min-height:52px;border:none;border-radius:14px;background:linear-gradient(180deg,#A85590 0%,#9C4680 100%);color:#fff;font-size:16px;font-weight:700;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 16px rgba(156,70,128,.35);cursor:pointer;}
+.ph-ghost{min-height:52px;padding:0 18px;border:1.5px solid #E4DCE9;border-radius:14px;background:rgba(255,255,255,.6);color:#6E6478;font-size:15.5px;font-weight:600;cursor:pointer;}
+.ph-entries{display:flex;gap:12px;margin-top:22px;margin-bottom:14px;}
+.ph-entry{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border:1px solid rgba(255,255,255,.7);border-radius:14px;background:rgba(255,255,255,.44);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);color:#2B2233;font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -123,6 +151,10 @@ const st = {
   set skipped(v){ LS.set(K.skipped, v); },
 };
 const diag  = LS.get(K.diag, null);
+// 타입 색 — 프리즘 진행 바 전용. 정본은 index.html TYPES(이론 소유 아님, 표시 토큰).
+// 값이 바뀌면 index와 같이 바꾼다.
+const TCOLOR={romantic:"#F2A9C4",pure:"#9CC8E8",elegant:"#B9AFD1",energetic:"#F5B84F",
+              gorgeous:"#C0546B",classic:"#C2A377",charisma:"#4A2B5C",chic:"#5C7FA3"};
 const photo = LS.get(K.photo, null);
 const cell  = id => DICT.cells.find(c => c.id === id);
 const count = kind => STATS.filter(s => s.kind === kind).length;
@@ -285,32 +317,60 @@ function renderHome(){
   if (!diag) return renderNoDiag();
   track("hub_shown", {diagnosed:true});
   const a = st.active;
+  // ── 프리즘 홈 상단 (시안 Home.dc.html = 스펙) ──────────────────────
+  const N = DICT?.type_names ?? {};
+  const wName = esc(N[diag.want] ?? diag.want), hName = esc(N[diag.have] ?? diag.have);
+  const wCol = TCOLOR[diag.want] || "#B76BA3", hCol = TCOLOR[diag.have] || "#9CC8E8";
+  const days = diag.ts ? Math.max(1, Math.floor((Date.now()-diag.ts)/864e5)+1) : 1;
+  // 진행점 위치 — 표시 전용 잠정 규칙: 완료 걸음 1개 = 6%p, 시작점 6%.
+  // 이론값이 아니다. 이론팀 일치율 산식(요청서 §4-1)이 확정되면 그걸로 교체한다.
+  const prog = Math.min(6 + STATS.length*6, 84);
+  const weeks = Math.max(1, Math.ceil(days/7));
+  const prism = `
+    <div class="ph-head">
+      <div class="ph-h1">오늘의 한 걸음</div>
+      <div class="ph-sub">${wName}${/[가-힣]$/.test(wName)&&(wName.charCodeAt(wName.length-1)-44032)%28>0?"으로":"로"} 가는 ${days}일째예요</div>
+    </div>
+    <div class="ph-glass ph-prism">
+      <div class="row"><div class="t">나의 프리즘</div><div class="d">${weeks}주째 물들어가는 중</div></div>
+      <div class="ph-bar" style="background:linear-gradient(90deg,${hCol} 0%,#C9BCD8 55%,${wCol} 100%)">
+        <div class="ph-dot" style="left:${prog}%"></div>
+      </div>
+      <div class="ph-ends"><div style="color:#3F5C8A">지금 · ${hName}</div><div style="color:#9C4680">추구미 · ${wName}</div></div>
+    </div>`;
   let today;
-  if (!QE) {                     // 걸음 모듈이 죽었다 — 이 카드만 접고 나머지는 그대로 그린다
-    today = `<div class="card"><h2>오늘 하나만</h2>
-      <p class="lead">걸음을 지금 불러오지 못했어요.</p>
-      <p class="note">잠시 뒤 새로고침해 주세요. 쌓인 건 그대로 있어요.</p></div>`;
+  // 히어로 카드 — 구미 전신 136px 받침(시트③: 머리 안 자름·밝은 받침·카드 안).
+  // 기존 3상태(모듈 실패/발행됨/미발행) 로직은 그대로, 옷만 갈아입힌다.
+  const gumiEl = `<div class="ph-gumi"><div class="pad"></div><img src="../bg/gumi_base.png" alt="" onerror="this.parentNode.style.display='none'"></div>`;
+  // "구미가 이걸 고른 이유" — 문구는 오늘 검수 통과한 기존 문장을 그대로 쓴다(신규 창작 금지).
+  const whyTxt = `오늘 당장 해볼 수 있는 것 중 ${wName} 쪽으로 가장 크게 움직입니다.`;
+  if (!QE) {
+    today = `<div class="ph-glass ph-hero">${gumiEl}
+      <div class="ph-title">걸음을 지금 불러오지 못했어요</div>
+      <div class="ph-whytxt">잠시 뒤 새로고침해 주세요. 쌓인 건 그대로 있어요.</div></div>`;
   } else if (a) {
     const c = cell(a.id);
-    today = `<div class="card"><h2>오늘 하나만</h2>
-      <p class="lead">${esc(c.copy)}</p>
-      ${c.kind === "knowledge"
-        ? `<button class="btn" id="toQuiz">풀어보기</button>`
-        : c.kind === "item"
-        ? `<button class="btn" id="toReg">담았어요</button>`
-        : c.countable && c.field
-          ? (a.before
-              ? `<button class="btn" id="toShot">해봤어요 · 사진으로 확인하기</button>`
-              // 기준선이 없으면 비교할 대상이 없다 — 판정 자체가 성립하지 않는다
-              : `<p class="note">지금 얼굴부터 한 장 찍어둬요. 나중에 이 사진과 비교해요.</p>
-                 <button class="btn" id="toShot">지금 얼굴 찍어두기</button>`)
-          : `<p class="note">이 걸음은 아직 사진으로 확인하지 못해요. 이번 주 시도로 남겨둘게요.</p>
-             <button class="btn ghost" id="tryDone">시도했어요</button>`}
-      <button class="btn quiet" id="drop">다른 걸음으로 바꾸기</button></div>`;
+    const primary = c.kind === "knowledge" ? `<button class="ph-jelly" id="toQuiz">풀어보기</button>`
+      : c.kind === "item" ? `<button class="ph-jelly" id="toReg">담았어요</button>`
+      : c.countable && c.field
+        ? (a.before ? `<button class="ph-jelly" id="toShot">해봤어요</button>`
+                    : `<button class="ph-jelly" id="toShot">지금 얼굴 찍어두기</button>`)
+        : `<button class="ph-jelly" id="tryDone">해봤어요</button>`;
+    const preNote = (c.countable && c.field && !a.before)
+      ? `<div class="ph-whytxt">지금 얼굴부터 한 장 찍어둬요. 나중에 이 사진과 비교해요.</div>` : ``;
+    today = `<div class="ph-glass ph-hero">${gumiEl}
+      <div class="ph-title">${esc(c.copy)}</div>
+      ${preNote}
+      <button class="ph-why" id="whyBtn">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#B76BA3" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"></circle><path d="M8 5.2v3l2 1.4"></path></svg>
+        구미가 이걸 고른 이유</button>
+      <div class="ph-whytxt" id="whyTxt" style="display:none">${whyTxt}</div>
+      <div class="ph-ctas">${primary}<button class="ph-ghost" id="laterBtn">내일 할게요</button></div>
+      <button class="btn quiet" id="drop" style="margin-top:2px">다른 걸음으로 바꾸기</button></div>`;
   } else {
-    today = `<div class="card"><h2>오늘 하나만</h2>
-      <p class="lead">고를 수 있는 걸음이 준비돼 있어요.</p>
-      <button class="btn" id="toList">걸음 고르기</button></div>`;
+    today = `<div class="ph-glass ph-hero">${gumiEl}
+      <div class="ph-title">고를 수 있는 걸음이<br>준비돼 있어요</div>
+      <div class="ph-ctas"><button class="ph-jelly" id="toList">걸음 고르기</button></div></div>`;
   }
   // §3-5 복귀 — 경과 일수를 적지 않고, 밀린 처방을 쌓아두지 않고, 구미는 실망하지 않는다
   const away = LS.get(K.lastSeen, null);
@@ -319,12 +379,18 @@ function renderHome(){
   track("home_shown", {returning: back, has_active: !!a});
   LS.set(K.lastSeen, new Date().toISOString());
 
+  // 하단 입구 2개(시안) — "내 결과 리포트"·"다시 진단하기" glass 칩
+  const entries = `<div class="ph-entries">
+    ${diag.scores ? `<a class="ph-entry" href="../index.html?view=report">내 결과 리포트</a>` : ``}
+    <a class="ph-entry" href="../index.html?view=start">다시 진단하기</a>
+  </div>`;
+  // briefing()은 프리즘 카드와 정보가 겹쳐서 뺐다(추구미·지금·벌어진 쪽이 다 프리즘에 있다).
   app.innerHTML = head("") + downBanner()
     + (back ? `<div class="banner">쌓아둔 건 그대로 있어요.</div>` : ``)
-    + briefing() + today + effortLine() + statsCard() + hubCard()
+    + `<div class="ph-bg">` + prism + today + entries + `</div>`
+    + effortLine() + statsCard() + hubCard()
     + `<button class="btn quiet" id="toRec">기록 · 옷장</button>
        <button class="btn quiet" id="toVid">볼 만한 영상</button>
-       ${diag.scores ? `<a class="btn quiet" href="../index.html?view=report" style="display:block;text-align:center">내 결과 다시 보기</a>` : ``}
        <button class="btn quiet" id="toVoc">하고 싶은 말 남기기</button>
        <button class="btn quiet" id="selfck">엔진 자체 점검</button>
        <button class="btn quiet" id="out">로그아웃</button>`;
@@ -334,6 +400,16 @@ function renderHome(){
   $("out").onclick   = () => { signOut(); route(); };
 
   $("toList")?.addEventListener("click", renderList);
+  $("whyBtn")?.addEventListener("click", () => {
+    const t=$("whyTxt"); t.style.display = t.style.display==="none" ? "" : "none";
+  });
+  $("laterBtn")?.addEventListener("click", () => {
+    track("onestep_later", {quest_id: a?.id});
+    const b=$("laterBtn"); b.textContent="내일 할게요 ✓"; b.disabled=true; b.style.opacity=".55";
+  });
+  // onestep_done — 완료 의도를 탭 시점에 센다(요청서 §3). 검증 성공 여부는 quest_completed가 따로 잰다.
+  for (const id of ["toQuiz","toReg","toShot","tryDone"])
+    $(id)?.addEventListener("click", () => track("onestep_done", {quest_id: a?.id, via:id}), {once:true});
   $("drop")?.addEventListener("click", () => { st.active = null; renderList(); });
   $("toReg")?.addEventListener("click", renderRegister);
   $("toQuiz")?.addEventListener("click", renderQuiz);
