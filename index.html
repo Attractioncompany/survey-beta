@@ -233,7 +233,7 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=6b81948"></script>
+<script src="modules/czm-core.js?v=7cb61af"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -294,7 +294,7 @@ const VIEW = new URLSearchParams(location.search).get("view");
 // ?flow=lecture — 강의용 흐름(modules/lecture.html)에서 온 경우. 결과 뒤 그리로 돌려보낸다.
 const FLOW_LECTURE = new URLSearchParams(location.search).get("flow")==="lecture";
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.33+6b81948"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.33+7cb61af"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -883,7 +883,7 @@ function renderStep(){
     app.innerHTML=`<div class="screen"><div class="screen-body" style="justify-content:center;text-align:center">
       <div class="em" style="font-size:44px">🎉</div>
       <h2 style="margin-top:14px">한 바퀴 다 돌았어요</h2>
-      <p class="small" style="margin-top:10px">다시 진단해서 지금 좌표를 새로 재보면 다음 걸음이 나와요.</p>
+      <p class="small" style="margin-top:10px">다시 진단해서 지금 좌표를 새로 재보면 다음 미션이 나와요.</p>
       </div><div class="screen-btm">
       <button class="btn" onclick="phase='result';render()">내 결과 보기</button>
       <button class="btn ghost" onclick="restart()">다시 진단하기</button></div></div>`;
@@ -894,7 +894,7 @@ function renderStep(){
   const nth = done.length + 1;
   app.innerHTML=`
    <div class="screen"><div class="screen-body">
-     <div class="q-part">오늘의 한 걸음 · ${nth}번째</div>
+     <div class="q-part">오늘의 미션 · ${nth}번째</div>
      <h2 style="margin-top:6px">${stepLine(STEP)}</h2>
      ${col ? `<div class="step-chip" style="background:${col}"></div>
        <p class="small" style="margin-top:10px;color:var(--sub)">${W.name} 매력이 자주 쓰는 색이에요</p>
@@ -1633,7 +1633,7 @@ async function buildSplitCard(){
     } else x.fillText(txt,PX+72,y);
   };
   bullet(line1, obsY+128);
-  const t0="구미가 처방한 첫걸음은 ";
+  const t0="구미가 처방한 첫 미션은 ";
   bullet(t0+teaser, obsY+192, [t0.length, teaser]);
 
   // ④ 푸터: 로고 + CTA 젤리 pill
