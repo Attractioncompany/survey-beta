@@ -4,6 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>추구미즘</title>
+<script>
+// 앱 로그인 반송 — Supabase가 로그인 토큰을 앱 스킴 대신 이 페이지로 내려보낸다
+// (redirect_to 허용 목록 판정이 불안정해 Site URL 폴백이 사실상 유일한 귀환 경로다).
+// 웹에서 시작한 로그인은 같은 탭이라 czm_oauth_web 표식이 남아 있고,
+// 앱의 로그인 창(ASWebAuthenticationSession)은 새 컨텍스트라 표식이 없다 —
+// 표식 없이 토큰이 왔으면 앱에서 온 것이므로 앱 스킴으로 되던져 창을 닫게 한다.
+(function(){
+  var h = location.hash;
+  if (h.indexOf("access_token") < 0 && h.indexOf("error_description") < 0) return;
+  if (!/iPhone|iPad/.test(navigator.userAgent)) return;            // 앱은 iOS뿐
+  try {
+    if (sessionStorage.getItem("czm_oauth_web")) { sessionStorage.removeItem("czm_oauth_web"); return; }
+  } catch(e) { return; }
+  location.replace("chugumism://auth" + h);
+})();
+</script>
 <!--
   앱 기틀 v1 Phase 1 — 홈 + 퀘스트 루프
   설계: docs/superpowers/specs/2026-08-16-app-foundation-v1-design.md §3-2 §4

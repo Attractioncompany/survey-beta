@@ -57,6 +57,9 @@ export function signOut(){ try { localStorage.removeItem(SKEY); } catch(e){} }
 
 /** 소셜 로그인 — 브라우저를 카카오로 보낸다. 돌아오면 주소 뒤에 토큰이 붙어 온다. */
 export function oauthStart(provider, redirectTo = location.href.split("#")[0]){
+  // 같은 탭 표식 — 로그인에서 돌아온 페이지가 "웹에서 시작한 로그인"임을 알게 한다.
+  // 앱의 로그인 창은 새 컨텍스트라 이 표식이 없고, home.html이 그 차이로 앱 반송을 판단한다.
+  try { sessionStorage.setItem("czm_oauth_web", "1"); } catch(e){}
   location.href = `${URL_}/auth/v1/authorize?provider=${encodeURIComponent(provider)}`
                 + `&redirect_to=${encodeURIComponent(redirectTo)}`;
 }
