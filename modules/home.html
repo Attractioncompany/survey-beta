@@ -278,7 +278,7 @@ function renderSignup(mode = "up"){
 // 허브의 기능 진입로. 지금까지 옷 색 판정·타입별 추천은 어디서도 링크가 없는 고아 페이지였다.
 const HUB = [
   { href: "../index.html?view=start", label: "설문 진단", desc: "24문항 · 3~4분" },   // ⚠ index.html의 Q를 줄이면 여기도 고쳐야 한다
-  { href: "photo-module.html",        label: "촬영 진단", desc: "사진으로 색·형태 재기" },
+  { href: "../photo.html",        label: "촬영 진단", desc: "사진으로 색·형태 재기" },
   { href: "cloth-check.html",         label: "옷 색 판정", desc: "가진 옷이 내 쪽인지" },
   { href: "pick.html",                label: "타입별 추천", desc: "내 타입이 자주 쓰는 것" },
 ];
@@ -413,7 +413,7 @@ function renderHome(){
   $("drop")?.addEventListener("click", () => { st.active = null; renderList(); });
   $("toReg")?.addEventListener("click", renderRegister);
   $("toQuiz")?.addEventListener("click", renderQuiz);
-  $("toShot")?.addEventListener("click", () => location.href = "photo-module.html?flow=verify");
+  $("toShot")?.addEventListener("click", () => location.href = "../photo.html?flow=verify");
   $("tryDone")?.addEventListener("click", () => {
     // 세지 않는 칸이다(§3-5). 기록만 남기고 스탯은 올리지 않는다.
     track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"skill",
