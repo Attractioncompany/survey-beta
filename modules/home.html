@@ -581,6 +581,16 @@ function tryJudge(){
   const v = judgeSkill(c, a.before, now);
   track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"skill",
                             field:v.field ?? null, sign_match:v.sign_match, countable:!!c.countable});
+  // 결과 시점 과금(헌법 §1)의 훅 — **변화가 확인된 바로 이 순간**이다.
+  // countable 밖에 둔다: countable은 스탯을 적립할지의 문제고, 여기는 "실제로 변했나"라
+  // 축이 다르다. 지금부터 쌓여야 나중에 "전환 제안 자격 유저"를 셀 수 있다(전략팀 R2).
+  if (v.verdict === "done") {
+    track("change_confirmed", {
+      category: c.item ?? null, axis: c.axis ?? null,
+      week_no: null,            // 주차 개념이 아직 없다. 생기면 여기에 넣는다
+      delta: v.delta, quest_id: c.id, offer_id: a.offer_id
+    });
+  }
   if (v.verdict === "done" && c.countable) {
     st.add({kind:"skill", ref:c.id, slot:null, at:new Date().toISOString()});
     sbPost("stat_entries", {user_id:UID, kind:"skill", ref:c.id,

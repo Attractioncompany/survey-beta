@@ -370,6 +370,15 @@
     TYPE_KEYS: TYPE_KEYS, TYPE_NAMES: TYPE_NAMES, PC8: PC8,
     COORD: COORD, coordOf: coordOf, gapOf: gapOf,
     measure: { flatten: flatten, colorAlias: COLOR_ALIAS },
+    // 계약층 이벤트 — **정의만 등재한다. 발화는 각 화면이 한다.**
+    // 이름이 여러 곳에서 문자열로 흩어지면 오타 하나가 조용히 계측을 끊는다(전략팀 R2).
+    EVENTS: {
+      // 결과 시점 과금의 훅. 검증에서 delta가 처방 방향으로 확인된 순간 1회.
+      CHANGE_CONFIRMED: "change_confirmed",     // props: category, axis, week_no, delta, quest_id, offer_id
+      // 커머스 접점 — 아이템 걸음 완료 화면의 슬롯. 아직 내용물이 없어 발화처도 없다.
+      COMMERCE_SLOT_SHOWN:   "commerce_slot_shown",   // props: slot_id, quest_id, category
+      COMMERCE_SLOT_CLICKED: "commerce_slot_clicked", // props: slot_id, quest_id, category, target
+    },
     version: "core_v1"
   };
 })(typeof window !== "undefined" ? window : globalThis);
