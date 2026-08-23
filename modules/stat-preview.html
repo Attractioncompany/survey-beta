@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>스탯 시각화 시안 — 방사형 vs 프리즘</title>
 <link rel="stylesheet" href="czm-ui.css">
+<script src="czm-stats.js"></script>
 <style>
   body{margin:0;padding-bottom:60px;}
   .wrap{max-width:520px;margin:0 auto;}
@@ -80,9 +81,9 @@
 <div class="ctl">
   <div class="row">
     <div class="seg" id="segData">
-      <button data-i="0" aria-pressed="true">한 타입 쏠림</button>
-      <button data-i="1" aria-pressed="false">고른 분포</button>
-      <button data-i="2" aria-pressed="false">두 타입 우세</button>
+      <button data-i="0" aria-pressed="true">P1 청순→우아</button>
+      <button data-i="1" aria-pressed="false">P2 카리→로맨</button>
+      <button data-i="2" aria-pressed="false">P3 세련→세련</button>
     </div>
   </div>
   <div class="row">
@@ -174,20 +175,26 @@ var TYPES = {
    gorgeous(딥 극) 6시 · classic 7.5시 · romantic 9시 · energetic 10.5시. */
 var RING = ["pure","elegant","chic","charisma","gorgeous","classic","romantic","energetic"];
 
-/* 합 30 고정 3벌 + 각각의 성장 후(합 41). 성장은 총합이 자라는 것이지 재분배가 아니다. */
-var SETS = [
-  { label:"한 타입 쏠림",
-    base:{pure:12,elegant:4,chic:3,charisma:2,gorgeous:2,classic:3,romantic:2,energetic:2},
-    grown:{pure:16,elegant:6,chic:4,charisma:3,gorgeous:2,classic:4,romantic:3,energetic:3} },
-  { label:"고른 분포",
-    base:{pure:4,elegant:4,chic:4,charisma:4,gorgeous:4,classic:4,romantic:3,energetic:3},
-    grown:{pure:6,elegant:6,chic:5,charisma:5,gorgeous:5,classic:5,romantic:5,energetic:4} },
-  { label:"두 타입 우세",
-    base:{pure:2,elegant:2,chic:8,charisma:9,gorgeous:3,classic:2,romantic:2,energetic:2},
-    grown:{pure:3,elegant:3,chic:11,charisma:12,gorgeous:4,classic:3,romantic:3,energetic:2} }
+/* 데이터 3벌은 이론 정본 §7의 페르소나 P1·P2·P3다. 스탯은 여기서 손으로 적지 않고
+   czm-stats.js(산식 정본)에 normed를 먹여 계산한다 — 시안과 정본이 갈라지지 않는다.
+   normed 8값은 문서 §7-1이 상위 3개만 공개해서, 나머지 5개는 §7-2·§2-3의 출력을
+   동시에 재현하는 값으로 역산한 것이다(개발 검증 2026-08-24). 상위 3개는 문서 그대로.
+   성장 후는 §7-4의 '전주 검증(주 +2)' 경로 — 목표 타입 하나만 자란다(§3-1). */
+var PERSONA = [
+  { label:"P1 청순→우아", weeks:8, goal:"elegant",
+    normed:{pure:18,elegant:13,romantic:9,energetic:8.5,chic:7,classic:6.5,gorgeous:5,charisma:4.5} },
+  { label:"P2 카리→로맨", weeks:4, goal:"romantic",
+    normed:{charisma:18,chic:15,gorgeous:12,classic:7,elegant:4,energetic:4,romantic:1,pure:0} },
+  { label:"P3 세련→세련", weeks:3, goal:"chic",
+    normed:{chic:17,charisma:13,elegant:11,classic:6,gorgeous:5,pure:3,romantic:0.5,energetic:0} }
 ];
+var SETS = PERSONA.map(function(p){
+  var base = CZMStats.initialStats(p.normed);
+  var gain = {}; gain[p.goal] = p.weeks * CZMStats.RUNG.verified;   // 주 1걸음 × 근거 B(+2)
+  return { label:p.label, base:base, grown:CZMStats.applyGains(base, gain) };
+});
 
-var MAXV = 16;              // 고정 눈금 상한 (성장이 보이려면 정규화 금지)
+var MAXV = 24;              // 고정 눈금 상한 (성장이 보이려면 정규화 금지). P1 8주 = 우아 22
 var CX = 180, CY = 168, R = 104;
 var state = { set:0, grown:false, nums:false };
 
@@ -204,7 +211,7 @@ function polyStr(scores){
 }
 function buildRadarStatic(){
   var g = "";
-  [4,8,12,16].forEach(function(v){
+  [6,12,18,24].forEach(function(v){
     var pts = RING.map(function(_,i){ var p = pt(i,v); return p[0].toFixed(1)+","+p[1].toFixed(1); }).join(" ");
     g += '<polygon class="grid-ring'+(v===MAXV?" base":"")+'" points="'+pts+'"/>';
   });
