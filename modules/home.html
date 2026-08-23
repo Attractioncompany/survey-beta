@@ -34,31 +34,35 @@
   ※ 유저향 문구는 전부 [마케팅 검수 통과 2026-08-21] 초안. 커밋 전 brand/문체가이드 3단 통과 필요.
 -->
 <style>
+/* 팔레트·카드·버튼 토큰 = index.html 리포트 화면과 동일 (대표 피드백 2026-08-23:
+   "설문 최종리포트처럼 앱스럽고 깔끔하게"). 값 정본은 index.html :root — 바뀌면 같이 바꾼다. */
 :root{
-  --bg:#FBFAF8; --card:#fff; --ink:#1E1B18; --sub:#6B635C; --line:#EBE6E0;
-  --accent:#C9756B; --soft:#F5EFEA; --ok:#5B8C6E;
+  --bg:#FAF7FB; --card:#fff; --ink:#2B2233; --sub:#6E6478; --line:#E4DCE9;
+  --accent:#B76BA3; --soft:#F7EBF4; --ok:#5B8C6E;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
   font:16px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;
-  -webkit-font-smoothing:antialiased;padding-bottom:40px}
+  -webkit-font-smoothing:antialiased;word-break:keep-all;padding-bottom:40px}
 .wrap{max-width:520px;margin:0 auto;padding:20px 18px}
 h1{font-size:19px;margin:0 0 2px;letter-spacing:-.02em}
 .hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px}
 .hd small{color:var(--sub);font-size:12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
-.card h2{font-size:13px;color:var(--sub);margin:0 0 10px;font-weight:600;letter-spacing:.01em}
-.lead{font-size:18px;line-height:1.5;margin:0 0 4px;letter-spacing:-.01em}
-.note{font-size:13px;color:var(--sub);margin:6px 0 0}
+.card{background:var(--card);border:0;border-radius:16px;padding:24px 20px;
+  box-shadow:0 4px 16px rgba(58,43,69,.08);margin-bottom:22px}
+.card h2{font-size:13px;color:var(--accent);margin:0 0 10px;font-weight:700;letter-spacing:.02em}
+.lead{font-size:18px;line-height:1.5;margin:0 0 4px;letter-spacing:-.01em;font-weight:600}
+.note{font-size:13.5px;color:var(--sub);margin:6px 0 0;line-height:1.6}
 button{font:inherit;cursor:pointer}
-.btn{display:block;width:100%;padding:13px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:600;margin-top:12px}
-.btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line);font-weight:500}
-.btn.quiet{background:none;border:0;color:var(--sub);font-size:14px;text-decoration:underline;padding:8px 0;width:auto;margin:8px auto 0}
-.q{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);
-   border-radius:14px;padding:14px 15px;margin-bottom:9px}
-.q:active{background:var(--soft)}
-.q .t{font-size:15.5px;line-height:1.45}
-.q .m{font-size:12px;color:var(--sub);margin-top:6px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.btn{display:block;width:100%;padding:15px;min-height:52px;border-radius:12px;border:0;
+  background:var(--accent);color:#fff;font-size:16px;font-weight:700;margin-top:14px}
+.btn.ghost{background:transparent;color:var(--sub);border:1.5px solid var(--line);font-weight:600;font-size:14px;min-height:48px;padding:12px}
+.btn.quiet{display:block;background:none;border:0;color:var(--sub);font-size:13px;font-weight:500;padding:10px 0;width:auto;margin:6px auto 0;min-height:0}
+.q{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);
+   border-radius:12px;padding:14px 16px;margin-bottom:10px;color:var(--ink)}
+.q:active{background:var(--soft);border-color:var(--accent)}
+.q .t{font-size:15.5px;line-height:1.45;font-weight:600}
+.q .m{font-size:12.5px;color:var(--sub);margin-top:5px;display:flex;gap:7px;flex-wrap:wrap;align-items:center;font-weight:400}
 .tag{border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-size:11px;color:var(--sub)}
 .tag.free{border-color:#CFE0D4;color:#4C7A5E}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
@@ -66,7 +70,15 @@ button{font:inherit;cursor:pointer}
 .st b{display:block;font-size:24px;font-weight:700;letter-spacing:-.02em}
 .st span{font-size:11.5px;color:var(--sub)}
 .st.empty b{font-size:14px;font-weight:600;color:var(--sub);padding:5px 0}
-.field{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;font:inherit;margin-top:9px;background:#fff}
+.field{width:100%;padding:13px;border:2px solid var(--line);border-radius:12px;font:inherit;margin-top:10px;background:#fff}
+.field:focus{outline:none;border-color:var(--accent)}
+/* 접힘 상자 — index.html details#waitSec와 같은 문법 */
+details.fold{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:14px}
+details.fold summary{font-size:14px;color:var(--sub);font-weight:600;cursor:pointer;list-style:none;
+  display:flex;align-items:center;justify-content:space-between;min-height:24px}
+details.fold summary::-webkit-details-marker{display:none}
+details.fold summary::after{content:"▾";color:var(--sub);font-size:12px}
+details.fold[open] summary::after{content:"▴"}
 .demo{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;background:var(--soft);
   border-radius:12px;padding:14px 15px;margin-top:4px;align-items:baseline}
 .demo-l{font-size:12px;color:var(--sub)} .demo-v{font-size:15px;font-weight:600}
@@ -123,7 +135,7 @@ async function mod(path, label){
   try { return await import(`${path}${MODV}`); }
   catch(e){ console.error("모듈 로드 실패 —", path, e); DOWN.push(label); return null; }
 }
-const QE = await mod("./quest-engine.js", "걸음");
+const QE = await mod("./quest-engine.js", "미션");   // 유저향 표기 — 내부 용어 '걸음'은 화면에 내지 않는다 [게이트 통과]
 const SS = await mod("./session.js", "계정");
 const { issueOffer, judgeSkill, selfCheck, withKnowledge } = QE ?? {};
 const { ensureUser, linkUid, sbFetch, fetchStats, PUBLIC,
@@ -152,9 +164,10 @@ const DICT = (QUIZ && withKnowledge) ? withKnowledge(DICT0, QUIZ) : DICT0;
 // 서버 왕복을 실제로 확인해야 할 때만 ?live=1 로 연다.
 const LOCAL = /^(localhost|127\.|$)/.test(location.hostname)
               && !new URLSearchParams(location.search).has("live");
-const sbPost = (table, row) => LOCAL ? Promise.resolve(true)
-  : sbFetch(table, {method:"POST", headers:{Prefer:"return=minimal"}, body:JSON.stringify(row)});
-const track = (event, props={}) => sbPost("events", {user_id:UID, event, props, app_version:"home_v1"});
+// extra는 fetch 옵션 통로 — 페이지를 떠나는 전송은 {keepalive:true} 필수(데이터 운영규약).
+const sbPost = (table, row, extra={}) => LOCAL ? Promise.resolve(true)
+  : sbFetch(table, {method:"POST", headers:{Prefer:"return=minimal"}, body:JSON.stringify(row), ...extra});
+const track = (event, props={}, extra={}) => sbPost("events", {user_id:UID, event, props, app_version:"home_v1"}, extra);
 
 // ── 상태 ─────────────────────────────────────────────────────
 // 서버가 원천이다. 로컬은 조회가 실패했을 때만 쓰는 사본 — 두 벌을 동시에 진실로 삼지 않는다.
@@ -266,19 +279,23 @@ function renderPreview(i = 0){
 function renderSignup(mode = "up"){
   track(mode === "up" ? "signup_shown" : "signin_shown");
   const up = mode === "up";
+  // 카드 위계(리포트 톤): 리드/부연 → 소셜 버튼 2개(브랜드 색 유지, 크기·라운드는 .btn 토큰) →
+  // 이메일은 접힘(details, index.html waitSec와 같은 문법) → 전환·상태는 조용히 아래로.
   app.innerHTML = head(up ? "시작하기" : "로그인") + `<div class="card">
-    <p class="lead">${up ? "기록이 남으려면 로그인이 필요해요." : "다시 오셨네요"}</p>
-    <p class="note">${up ? "다음에 열어도 지난 진단이 그대로 남습니다. 이름도 나이도 안 물어봐요."
+    <p class="lead">${up ? "기록이 남으려면 로그인이 필요해요." : "다시 오셨네요."}</p>
+    <p class="note" style="margin-bottom:8px">${up ? "다음에 열어도 지난 진단이 그대로 남습니다. 이름도 나이도 안 물어봐요."
                          : "쓰시던 계정으로 들어오시면 그대로 이어져요."}</p>
     <button class="btn" id="kakao" style="background:#FEE500;color:#191600">카카오로 ${up ? "시작하기" : "로그인"}</button>
-    <button class="btn" id="google" style="background:#fff;color:#1F1F1F;border:1px solid #DADCE0;display:flex;align-items:center;justify-content:center;gap:9px">
+    <button class="btn" id="google" style="background:#fff;color:#1F1F1F;border:1.5px solid #DADCE0;display:flex;align-items:center;justify-content:center;gap:9px;margin-top:10px">
       <svg width="17" height="17" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M45.1 24.5c0-1.6-.1-2.7-.4-3.9H24v7.1h12.1c-.2 1.8-1.6 4.6-4.5 6.4l6.9 5.4c4.1-3.8 6.6-9.4 6.6-15z"/><path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.9-5.4c-1.8 1.3-4.3 2.2-7.6 2.2-5.8 0-10.7-3.8-12.5-9.1l-7.1 5.5C8.1 41.1 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.5 28.4c-.5-1.4-.7-2.9-.7-4.4s.3-3 .7-4.4l-7.1-5.6C2.9 17 2 20.4 2 24s.9 7 2.4 10l7.1-5.6z"/><path fill="#EA4335" d="M24 10.6c4.1 0 6.9 1.8 8.5 3.3l6.2-6C34.9 4.5 29.9 2 24 2 15.4 2 8.1 6.9 4.4 14l7.1 5.6c1.8-5.3 6.7-9 12.5-9z"/></svg>
       Google로 ${up ? "시작하기" : "로그인"}
     </button>
-    <input class="field" id="em" type="email" inputmode="email" autocomplete="email" placeholder="이메일 주소">
-    <button class="btn ghost" id="go">메일로 링크 받기</button>
-    <button class="btn quiet" id="swap">${up ? "이미 계정이 있어요" : "처음이에요"}</button>
-    <p class="note" id="msg"></p></div>`;
+    <details class="fold"><summary>이메일로 할게요</summary>
+      <input class="field" id="em" type="email" inputmode="email" autocomplete="email" placeholder="이메일 주소">
+      <button class="btn ghost" id="go" style="width:100%">메일로 링크 받기</button>
+    </details>
+    <button class="btn quiet" id="swap" style="display:block">${up ? "이미 계정이 있어요" : "처음이에요"}</button>
+    <p class="note" id="msg" style="text-align:center"></p></div>`;
   $("kakao").onclick  = () => { track("signup_started", {method:"kakao", mode}); oauthStart("kakao"); };
   $("google").onclick = () => { track("signup_started", {method:"google", mode}); oauthStart("google"); };
   $("swap").onclick  = () => renderSignup(up ? "in" : "up");
@@ -291,25 +308,27 @@ function renderSignup(mode = "up"){
   };
 }
 
-// 허브의 기능 진입로. 지금까지 옷 색 판정·타입별 추천은 어디서도 링크가 없는 고아 페이지였다.
+// 도구 진입로. 진단(촬영→설문)은 단일 흐름이라 여기 두지 않는다 —
+// 입구는 미진단자용 히어로 CTA와 상단 "다시 진단하기" 칩 하나씩뿐이다(대표 피드백 2026-08-23 #3).
 const HUB = [
-  { href: "../index.html?view=start", label: "설문 진단", desc: "24문항 · 3~4분" },   // ⚠ index.html의 Q를 줄이면 여기도 고쳐야 한다
-  { href: "../photo.html",        label: "촬영 진단", desc: "사진으로 색·형태 재기" },
-  { href: "cloth-check.html",         label: "옷 색 판정", desc: "가진 옷이 내 쪽인지" },
-  { href: "pick.html",                label: "타입별 추천", desc: "내 타입이 자주 쓰는 것" },
+  { href: "cloth-check.html", label: "옷 색 판정", desc: "가진 옷이 내 쪽 색인지 사진으로 확인" },
+  { href: "pick.html",        label: "타입별 추천", desc: "내 타입이 자주 쓰는 아이템 모음" },
 ];
-const hubCard = () => `<div class="card"><h2>기능</h2>` + HUB.map(h =>
-  `<a class="q" href="${h.href}" style="display:block;text-decoration:none;color:inherit">
-     <div class="t">${h.label}</div><div class="m">${h.desc}</div></a>`).join("") + `</div>`;
+const hubCard = (extraRows = "") => `<div class="card"><h2>도구</h2>` + HUB.map(h =>
+  `<a class="q" href="${h.href}" style="display:block;text-decoration:none">
+     <div class="t">${h.label}</div><div class="m">${h.desc}</div></a>`).join("") + extraRows + `</div>`;
 
 // 진단 전 — 대표 지시 2026-08-17: "진단을 아직 안 받으셨어요" 한 줄 + 진단으로 보낸다
 function renderNoDiag(){
   track("hub_shown", {diagnosed:false});
+  // 진단 입구는 이 버튼 하나 — 촬영→설문 통합 흐름(?flow=full)으로 보낸다.
+  // 따로 두던 "설문 진단"·"촬영 진단" 항목은 없앴다(개별 진단이 흩어져 보이던 원인).
   app.innerHTML = head("시작 전") + `<div class="card">
       <p class="lead">아직 진단을 안 받으셨어요.</p>
       <p class="note">진단을 마치면 여기에 지금 자리와 오늘 할 미션이 들어와요.</p>
-      <a class="btn" href="../index.html?view=start" style="display:block;text-align:center;text-decoration:none">진단 시작하기</a>
-    </div>` + hubCard() + `<button class="btn quiet" id="out">로그아웃</button>`;
+      <a class="btn" href="../photo.html?flow=full" style="display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none">진단 시작하기</a>
+      <p class="note" style="text-align:center;margin-top:8px">사진 한 장, 설문 3~4분이면 됩니다.</p>
+    </div>` + hubCard() + `<button class="btn quiet" id="out" style="display:block">로그아웃</button>`;
   $("out").onclick = () => { signOut(); route(); };
 }
 
@@ -401,13 +420,16 @@ function renderHome(){
     <a class="ph-entry" href="../index.html?view=start">다시 진단하기</a>
   </div>`;
   // briefing()은 프리즘 카드와 정보가 겹쳐서 뺐다(추구미·지금·벌어진 쪽이 다 프리즘에 있다).
+  // 기록·영상은 밑줄 리스트에서 도구 카드의 행으로 — 리포트 카드 문법 하나로 통일.
+  // 관리성 항목(의견·점검·로그아웃)만 조용한 버튼으로 남긴다.
+  const myRows = `
+    <button class="q" id="toRec"><div class="t">기록 · 옷장</div><div class="m">담아둔 것과 해낸 미션</div></button>
+    <button class="q" id="toVid"><div class="t">볼 만한 영상</div><div class="m">내 타입 쪽 영상 모음</div></button>`;
   app.innerHTML = head("") + downBanner()
     + (back ? `<div class="banner">쌓아둔 건 그대로 있어요.</div>` : ``)
     + `<div class="ph-bg">` + prism + today + entries + `</div>`
-    + effortLine() + statsCard() + hubCard()
-    + `<button class="btn quiet" id="toRec">기록 · 옷장</button>
-       <button class="btn quiet" id="toVid">볼 만한 영상</button>
-       <button class="btn quiet" id="toVoc">하고 싶은 말 남기기</button>
+    + effortLine() + statsCard() + hubCard(myRows)
+    + `<button class="btn quiet" id="toVoc">하고 싶은 말 남기기</button>
        <button class="btn quiet" id="selfck">엔진 자체 점검</button>
        <button class="btn quiet" id="out">로그아웃</button>`;
   $("toRec").onclick = renderRecord;
@@ -442,9 +464,26 @@ function renderHome(){
 function renderList(){
   const r = issueOffer(DICT, diag.gap_axis, {excluded: st.skipped});
   if (r.status === "arrived") {
+    // 막다른 길 → 갈림길 (대표 피드백 2026-08-23 실기기: 청순청량→우아한 유저가 여기서 갇혔다).
+    // "지금 매력 강화" 선택지는 넣지 않았다 — quest-dict에 같은 타입 유지·심화 미션이 없다
+    // (셀 29개 전부 축 격차를 좁히는 방향형). 없는 기능의 버튼은 만들지 않는다 → 이론 요청 필요.
+    // 두 갈림길 다 기존 재진단 경로(index.html?view=start) 재사용 — 무엇을 고르나가 계측의 값이다.
+    track("arrived_fork_shown", {axis:r.primary_axis, gap:r.gap_value});
+    const go = choice => {   // 페이지를 떠나는 전송 — keepalive 필수
+      track("arrived_fork_pick", {choice}, {keepalive:true});
+      location.href = "../index.html?view=start";
+    };
+    // [게이트 통과] 도착은 축하로, 판정 화법 없이. 어미: 왔어요/나옵니다/보세요.
     app.innerHTML = head("도착") + `<div class="card">
-      <p class="lead">지금 자리가 추구미와 거의 겹쳐요. 새 미션을 만들지 않을게요.</p>
-      <button class="btn ghost" id="back">홈으로</button></div>`;
+        <p class="lead">추구미에 거의 다 왔어요.</p>
+        <p class="note">지금 자리와 추구미가 많이 겹쳐서 새 미션이 안 나옵니다. 이제 어디로 갈지 골라보세요.</p></div>
+      <button class="q" id="fkNew"><div class="t">다른 추구미에 도전하기</div>
+        <div class="m">새 방향을 골라 다시 출발</div></button>
+      <button class="q" id="fkRetest"><div class="t">테스트 다시 보기</div>
+        <div class="m">지금 자리가 그대로인지 한 번 더 확인</div></button>
+      <button class="btn ghost" id="back" style="width:100%">홈으로</button>`;
+    $("fkNew").onclick    = () => go("new_want");
+    $("fkRetest").onclick = () => go("retest");
     $("back").onclick = renderHome; return;
   }
   const offerId = crypto.randomUUID();
