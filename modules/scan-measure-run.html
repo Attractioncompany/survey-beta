@@ -64,7 +64,7 @@ function fail(msg) {
 
 // ── 계측 (데이터 운영규약 §6-1) ──
 // 이 기능에서 나오는 데이터: 통합측정 1회당 성공 여부와 사유 (scan_unified_measure)
-// 남길 것: photo_ok·scan_ok·frame(선택된 정면 프레임 태그)·fail_reason
+// 남길 것: photo_ok·scan_ok·frame(선택된 정면 프레임 태그)·fail_reason·draping(answered|skipped|timeout — 웜쿨 판정 질 지표)
 // 안 남길 것: 프레임 이미지·랜드마크 좌표 (헌법 §4 — 얼굴은 기기 밖으로 안 나간다)
 // 어디에 남기나: events 테이블 — index.html track()과 같은 스키마·같은 가드
 // 대시보드: 통합측정 성공률(photo_ok 비율) — 촬영 단계를 없앤 이 구조의 생사 지표
@@ -90,6 +90,55 @@ async function waitFor(cond, ms, why) {
   }
 }
 
+/** 드레이핑 노출 (대표 2026-08-23) — 이 구간만 숨은 iframe을 전면에 띄워 유저가 색 카드를
+ *  직접 고른다. photo.html의 drapeCard가 단계 표기("1/2 단계")·질문·힌트·'잘 모르겠어요'
+ *  스킵을 전부 갖고 있어, 이 페이지의 예고 문구는 겹말이라 넣지 않는다(한 페이지 = 한 메시지).
+ *  photo.html 단독 흐름의 머리(제목·전송 안내·스텝바 1~4)는 앱 통합 흐름에선 맥락이 없다 —
+ *  파일 오너십은 건드리지 않고, 같은 origin 문서에 표시용 스타일만 얹어 가린다.
+ *  라운드 사이 무응답 90초면 남은 라운드를 기존 '모름' 스킵으로 넘겨 흐름이 막히지 않는다. */
+const DRAPE_IDLE_MS = 90000;
+async function runDraping(fr, win, doc, t0) {
+  const card = doc.getElementById("drapeCard");
+  if (!card || card.style.display === "none") return skipDraping(doc);  // 카드가 안 떴으면 종전 경로
+  const st = doc.createElement("style");
+  st.textContent = "#mainContent>h1,#mainContent>p.small,#stepbar{display:none!important}";
+  doc.head.appendChild(st);
+  Object.assign(fr.style, { display: "block", position: "fixed", inset: "0",
+    width: "100%", height: "100%", border: "0", background: "#FAF7FB", zIndex: "10" });
+  win.scrollTo(0, 0);   // 숨긴 채 실행된 scrollIntoView 위치를 버리고 카드부터 보이게
+  const answered = () => Object.values(win.__pm.state?.draping || {}).filter(v => v != null).length;
+  let lastN = answered(), lastAct = Date.now();
+  while (true) {
+    await sleep(300);
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem("chugu_photo_result") || "null"); } catch (e) {}
+    if (saved && saved.ts >= t0) {   // finalize()는 마지막 응답과 같은 태스크에서 저장한다
+      fr.style.display = "none";     // photo.html 결과 화면이 보이기 전에 되숨김
+      const vals = Object.values(win.__pm.state?.draping || {}).filter(v => v != null);
+      return vals.some(v => v !== "unknown") ? "answered" : "skipped";
+    }
+    const n = answered();
+    if (n !== lastN) { lastN = n; lastAct = Date.now(); }
+    if (Date.now() - lastAct > DRAPE_IDLE_MS) {
+      fr.style.display = "none";
+      await skipDraping(doc);
+      return "timeout";
+    }
+  }
+}
+// 기존 '모름' 스킵 경로 — 근소 경합이면 finalize()가 r3·r4를 되물어 최대 4라운드다.
+async function skipDraping(doc) {
+  for (let i = 0; i < 6; i++) {
+    const card = doc.getElementById("drapeCard");
+    if (!card || card.style.display === "none") break;
+    const skip = doc.getElementById("drapeSkip");
+    if (!skip) break;
+    skip.click();
+    await sleep(30);
+  }
+  return "skipped";
+}
+
 /** 통합측정 (대표 2026-08-23) — 스캔의 정면 rgb 프레임을 photo.html의 판정 파이프에
  *  **그대로** 태워 chugu_photo_result를 만든다. 촬영 화면(.photo)이 앱 흐름에서 빠졌으므로
  *  색 3종(chroma·contrast_overall·hue_angle)은 이제 여기서 나온다.
@@ -100,9 +149,10 @@ async function waitFor(cond, ms, why) {
  *  같은 origin(app://local)이라 localStorage도 한 곳이고, 게이트 임계(밝기 55~225·
  *  기울기 ≤12°·얼굴폭 ≥0.18W)·engine_ver·저장 스키마가 photo.html 그 자체다(재구현 0줄).
  *
- *  드레이핑은 이 흐름에 없다 — 전 라운드 '모름'으로 건너뛴다. photo.html의 결측 처리
- *  (가중 재정규화 + 웜쿨 경계)가 그대로 적용되어, 유저가 드레이핑을 전부 건너뛴 것과
- *  같은 결과가 된다. 없는 응답을 지어내지 않는다. */
+ *  드레이핑 라운드만 iframe을 화면에 띄워 유저가 직접 고른다(대표 2026-08-23 — 스캔 정면 컷
+ *  기반 드레이핑). 응답이 있어야 웜쿨 가중 0.8이 살아나고 '경계' 고정이 풀린다.
+ *  그 전(게이트·측정)과 후(finalize)는 종전대로 숨김 자동 진행. 무응답 90초면 기존
+ *  '모름' 스킵으로 폴백한다 — 막다른 길을 만들지 않는다. */
 async function runPhotoPipe(scan) {
   // 정면 프레임 — 스캔 세션은 front를 1장 저장한다(ScanCoordinator, 정면이탈 ≤12° 통과분).
   // 포즈 태그는 프레임 메타(step)가 정본이다. 태그가 없으면 정면 후보로 취급해 게이트에 맡긴다.
@@ -144,15 +194,8 @@ async function runPhotoPipe(scan) {
       const t0 = Date.now();
       win.__pm.analyze(img);
       if (!win.__pm.state) continue;   // 게이트 탈락(밝기·기울기·거리·얼굴) — photo.html이 판정했다
-      // 드레이핑 건너뛰기 — 근소 경합이면 finalize()가 r3·r4를 되물어 최대 4라운드다.
-      for (let i = 0; i < 6; i++) {
-        const card = doc.getElementById("drapeCard");
-        if (!card || card.style.display === "none") break;
-        const skip = doc.getElementById("drapeSkip");
-        if (!skip) break;
-        skip.click();
-        await sleep(30);
-      }
+      // 드레이핑 — analyze()가 게이트를 통과하면 askDraping("r1")로 drapeCard가 이미 떠 있다.
+      const draping = await runDraping(fr, win, doc, t0);
       let saved = null;
       try { saved = JSON.parse(localStorage.getItem("chugu_photo_result") || "null"); } catch (e) {}
       if (saved && saved.ts >= t0) {
@@ -160,13 +203,17 @@ async function runPhotoPipe(scan) {
         // 모르는 필드는 무해하다(1184행 확인). 분석에서 촬영분과 구분하는 용도.
         saved.src = "scan"; saved.frame = tag;
         try { localStorage.setItem("chugu_photo_result", JSON.stringify(saved)); } catch (e) {}
-        return { ok: true, frame: tag };
+        return { ok: true, frame: tag, draping };
       }
-      return { ok: false, reason: "finalize-missed", frame: tag };
+      return { ok: false, reason: "finalize-missed", frame: tag, draping };
     }
     return { ok: false, reason: "gate-fail" };
   } finally { fr.remove(); }
 }
+
+// 검증 훅 — photo.html의 __pm과 같은 성격. 네이티브 없는 브라우저에서 Sample 픽스처로
+// iframe 시퀀스(게이트→드레이핑 노출→finalize)를 실제 코드 그대로 돌려보기 위한 노출.
+window.__smr = { runPhotoPipe };
 
 (async () => {
   try {
@@ -195,6 +242,7 @@ async function runPhotoPipe(scan) {
 
     track("scan_unified_measure", {
       photo_ok: photo.ok, scan_ok: scanOk, frame: photo.frame || null,
+      draping: photo.draping || null,   // answered|skipped|timeout — 웜쿨 판정 질 지표
       fail_reason: photo.ok && scanOk ? null :
         [photo.ok ? null : "photo:" + photo.reason, scanOk ? null : "scan:" + scanReason]
           .filter(Boolean).join(" · "),
