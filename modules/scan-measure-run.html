@@ -1,12 +1,14 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>측정 중</title>
+<!-- 토큰 정본은 czm-ui.css (P0-1) — :root 중복 정의를 지웠다. 폰트는 번들 스크립트가 로컬로 치환한다. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="czm-ui.css">
 <style>
- :root{--bg:#FAF7FB;--ink:#2B2233;--sub:#6E6478;--accent:#B76BA3}
  *{box-sizing:border-box}
  body{margin:0;min-height:100vh;display:flex;flex-direction:column;justify-content:center;
       align-items:center;padding:32px;background:var(--bg);color:var(--ink);
-      font:16px -apple-system,'Pretendard Variable',system-ui;line-height:1.7;text-align:center}
+      font:16px/1.7 'Pretendard Variable','Pretendard',-apple-system,system-ui;text-align:center}
  .dot{width:56px;height:56px;border-radius:50%;background:var(--accent);opacity:.25;
       animation:pulse 1.3s ease-in-out infinite}
  @keyframes pulse{0%,100%{transform:scale(.85);opacity:.25}50%{transform:scale(1.1);opacity:.6}}
@@ -19,7 +21,7 @@
 </style></head><body>
 
 <div class="dot" id="dot"></div>
-<h1 id="t">얼굴을 재고 있어요</h1>
+<h1 id="t">구미가 얼굴을 재고 있어요</h1>
 <p id="s">방금 찍은 3방향 사진을 이 기기 안에서만 계산해요.</p>
 <div id="err"></div>
 <button class="btn" id="next" style="display:none">결과 보러 가기</button>

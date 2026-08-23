@@ -7,10 +7,11 @@
 <title>추구미즘 · 사진으로 찾는 내 컬러</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="modules/czm-ui.css">
 <style>
 /* 디자인 토큰 v1 (VLAS 레퍼런스 · 대표 방향 2026-07-22): 모던 고딕(Pretendard)·여백·절제된 강조.
-   폰트는 기존 선언에 이미 Pretendard가 1순위였으나 로드 코드가 없어 폴백되던 것 — 로드 추가로 완성. */
-:root{--ink:#221A2B;--sub:#6E6478;--bg:#F8F7FA;--accent:#B76BA3;--accent-btn:#9C4680;--deep:#4A2B5C;--line:#E7E3EC;
+   공통 토큰 정본은 modules/czm-ui.css — 배경은 정본값 #FAF7FB로 통일(P0-1, 2026-08-23). */
+:root{--ink:#221A2B;--sub:#6E6478;--bg:#FAF7FB;--accent:#B76BA3;--accent-btn:#9C4680;--deep:#4A2B5C;--line:#E7E3EC;
       --radius:16px;--shadow:0 2px 12px rgba(58,43,69,.06);}
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Pretendard Variable','Pretendard',-apple-system,'Malgun Gothic',sans-serif;}
 body{background:var(--bg);color:var(--ink);min-height:100vh;padding:20px 16px 64px;
@@ -70,6 +71,20 @@ details[open] summary::after{content:" ▴";}
 #stepbar .sb.on{border-color:var(--accent);color:var(--accent);font-weight:700;}
 #stepbar .sb.done{border-color:var(--line);color:#B9AFC2;}
 .stepnav{margin-top:4px;}
+/* 촬영 가이드 스텝 시퀀스 (P0-7) — 한 카드 = 선화 SVG 1 + 지시 1. 표시 전용 */
+.gstep{display:none;text-align:center;padding:8px 0 2px;animation:stepIn .25s ease;}
+.gstep.on{display:block;}
+.gstep svg{width:92px;height:92px;color:var(--accent);fill:none;stroke:currentColor;
+  stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+.gstep .gt{font-size:15.5px;font-weight:700;margin-top:8px;letter-spacing:-0.01em;}
+.gstep .gs{font-size:12.5px;color:var(--sub);margin-top:5px;line-height:1.6;}
+.gnav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;}
+.gnav button{border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;
+  padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;min-height:40px;}
+.gnav button.primary{background:var(--accent-btn);border-color:var(--accent-btn);color:#fff;}
+.gdots{display:flex;gap:6px;}
+.gdots span{width:6px;height:6px;border-radius:50%;background:var(--line);transition:all .2s;}
+.gdots span.on{background:var(--accent);width:16px;border-radius:3px;}
 /* 판정 병기: 추구미 8타입 + 퍼스널컬러 12타입 (대표 확정 2026-07-20 — 같은 비중) */
 .verdict-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
 .verdict{flex:1 1 190px;border-radius:14px;padding:20px 16px;color:#fff;text-align:center;}
@@ -97,15 +112,19 @@ details[open] summary::after{content:" ▴";}
 .cam-top{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;
   padding:calc(10px + env(safe-area-inset-top)) 14px 10px;z-index:2;}
 .cam-top button{background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:20px;
-  padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;}
+  padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.cam-top .ic{width:16px;height:16px;}
 .cam-bottom{position:absolute;left:0;right:0;bottom:0;text-align:center;z-index:2;
   padding:14px 16px calc(20px + env(safe-area-inset-bottom));background:linear-gradient(transparent, rgba(0,0,0,.55));}
 .cam-guide{position:absolute;left:0;right:0;top:calc(64px + env(safe-area-inset-top));z-index:2;
   display:flex;justify-content:center;padding:0 16px;pointer-events:none;}
 #liveMsg{background:rgba(0,0,0,.6);color:#fff;font-size:15px;font-weight:700;line-height:1.4;
   padding:10px 16px;border-radius:14px;max-width:88%;text-align:center;}
-#shotBtn{width:74px;height:74px;border-radius:50%;border:5px solid rgba(255,255,255,.85);
-  background:var(--accent);color:#fff;font-size:24px;cursor:pointer;box-shadow:0 2px 14px rgba(0,0,0,.4);}
+/* 셔터 = 흰 원(테두리 링 + 속원, iOS 카메라 문법) — 이모지 폐지 (P0-3 2026-08-23).
+   속원 색은 liveCheck가 backgroundColor로 바꾼다(통과=초록빛). background 축약형을 쓰면
+   background-clip이 초기화돼 링 틈이 사라진다 — 반드시 backgroundColor만 만질 것. */
+#shotBtn{width:74px;height:74px;border-radius:50%;border:4px solid rgba(255,255,255,.9);
+  padding:5px;background:#fff;background-clip:content-box;cursor:pointer;box-shadow:0 2px 14px rgba(0,0,0,.4);}
 body.cam-open{overflow:hidden;}
 /* 접근성 선택 카드 (Plan C Task3) */
 .seg-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
@@ -136,6 +155,15 @@ body.cam-open{overflow:hidden;}
        미동의 시 step2(촬영) 진입 불가 — consentGate()가 toStep2Btn을 잠근다. -->
   <div class="card" id="consentCard" style="padding:16px 18px">
     <div class="tag">측정 데이터 수집 동의</div>
+    <!-- 핵심 요약 3줄 + 전문 접힘 (P0-6 정보 밀도 다이어트, 2026-08-23).
+         요약은 표시용 안내일 뿐 동의 문안이 아니다 — 문안 정본(v1.2)은 아래 details 안에 한 글자도 안 바꾸고 그대로 있다. -->
+    <div class="small" style="margin-top:8px;line-height:1.8">
+      · <b>얼굴 사진은 서버에 저장하지 않아요</b> — 기기 안에서 측정 수치로만 바뀝니다.<br>
+      · 수치는 익명이고, 진단 정확도 연구에만 쓴 뒤 2년 안에 폐기해요.<br>
+      · 만 14세 이상만 참여할 수 있어요.
+    </div>
+    <details style="border-top:none;padding-top:0;margin-top:8px">
+    <summary>동의 문안 전체 보기</summary>
     <div class="small" style="margin-top:8px;line-height:1.85">
       이 촬영은 진단 정확도를 높이는 연구에 쓰여요. 시작 전에 뭘 모으고 뭘 안 모으는지 알려드릴게요.<br><br>
       · <b>얼굴 사진은 서버에 저장하지 않아요.</b> 촬영 즉시 기기 안에서 측정 수치(눈·입·윤곽의 비율, 피부 색 값 같은 숫자)로 바뀌고, 이 수치만 전송돼요.<br>
@@ -146,30 +174,87 @@ body.cam-open{overflow:hidden;}
       · 동의하지 않으면 촬영으로 넘어가지 않아요. 화면을 닫으셔도 아무 데이터도 남지 않아요.<br>
       · 문의: welcome.rainby@gmail.com
     </div>
+    </details>
     <label style="display:flex;gap:9px;align-items:flex-start;margin-top:12px;font-size:13.5px;line-height:1.6;cursor:pointer">
       <input type="checkbox" id="consentChk" style="margin-top:3px;width:18px;height:18px;flex:none">
       <span>만 14세 이상이고, 위 내용을 읽었으며, 측정 수치 수집에 동의해요.</span>
     </label>
   </div>
 
-  <!-- P1 (REQUEST_dev_ui_p123): 기본 노출 3개, 나머지는 접기 -->
-  <div class="card" style="padding:16px 18px">
-    <div class="tag">📸 촬영 가이드 (정확도를 크게 좌우해요)</div>
-    <div class="small" style="margin-top:8px;line-height:1.9">
-    ⓪ <b>촬영 전 렌즈를 한 번 닦아주세요</b> — 뿌연 막이 색을 다 씻어내요<br>
-    ① <b>흰 배경</b>에서 — 흰 종이·A4를 얼굴 옆에 들면 최고예요<br>
-    ② <b>폰을 눈높이로</b> — 아래에서 올려 찍으면 다시 찍게 돼요 (지난 강의 재촬영의 대부분이 이것)<br>
-    ③ <b>정면 · 자연광(백색등)</b> — 얼굴 기울이지 않기<br>
-    ④ <b>후면 카메라(2배줌) 권장</b> — 다른 분이 찍어주거나 폰을 세워두면 색이 더 정확해요</div>
+  <!-- 촬영 가이드 스텝 시퀀스 (P0-7, 2026-08-23) — 줄글 ①②③ 폐지, 한 카드 = 그림 1 + 지시 1.
+       그림은 인라인 SVG 선화(스트로크 1.5 · currentColor, czm-ui 문법). 표시 전용 — 게이트·측정 무관. -->
+  <div class="card" id="guideCard" style="padding:16px 18px">
+    <div class="tag">촬영 가이드 — 정확도를 크게 좌우해요</div>
+    <div id="gStage">
+      <div class="gstep on">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <rect x="23" y="8" width="18" height="36" rx="4"/>
+          <circle cx="32" cy="16" r="3.6"/>
+          <path d="M44 20c4 2.5 6.5 6 7.5 10.5"/>
+          <path d="M48 15c4.5 3 7.5 7 9 12"/>
+          <path d="M14 50q4-4 9-1t9-1"/>
+        </svg>
+        <div class="gt">렌즈를 한 번 닦아주세요</div>
+        <div class="gs">뿌연 막이 색을 다 씻어내요</div>
+      </div>
+      <div class="gstep">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <rect x="10" y="8" width="44" height="48" rx="3"/>
+          <circle cx="32" cy="27" r="7.5"/>
+          <path d="M19 50c2.5-8 8-10.5 13-10.5s10.5 2.5 13 10.5"/>
+        </svg>
+        <div class="gt">흰 배경 앞에서</div>
+        <div class="gs">흰 종이·A4를 얼굴 옆에 들면 최고예요</div>
+      </div>
+      <div class="gstep">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="21" cy="26" r="11"/>
+          <circle cx="25.5" cy="24" r="1.1" fill="currentColor" stroke="none"/>
+          <path d="M18 44v10"/><path d="M24 44v10"/>
+          <path d="M34 24h8" stroke-dasharray="3 3"/>
+          <rect x="44" y="13" width="12" height="22" rx="3"/>
+          <circle cx="50" cy="30" r="1.4"/>
+        </svg>
+        <div class="gt">폰을 눈높이로</div>
+        <div class="gs">아래에서 올려 찍으면 다시 찍게 돼요</div>
+      </div>
+      <div class="gstep">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="26" cy="36" r="13"/>
+          <circle cx="21.5" cy="33.5" r="1.1" fill="currentColor" stroke="none"/>
+          <circle cx="30.5" cy="33.5" r="1.1" fill="currentColor" stroke="none"/>
+          <path d="M22.5 41q3.5 2.6 7 0"/>
+          <circle cx="51" cy="13" r="5"/>
+          <path d="M51 3.5v3"/><path d="M51 19.5v3"/><path d="M41.5 13h-3"/><path d="M60.5 13h-3"/>
+          <path d="M44.3 6.3l-2.1 2.1"/><path d="M57.7 19.7l2.1 2.1"/>
+        </svg>
+        <div class="gt">정면, 자연광에서</div>
+        <div class="gs">얼굴은 기울이지 말고 화면을 마주 봐요</div>
+      </div>
+      <div class="gstep">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="22"/>
+          <circle cx="32" cy="32" r="13" fill="currentColor" stroke="none" opacity=".9"/>
+        </svg>
+        <div class="gt">자, 시작합니다</div>
+        <div class="gs">아래에서 동의를 확인하고 촬영을 눌러주세요</div>
+      </div>
+    </div>
+    <div class="gnav">
+      <button type="button" id="gPrev">이전</button>
+      <div class="gdots" id="gDots"><span class="on"></span><span></span><span></span><span></span><span></span></div>
+      <button type="button" class="primary" id="gNext">다음</button>
+    </div>
     <details style="border-top:none;padding-top:6px;margin-top:8px">
       <summary>자세한 팁 펼치기</summary>
       <div class="small" style="margin-top:6px;line-height:1.9">
+      · <b>후면 카메라(2배줌) 권장</b> — 다른 분이 찍어주거나 폰을 세워두면 색이 더 정확해요<br>
       · 머리카락이 이마·볼을 가리지 않게 넘겨주세요<br>
       · 민낯 권장 (베이스 메이크업은 색 판정을 바꿔요)<br>
       · 안경 벗기 · 무표정 (입꼬리·눈매 측정)<br>
       · <b>필터·뷰티 모드는 꼭 꺼주세요</b> — 피부색이 실제와 달라져서 판정이 흔들려요 (기본 카메라 앱 권장)<br>
       · <b>밝게 염색한 머리라면</b>: 밝은 창가나 조명을 <b>마주 보고</b>, 얼굴이 화면에 <b>꽉 차게</b> 가까이서 찍으면
-        눈동자로 또렷함을 잴 수 있어요 (☀️ 태양은 절대 직접 보지 마세요)</div>
+        눈동자로 또렷함을 잴 수 있어요 (태양은 절대 직접 보지 마세요)</div>
     </details>
   </div>
 
@@ -185,12 +270,12 @@ body.cam-open{overflow:hidden;}
 
   <div class="step" id="step2" tabindex="-1" aria-labelledby="sb2">
   <div class="card">
-    <div class="tag">📷 촬영 · 업로드</div>
+    <div class="tag">촬영</div>
 <input type="file" id="file" accept="image/*" style="display:none">
     <!-- 입력은 직접촬영 전용 (대표 확정 2026-07-31 — 필터·뷰티앱 원천 차단, 오류대장 040)
          업로드는 검수(?dev=1) 전용 강등: 검증셋 배치 측정 경로 보존 -->
-    <button class="btn" id="liveBtn" disabled>구미 깨우는 중...</button>
-    <button class="btn sub dev-only" id="pickBtn" disabled onclick="document.getElementById('file').click()">📂 사진 업로드 (검수 전용)</button>
+    <button class="btn" id="liveBtn" disabled>준비하고 있어요…</button>
+    <button class="btn sub dev-only" id="pickBtn" disabled onclick="document.getElementById('file').click()">사진 업로드 (검수 전용)</button>
     <div id="status">잠깐만요, 구미가 준비하고 있어요</div>
     <!-- 즉시촬영 모드: 실시간 가이드(밝기·거리·정면·타원 정렬) 후 촬영 -->
     <!-- 풀스크린 카메라 오버레이 — 카드 임베드 폐지(대표 확정 2026-07-31, VLAS식).
@@ -202,14 +287,14 @@ body.cam-open{overflow:hidden;}
         <canvas id="liveOverlay"></canvas>
       </div>
       <div class="cam-top">
-        <button id="camSwitchBtn">🤳 셀프로 찍기</button>
-        <button id="liveCloseBtn">✕ 닫기</button>
+        <button id="camSwitchBtn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 19.5c1.3-3.6 3.8-5.2 6.5-5.2s5.2 1.6 6.5 5.2"/></svg>셀프로 찍기</button>
+        <button id="liveCloseBtn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>닫기</button>
       </div>
       <!-- 가이드 문구는 상단 — 셀카 때 시선이 렌즈 쪽(위)에 가 있어 하단 문구는 눈에 안 들어온다
            (대표 실기기 피드백 2026-08-23). 박스 배경도 같은 피드백 — 맨글자는 프리뷰에 묻힌다. -->
-      <div class="cam-guide"><div id="liveMsg">카메라 준비 중...</div></div>
+      <div class="cam-guide"><div id="liveMsg">카메라를 켜고 있어요</div></div>
       <div class="cam-bottom">
-        <button id="shotBtn" aria-label="촬영">📷</button>
+        <button id="shotBtn" aria-label="촬영"></button>
       </div>
     </div>
     <!-- 촬영 확인 단계 (대표 피드백 2026-07-22) — 찍힌 사진을 보고 유저가 결정 -->
@@ -250,11 +335,11 @@ body.cam-open{overflow:hidden;}
       <summary>자세히 보기</summary>
       <div class="tag">색 방향</div>
       <div class="gauge">
-        <div class="lbl"><span>❄️ 쿨</span><span id="wcVal"></span><span>🔥 웜</span></div>
+        <div class="lbl"><span>쿨</span><span id="wcVal"></span><span>웜</span></div>
         <div class="bar"><div class="dot" id="wcDot"></div></div>
       </div>
       <div class="gauge">
-        <div class="lbl"><span>🫧 소프트</span><span id="sdVal"></span><span>🖤 딥</span></div>
+        <div class="lbl"><span>소프트</span><span id="sdVal"></span><span>딥</span></div>
         <div class="bar"><div class="dot" id="sdDot"></div></div>
       </div>
     </details>
@@ -284,25 +369,28 @@ body.cam-open{overflow:hidden;}
       <div id="sigCards"></div>
     </div>
   </div>
-  <button class="btn sub stepnav" id="restartBtn">↺ 처음부터 다시 진단하기</button>
+  <button class="btn sub stepnav" id="restartBtn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v5h5"/></svg> 처음부터 다시 진단하기</button>
   </div><!-- /step4 -->
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="modules/czm-core.js?v=122fba8"></script>
-<script src="modules/measure-color.js?v=122fba8"></script>
-<script src="modules/measure-structure.js?v=122fba8"></script>
+<script src="modules/czm-core.js?v=9ad134d"></script>
+<script src="modules/measure-color.js?v=9ad134d"></script>
+<script src="modules/measure-structure.js?v=9ad134d"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
 const $=id=>document.getElementById(id);
 // ── 단계별 페이징 ──
 let CUR_STEP=1;
+// 여정 스텝바 모드 (P0-2): flow=full이면 스텝바가 전체 여정(사진→설문→결과)을 그린다.
+// 그때 내부 단계(준비~측정)로 스텝바를 움직이면 "설문"에 불이 들어오는 거짓말이 되므로 잠근다.
+let JOURNEY=false;
 function goStep(n){
   if(n===CUR_STEP) return;
   CUR_STEP=n;
   document.querySelectorAll(".step").forEach(el=>el.classList.toggle("active", el.id==="step"+n));
-  document.querySelectorAll("#stepbar .sb").forEach(el=>{
+  if(!JOURNEY) document.querySelectorAll("#stepbar .sb").forEach(el=>{
     const k=+el.dataset.s;
     el.classList.toggle("on", k===n);
     el.classList.toggle("done", k<n);
@@ -324,8 +412,8 @@ window.__pm={ analyze:img=>analyze(img), get state(){ return STATE; } };
 // 개발/검수 모드: 주소 뒤에 ?dev=1 — 출력 JSON·랜드마크 오버레이·엔진 버전 표기 등 순수 개발용만.
 // 지표(수치+해설)는 기본 화면에 항상 표시한다 (대표 2회 확정 07-11·07-20, REQUEST_dev_ux_restore §1).
 // 과거의 "수치는 내부·검증·B2B 전용" 근거는 폐기됨 — 지표를 다시 숨기려면 대표 승인 필요.
-const DEV = new URLSearchParams(location.search).get("122fba8")==="1";
-if(DEV) document.body.classList.add("122fba8");
+const DEV = new URLSearchParams(location.search).get("9ad134d")==="1";
+if(DEV) document.body.classList.add("9ad134d");
 // 성별 전달 경로 (이론 이목구비앵커 §3, 2026-07-30) — index GENDER를 ?gender=f/m 로 수신. 여성한정 앵커(eye_len F1)·성별밴드(U30) 검증용.
 // ⚠ photo_measurements payload에는 넣지 않음(성별은 app_users.gender 조인, backend 결정 2026-07-30). 현재는 경로만 확보, 실사용은 통합/eye_len 카드 구현 시.
 const GENDER_PM = new URLSearchParams(location.search).get("gender")||null;
@@ -398,7 +486,7 @@ async function sendMeasurement(out){
 
 async function init(){
   $("liveBtn").disabled=true;
-  $("liveBtn").textContent="구미 깨우는 중...";
+  $("liveBtn").textContent="준비하고 있어요…";
   $("pickBtn").disabled=true;
   $("status").textContent="잠깐만요, 구미가 준비하고 있어요";
   try{
@@ -410,11 +498,11 @@ async function init(){
     $("pickBtn").disabled=false;
     $("liveBtn").disabled=false;
     pmTrack("photo_enter",{flow:FLOW_LECTURE?"lecture":FLOW_FULL?"full":FLOW_VERIFY?"verify":"solo"});   // verify를 안 가르면 재촬영 유입이 solo에 섞인다
-    $("liveBtn").textContent="📸 촬영 시작";
+    $("liveBtn").textContent="촬영 시작";
     $("status").textContent="구미가 준비됐어요 — 촬영 시작을 눌러주세요";
   }catch(e){
     // 원시 에러 메시지는 개발 모드에서만. 고객에게는 다음 행동만 안내합니다.
-    $("status").innerHTML=`<div class="warn">🫧 구미를 깨우지 못했어요 — 인터넷 연결을 확인하고 다시 시도해주세요`
+    $("status").innerHTML=`<div class="warn">준비가 안 됐어요 — 인터넷 연결을 확인하고 다시 시도해주세요`
       +`<div class="dev-only" style="margin-top:8px;font-size:11.5px;opacity:.8">dev: ${e.message}</div>`
       +`<button class="btn" id="retryBtn">다시 시도</button></div>`;
     $("retryBtn").addEventListener("click", init);
@@ -439,8 +527,26 @@ $("toStep2Btn").addEventListener("click", ()=>{ if(!CONSENT) return; goStep(2);
 });
 $("backStep1Btn").addEventListener("click", ()=>goStep(1));
 $("restartBtn").addEventListener("click", ()=>location.reload());
-if(FLOW_FULL) document.getElementById("stepbar").insertAdjacentHTML("beforebegin",
-  `<div class="small" style="text-align:center;margin-top:10px;color:var(--accent);font-weight:700">통합 진단 1/2 — 촬영·측정을 마치면 설문으로 이어져요</div>`);
+// ── 촬영 가이드 스텝 넘김 (P0-7) — 표시 전용, 게이트·측정 무관 ──
+let GI=0;
+const GSTEPS=document.querySelectorAll("#gStage .gstep");
+function gShow(i){
+  GI=Math.max(0, Math.min(GSTEPS.length-1, i));
+  GSTEPS.forEach((el,k)=>el.classList.toggle("on", k===GI));
+  document.querySelectorAll("#gDots span").forEach((el,k)=>el.classList.toggle("on", k===GI));
+  $("gPrev").style.visibility = GI===0 ? "hidden" : "visible";
+  $("gNext").style.visibility = GI===GSTEPS.length-1 ? "hidden" : "visible";
+}
+$("gPrev").addEventListener("click", ()=>gShow(GI-1));
+$("gNext").addEventListener("click", ()=>gShow(GI+1));
+gShow(0);
+// 통합 흐름(P0-2): 스텝바를 전체 여정(사진→설문→결과)으로 바꾼다 — "4 결과" 거짓말 수정.
+// 이 페이지 전체가 여정의 1번째 마디라 내부 단계로는 움직이지 않는다(goStep의 JOURNEY 가드).
+if(FLOW_FULL){
+  JOURNEY=true;
+  document.getElementById("stepbar").innerHTML=
+    `<div class="sb on"><b>1</b>사진</div><div class="sb"><b>2</b>설문</div><div class="sb"><b>3</b>결과</div>`;
+}
 init();
 
 let DEVICE="unknown";
@@ -474,7 +580,7 @@ $("file").addEventListener("change", async ev=>{
   if(!f||!engine) return;
   shotPending=null; $("shotConfirm").style.display="none";   // 촬영 확인 대기 중이었다면 정리 (갤러리 경로로 전환)
   goStep(2);
-  $("status").textContent="분석 중...";
+  $("status").textContent="구미가 사진을 보고 있어요";
   try{ DEVICE = readExifDevice(await f.slice(0,131072).arrayBuffer()); }catch(e){ DEVICE="exif_err"; }
   const img=new Image();
   const url=URL.createObjectURL(f);
@@ -951,7 +1057,7 @@ function finalize(){
     engine_ver:"photo_v2.2_sat_anchor"
   };
   render(out);
-  $("status").textContent="✅ 분석 완료";
+  $("status").textContent="구미가 다 봤어요";
   sendMeasurement(out);   // 형태 스칼라 23필드+quality 익명 전송 (얼굴/좌표/드레이핑 제외). 해시블록 밖이라 판정부 무영향.
 }
 
@@ -962,7 +1068,7 @@ let LIVE_FACING="environment", LIVE_LOCK=null;   // 후면 기본(2배줌 자동
 function liveSwitchCam(){
   LIVE_FACING = LIVE_FACING==="user" ? "environment" : "user";
   liveStop(); liveStart();
-  $("camSwitchBtn").textContent = LIVE_FACING==="user" ? "📷 후면으로 (권장)" : "🤳 셀프로 찍기";
+  $("camSwitchBtn").innerHTML = `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${LIVE_FACING==="user"?'<path d="M4.5 8h3.2l1.8-2h5l1.8 2h3.2v10.5h-15z"/><circle cx="12" cy="13" r="3.2"/>':'<circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 19.5c1.3-3.6 3.8-5.2 6.5-5.2s5.2 1.6 6.5 5.2"/>'}</svg>` + (LIVE_FACING==="user" ? "후면으로 (권장)" : "셀프로 찍기");
 }
 // 촬영 순간 흰 플래시 (햅틱 대체 — iOS 웹은 진동 API 미지원, REPLY_dev_VLAS §1-2)
 function liveFlash(){
@@ -1065,7 +1171,7 @@ function liveCheck(){
     else if(Math.abs(gazeH(lm,W,H)) > 0.10) msg="정확한 진단을 위해 카메라를 응시해주세요";   // 대표 확정 2026-08-08
     else if(DEV_TILT && DEV_TILT.supported && DEV_TILT.pitch_off > PITCH_MAX)
       msg="휴대폰을 조금 더 세워주세요";   // 문구 마케팅 검수 대기
-    else { msg="좋아요! 이대로 찍어주세요 ✨"; pass=true; }
+    else { msg="좋아요! 이대로 찍어주세요"; pass=true; }
   }
   // 자동 촬영은 대표 피드백(2026-07-22)으로 철회 — "어떤 상태로 찍혔는지 확인이 안 되어 불쾌"
   // 대신 수동 촬영 후 확인 단계(shotConfirm)로 통제감을 준다. 재도입하려면 대표 승인 필요.
@@ -1105,7 +1211,7 @@ function liveCheck(){
   const grx=ov.width*0.30, gry=Math.min(grx*1.3, ov.height*0.42);
   g.ellipse(ov.width/2, ov.height*0.46, grx, gry, 0, 0, Math.PI*2);
   g.stroke();
-  $("shotBtn").style.background = pass ? "#2C6B3A" : "var(--accent)";
+  $("shotBtn").style.backgroundColor = pass ? "#7FCF96" : "#fff";
 }
 // 촬영 → 즉시 분석이 아니라 확인 단계를 거친다 (대표 피드백 2026-07-22: "어떤 상태로 찍혔는지 확인이 안 되면 불쾌")
 let shotPending=null;   // 확인 대기 중인 촬영본 dataURL — 메모리만, 저장·전송 없음
@@ -1129,7 +1235,7 @@ function shotUse(){
   if(!shotPending) return;
   $("shotConfirm").style.display="none";
   DEVICE="live_capture";           // EXIF가 없는 경로 — 기기 정보 대신 촬영 모드 표기
-  $("status").textContent="분석 중...";
+  $("status").textContent="구미가 사진을 보고 있어요";
   const img=new Image();
   img.onload=()=>{ CZM.trace.reset(); CZM.trace.run("측정", ()=>analyze(img)); };
   img.onerror=()=>gateFail("촬영한 사진을 읽지 못했어요 — 한 번만 더 찍어주세요");
@@ -1163,7 +1269,7 @@ function gateFail(msg){
   goStep(2);
   $("resultCard").style.display="none";
   $("drapeCard").style.display="none";
-  $("status").innerHTML=`<div class="warn">🫧 ${msg}<button class="btn" id="retakeBtn">📷 다시 찍기</button></div>`;
+  $("status").innerHTML=`<div class="warn">${msg}<button class="btn" id="retakeBtn">다시 찍기</button></div>`;
   $("retakeBtn").addEventListener("click", ()=>{ DEV&&confirm("검수: 파일 업로드로 재시도할까요? (취소=카메라)") ? $("file").click() : liveStart(); });
 }
 function render(o){
@@ -1240,7 +1346,7 @@ function render(o){
   // ── 지표 카드 6단 골격 (VLAS 이식 #1+#6 · Plan E Task2) ──
   // 밴드 경계값은 위 band()(.78/.62/.42/.28)·wc_borderline 판정의 ±0.35 그대로 재사용 — 새 기준 신설 없음
   function indicatorCard(cfg){
-    const {icon,label,desc,value,isWC}=cfg;
+    const {label,desc,value,isWC}=cfg;
     let dotPct,badgeTxt,rangeTxt,bandsHtml;
     if(isWC){
       dotPct=clamp((value+1)/2*100,0,100);
@@ -1261,7 +1367,7 @@ function render(o){
       rangeTxt=`내 수치 ${value.toFixed(2)} · ${badgeTxt} 구간(${buckets.find(b=>b[0]===badgeTxt)[1]})`;
     }
     return `<div class="ind-card">
-      <div class="ind-desc">${icon} <b>${label}</b> — ${desc}</div>
+      <div class="ind-desc"><b>${label}</b> — ${desc}</div>
       <div class="ind-bar"><div class="ind-dot" style="left:${dotPct}%"></div></div>
       <div class="ind-range"><span>${rangeTxt}</span></div>
       <div><span class="ind-badge">${badgeTxt}</span></div>
@@ -1269,11 +1375,11 @@ function render(o){
     </div>`;
   }
   $("indCards").innerHTML = [
-    indicatorCard({icon:"❄️🔥",label:"웜쿨",desc:"피부에 도는 기운이 따뜻한 쪽인지 차가운 쪽인지 봤어요",value:fx.warm_cool,isWC:true}),
-    indicatorCard({icon:"☀️",label:"명도",desc:"피부 톤이 밝은 편인지 깊은 편인지 봤어요",value:fx.brightness,isWC:false}),
-    indicatorCard({icon:"🎨",label:"채도",desc:"얼굴색이 선명하게 도는지 부드럽게 가라앉는지 봤어요",value:fx.saturation,isWC:false}),
-    indicatorCard({icon:"🌫️",label:"탁기",desc:"톤이 맑게 떠 있는지 차분히 내려앉아 있는지 봤어요",value:fx.muteness,isWC:false}),
-    indicatorCard({icon:"⚫️",label:"대비",desc:"머리색과 피부색 차이가 뚜렷한지 은은한지 봤어요",value:fx.contrast,isWC:false})
+    indicatorCard({label:"웜쿨",desc:"피부에 도는 기운이 따뜻한 쪽인지 차가운 쪽인지 봤어요",value:fx.warm_cool,isWC:true}),
+    indicatorCard({label:"명도",desc:"피부 톤이 밝은 편인지 깊은 편인지 봤어요",value:fx.brightness,isWC:false}),
+    indicatorCard({label:"채도",desc:"얼굴색이 선명하게 도는지 부드럽게 가라앉는지 봤어요",value:fx.saturation,isWC:false}),
+    indicatorCard({label:"탁기",desc:"톤이 맑게 떠 있는지 차분히 내려앉아 있는지 봤어요",value:fx.muteness,isWC:false}),
+    indicatorCard({label:"대비",desc:"머리색과 피부색 차이가 뚜렷한지 은은한지 봤어요",value:fx.contrast,isWC:false})
   ].join("");
   const w=o.type8;
   const wcLabel = !o.pc12.wc_borderline?(fx.warm_cool>0?"웜":"쿨")
@@ -1302,10 +1408,10 @@ function render(o){
     const protoCon = (proto[o.pc12.primary]||[0,0,0,0.5])[3];
     const hairConN = Math.max(0, Math.min(1, (o.color.contrast_hair-40)/22));
     const d_=hairConN-protoCon;
-    const hairMsg = Math.abs(d_)<0.18 ? "지금 머리 밝기는 이 타입과 잘 어울리는 대비예요 👍"
+    const hairMsg = Math.abs(d_)<0.18 ? "지금 머리 밝기는 이 타입과 잘 어울리는 대비예요"
       : d_<0 ? "지금 머리는 피부와 대비가 조금 약한 편 — 한 톤 더 깊은(어두운) 컬러가 인상을 또렷하게 살려줘요"
              : "지금 머리는 대비가 강한 편 — 한 톤 부드러운(밝은) 컬러가 얼굴과 자연스럽게 어우러져요";
-    $("dyeBox").innerHTML = `<div style="background:#FFF6EC;border-radius:12px;padding:12px 16px;font-size:13px;line-height:1.7;margin-bottom:12px">💇 <b>염색모 안내</b> — 머리색은 진단에서 제외하고 눈동자 기준으로 판정했어요.<br>${hairMsg}</div>`;
+    $("dyeBox").innerHTML = `<div style="background:#FFF6EC;border-radius:12px;padding:12px 16px;font-size:13px;line-height:1.7;margin-bottom:12px"><b>염색모 안내</b> — 머리색은 진단에서 제외하고 눈동자 기준으로 판정했어요.<br>${hairMsg}</div>`;
   } else $("dyeBox").innerHTML = "";
   // 드레이핑 결과 요약 (P3 신설 슬롯)
   const DRAPE_KO={orange:"주황",blue:"파랑",ivory:"아이보리",white:"퓨어 화이트",black:"블랙",unknown:"모르겠음"};
@@ -1315,19 +1421,19 @@ function render(o){
   if(o.draping_r3 && o.draping_r3!=="unknown") dParts.push(DRAPE_KO[o.draping_r3]);
   const drapeTxt = dParts.length ? `${dParts.join("·")} 쪽에서 얼굴이 살아 보인다고 하셨어요` : "";
   $("drapeSummary").innerHTML = drapeTxt
-    ? `<div class="small" style="background:#F6F1FF;border-radius:12px;padding:10px 14px;margin-bottom:12px">🎨 <b>드레이핑 응답</b> — ${drapeTxt}</div>` : "";
+    ? `<div class="small" style="background:#F6F1FF;border-radius:12px;padding:10px 14px;margin-bottom:12px"><b>드레이핑 응답</b> — ${drapeTxt}</div>` : "";
   // ── P2: 경고 배너 단일화 — 심각도순 1개만, 나머지는 하단 한 줄 요약 ──
   // (게이트 실패는 결과 자체가 없으므로 이 시스템 밖 — gateFail이 전담)
   const warns=[];
   if(o.quality.hazy) warns.push({label:"뿌연 사진 안내",
-    html:`📷 사진이 살짝 뿌옇게 나왔어요. 렌즈 한 번 쓱 닦고 다시 찍으면 색이 확 살아나요 — 지금 건 참고만 해주세요`});
+    html:`사진이 살짝 뿌옇게 나왔어요. 렌즈 한 번 쓱 닦고 다시 찍으면 색이 확 살아나요 — 지금 건 참고만 해주세요`});
   if(o.pc12.contrast_anchor.gate===0) warns.push({label:"밝은 염색모 안내",
-    html:`💇 밝게 염색한 머리는 <b>또렷함(대비)을 정확히 재기 어려워요</b> — 이번 결과는 색감 중심으로 봤어요.<br>
-      🌟 눈동자로 다시 잴 수 있어요 — <b>밝은 창가나 조명을 마주 보고</b>(태양은 절대 직접 보지 마세요),
+    html:`밝게 염색한 머리는 <b>또렷함(대비)을 정확히 재기 어려워요</b> — 이번 결과는 색감 중심으로 봤어요.<br>
+      눈동자로 다시 잴 수 있어요 — <b>밝은 창가나 조명을 마주 보고</b>(태양은 절대 직접 보지 마세요),
       <b>얼굴이 화면에 꽉 차게 가까이서</b> 한 장만 더 부탁해요. 눈이 부시면 억지로 뜨지 않아도 돼요 — 편하게 뜬 정도면 충분해요
-      <button class="btn" id="eyeRetakeBtn" style="margin-top:10px">📷 가까이서 다시 찍기</button>`});
+      <button class="btn" id="eyeRetakeBtn" style="margin-top:10px">가까이서 다시 찍기</button>`});
   if(!w.pc_agrees) warns.push({label:"판정 교차확인 안내",
-    html:`🔍 두 판정이 서로 다른 쪽을 가리켜요 — 사진 조건에 따라 갈릴 수 있는 구간이라 다른 사진으로 한 번 더 보면 좋겠어요`});
+    html:`두 판정이 서로 다른 쪽을 가리켜요 — 사진 조건에 따라 갈릴 수 있는 구간이라 다른 사진으로 한 번 더 보면 좋겠어요`});
   $("warnBox").innerHTML = warns.length ? `<div class="warn" style="margin-bottom:10px">${warns[0].html}</div>` : "";
   const eyeBtn=document.getElementById("eyeRetakeBtn");
   if(eyeBtn) eyeBtn.addEventListener("click", ()=>liveStart());
@@ -1385,9 +1491,9 @@ function render(o){
   Object.entries(o.color).forEach(([k,v])=>{ if(COLOR_HIDE.includes(k))return; (COLOR_MAIN.includes(k)?colorMain:colorRaw)[k]=v; });
   const ratioShown={}; Object.entries(o.ratio).forEach(([k,v])=>{ if(!RATIO_INTERNAL.includes(k)) ratioShown[k]=v; });
   $("metrics").innerHTML =
-    sec("🎨 색상 (L·a·b 기반)", colorMain) +
-    sec("📐 비율 (3분할·부위)", ratioShown) +
-    sec("✏️ 라인 (직선감·곡선감 → 종합 "+o.axes.line_score+" / 1=직선)", o.line) +
+    sec("색상 (L·a·b 기반)", colorMain) +
+    sec("비율 (3분할·부위)", ratioShown) +
+    sec("라인 (직선감·곡선감 → 종합 "+o.axes.line_score+" / 1=직선)", o.line) +
     `<details style="margin-top:12px"><summary>원시 측정값 자세히 보기 (a*·b*·ITA°·보정 전 L·참고 대비)</summary><div style="margin-top:4px">`+
     Object.entries(colorRaw).map(([k,v])=>row(k,v)).join("")+
     `</div></details>`;
@@ -1411,7 +1517,7 @@ function render(o){
                L_corrected:o.quality.L_corrected, forehead_used:o.quality.forehead_used}})); }catch(e){}
     $("restartBtn").insertAdjacentHTML("beforebegin", FLOW_VERIFY
       ? `<a class="btn stepnav" id="toSurveyBtn" style="display:block;text-align:center;text-decoration:none" href="modules/home.html">확인하러 돌아가기 →</a>`
-      : `<a class="btn stepnav" id="toSurveyBtn" style="display:block;text-align:center;text-decoration:none" href="index.html?flow=full">다음 단계 — 추구미 설문 (2/2) →</a>`);
+      : `<a class="btn stepnav" id="toSurveyBtn" style="display:block;text-align:center;text-decoration:none" href="index.html?flow=full">다음 — 추구미 설문으로 →</a>`);
   }
   if(DEV){
     $("sigCards").innerHTML = signalCards(o);

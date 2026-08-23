@@ -33,16 +33,15 @@
 
   ※ 유저향 문구는 전부 [마케팅 검수 통과 2026-08-21] 초안. 커밋 전 brand/문체가이드 3단 통과 필요.
 -->
+<!-- Pretendard 실로드 + 공통 토큰 정본(czm-ui.css, P0-1 2026-08-23).
+     토큰(:root)·접힘(details.fold)·ph-glass는 czm-ui.css가 정본 — 여기 중복 정의를 지웠다. -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="czm-ui.css">
 <style>
-/* 팔레트·카드·버튼 토큰 = index.html 리포트 화면과 동일 (대표 피드백 2026-08-23:
-   "설문 최종리포트처럼 앱스럽고 깔끔하게"). 값 정본은 index.html :root — 바뀌면 같이 바꾼다. */
-:root{
-  --bg:#FAF7FB; --card:#fff; --ink:#2B2233; --sub:#6E6478; --line:#E4DCE9;
-  --accent:#B76BA3; --soft:#F7EBF4; --ok:#5B8C6E;
-}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;
+  font:16px/1.6 'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;
   -webkit-font-smoothing:antialiased;word-break:keep-all;padding-bottom:40px}
 .wrap{max-width:520px;margin:0 auto;padding:20px 18px}
 h1{font-size:19px;margin:0 0 2px;letter-spacing:-.02em}
@@ -72,13 +71,7 @@ button{font:inherit;cursor:pointer}
 .st.empty b{font-size:14px;font-weight:600;color:var(--sub);padding:5px 0}
 .field{width:100%;padding:13px;border:2px solid var(--line);border-radius:12px;font:inherit;margin-top:10px;background:#fff}
 .field:focus{outline:none;border-color:var(--accent)}
-/* 접힘 상자 — index.html details#waitSec와 같은 문법 */
-details.fold{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:14px}
-details.fold summary{font-size:14px;color:var(--sub);font-weight:600;cursor:pointer;list-style:none;
-  display:flex;align-items:center;justify-content:space-between;min-height:24px}
-details.fold summary::-webkit-details-marker{display:none}
-details.fold summary::after{content:"▾";color:var(--sub);font-size:12px}
-details.fold[open] summary::after{content:"▴"}
+/* 접힘 상자(details.fold)는 czm-ui.css 정본을 쓴다 */
 .demo{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;background:var(--soft);
   border-radius:12px;padding:14px 15px;margin-top:4px;align-items:baseline}
 .demo-l{font-size:12px;color:var(--sub)} .demo-v{font-size:15px;font-weight:600}
@@ -93,7 +86,7 @@ details.fold[open] summary::after{content:"▴"}
 .ph-head{display:flex;flex-direction:column;gap:6px;padding:4px 0 2px;}
 .ph-h1{font-size:24px;font-weight:800;letter-spacing:-.015em;margin-left:-1px;color:#2B2233;}
 .ph-sub{font-size:13.5px;color:#6E6478;}
-.ph-glass{background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.66);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);border-radius:20px;box-shadow:0 8px 24px rgba(74,43,92,.08);}
+/* .ph-glass는 czm-ui.css 정본을 쓴다 (2026-08-23 이관) */
 .ph-prism{display:flex;flex-direction:column;gap:12px;padding:22px 22px 20px;margin-top:22px;}
 .ph-prism .row{display:flex;justify-content:space-between;align-items:baseline;}
 .ph-prism .t{font-size:13.5px;font-weight:700;color:#4A2B5C;}
@@ -164,6 +157,8 @@ const DICT = (QUIZ && withKnowledge) ? withKnowledge(DICT0, QUIZ) : DICT0;
 // 서버 왕복을 실제로 확인해야 할 때만 ?live=1 로 연다.
 const LOCAL = /^(localhost|127\.|$)/.test(location.hostname)
               && !new URLSearchParams(location.search).has("live");
+// 개발·검수 전용 노출 게이트 — "엔진 자체 점검"은 ?dev=1일 때만 (P0-5, photo.html과 같은 규칙)
+const DEV = new URLSearchParams(location.search).get("dev")==="1";
 // extra는 fetch 옵션 통로 — 페이지를 떠나는 전송은 {keepalive:true} 필수(데이터 운영규약).
 const sbPost = (table, row, extra={}) => LOCAL ? Promise.resolve(true)
   : sbFetch(table, {method:"POST", headers:{Prefer:"return=minimal"}, body:JSON.stringify(row), ...extra});
@@ -218,7 +213,7 @@ function statsCard(){
       ? `<div class="st empty"><b>첫 칸</b><span>${label}</span></div>`
       : `<div class="st"><b>${n}</b><span>${label}</span></div>`;
   }).join("");
-  return `<div class="card"><h2>쌓인 것</h2><div class="stats">${rows}</div>
+  return `<div class="card ph-glass"><h2>쌓인 것</h2><div class="stats">${rows}</div>
     ${STATS.length===0 ? `<p class="note">여기 첫 칸을 채워볼까요.</p>` : ``}</div>`;
 }
 
@@ -226,7 +221,7 @@ function effortLine(){
   const done = STATS.filter(s => s.ref !== "diagnosis").length;
   if (!done) return "";
   // 최초 진단이 원점. 누적이고 줄지 않는다. 남과 비교하지 않는다.
-  return `<div class="card"><h2>진단 이후</h2>
+  return `<div class="card ph-glass"><h2>진단 이후</h2>
     <p class="lead">지금까지 ${done}개 해내셨어요.</p></div>`;
 }
 
@@ -314,7 +309,7 @@ const HUB = [
   { href: "cloth-check.html", label: "옷 색 판정", desc: "가진 옷이 내 쪽 색인지 사진으로 확인" },
   { href: "pick.html",        label: "타입별 추천", desc: "내 타입이 자주 쓰는 아이템 모음" },
 ];
-const hubCard = (extraRows = "") => `<div class="card"><h2>도구</h2>` + HUB.map(h =>
+const hubCard = (extraRows = "") => `<div class="card ph-glass"><h2>도구</h2>` + HUB.map(h =>
   `<a class="q" href="${h.href}" style="display:block;text-decoration:none">
      <div class="t">${h.label}</div><div class="m">${h.desc}</div></a>`).join("") + extraRows + `</div>`;
 
@@ -430,7 +425,7 @@ function renderHome(){
     + `<div class="ph-bg">` + prism + today + entries + `</div>`
     + effortLine() + statsCard() + hubCard(myRows)
     + `<button class="btn quiet" id="toVoc">하고 싶은 말 남기기</button>
-       <button class="btn quiet" id="selfck">엔진 자체 점검</button>
+       ${DEV ? `<button class="btn quiet" id="selfck">엔진 자체 점검</button>` : ``}
        <button class="btn quiet" id="out">로그아웃</button>`;
   $("toRec").onclick = renderRecord;
   $("toVoc").onclick = renderVoc;
