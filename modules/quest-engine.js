@@ -83,6 +83,13 @@ export function issueOffer(dict, gapAxis, opts = {}) {
   const [axis, gap] = top;
   // §4-1 도착 밴드 — 걸음을 지어내지 않는다
   if (Math.abs(gap) < dict.arrival_band) {
+    // 단, 축이 가깝다고 도착인 것은 아니다. 타입이 다르면(화려함인데 목표가 클래식)
+    // 유저는 그 상태를 도착으로 읽지 않는다 — "차이가 있는데 미션이 안 나온다"가 된다
+    // (대표 실기기 지적 2026-08-24). 이론의 도착 밴드는 축 거리 개념이라 타입 동일성을
+    // 다루지 않았다. 축으로 좁힐 것이 없을 뿐이므로 방향 없는 걸음(옷장·기록)은 계속 낸다.
+    if (opts.sameType === false && dirless.length) {
+      return pack(opts.hasActive ? "busy" : "ok", axis, gap, dirless.sort(byRank), excluded);
+    }
     return { status: "arrived", primary_axis: axis, gap_value: gap,
              candidate_pool: [], offered_quests: [], cells: [] };
   }

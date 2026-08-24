@@ -6,9 +6,11 @@
 <link rel="stylesheet" href="czm-ui.css">
 <style>
  *{box-sizing:border-box}
- body{margin:0;min-height:100vh;display:flex;flex-direction:column;justify-content:center;
-      align-items:center;padding:32px;background:var(--bg);color:var(--ink);
-      font:16px/1.7 'Pretendard Variable','Pretendard',-apple-system,system-ui;text-align:center}
+ /* 100dvh — iOS 주소창이 접히고 펴져도 화면 하나에 딱 맞는다(100vh는 폴백) */
+ body{margin:0;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:center;
+      align-items:center;text-align:center;background:var(--bg);color:var(--ink);
+      padding:calc(var(--safe-t) + 32px) 24px calc(var(--safe-b) + 32px);
+      font:16px/1.7 'Pretendard Variable','Pretendard',-apple-system,system-ui}
  .dot{width:56px;height:56px;border-radius:50%;background:var(--accent);opacity:.25;
       animation:pulse 1.3s ease-in-out infinite}
  @keyframes pulse{0%,100%{transform:scale(.85);opacity:.25}50%{transform:scale(1.1);opacity:.6}}
@@ -62,6 +64,55 @@ function fail(msg) {
   $("next").style.display = "block"; $("next").textContent = "설문으로";
 }
 
+/** 측정 실패를 유저에게 알리고 다시 찍을 기회를 준다 (대표 2026-08-24).
+ *  그전에는 게이트를 못 넘으면 chugu_photo_result 없이 조용히 설문으로 넘어갔다 —
+ *  유저는 퍼스널컬러가 왜 비었는지도, 다시 찍을 수 있다는 것도 몰랐다.
+ *
+ *  사유 문구는 photo.html이 이미 쓴 것을 그대로 읽어 온다(gateMsg/gateFail). 어두움·
+ *  기울어짐·거리·기기각도·얼굴 못 찾음이 전부 거기 있고, 마케팅 검수도 거기서 끝났다.
+ *  여기서 다시 쓰면 두 벌이 되고, 임계가 바뀌면 문구만 옛말이 된다(헌법 §3).
+ *
+ *  ⚠ [다시 찍기]의 한계: 브릿지에 재스캔 method가 없다. 앱은 `/photo.html`로 가는 이동을
+ *  가로채 동의→스캔으로 돌리는데(NativeBridge), 그 콜백(onIntercept)이 측정 화면 웹뷰에는
+ *  연결돼 있지 않다(AppFlow .measure). 그래서 이동을 시도한 뒤 그대로 남아 있으면
+ *  네이티브 '홈' 버튼 안내로 내려간다 — 눌러도 아무 일이 없는 버튼은 만들지 않는다.
+ *  ponytail: AppFlow .measure에 onIntercept 한 줄이 붙으면 이 폴백은 안 탄다. */
+const RETAKE_WAIT_MS = 30000;
+function retakeAsk(hint, reason) {
+  track("unified_gate_fail", { reason });
+  $("dot").style.animation = "none"; $("dot").style.opacity = ".15";
+  $("t").textContent = "이번 사진은 잘 안 잡혔어요";
+  $("s").innerHTML = hint ||
+    "빛이나 각도 탓일 수 있습니다. 밝은 곳에서 화면을 정면으로 보고 한 번만 더 찍어주세요.";
+
+  let done = false;
+  const pick = choice => { if (done) return; done = true; track("unified_retake_pick", { choice }); };
+
+  $("next").style.display = "block"; $("next").textContent = "다시 찍기";
+  $("next").onclick = () => {
+    pick("retake");
+    location.href = "../photo.html?flow=verify";   // 앱: 동의→스캔 / 웹: 촬영 모듈
+    setTimeout(() => {   // 가로채였는데 아무 데도 안 갔다 — 남은 길을 알려준다
+      $("err").style.display = "block";
+      $("err").textContent = "오른쪽 위 홈을 누르고 진단을 다시 시작해 주세요.";
+    }, 900);
+  };
+  $("skip").style.display = "block"; $("skip").textContent = "이대로 설문 계속";
+  $("skip").onclick = e => { e.preventDefault(); pick("survey"); goSurvey(); };
+
+  // 막다른 길 금지 — 어느 쪽도 안 고르면 종전처럼 설문으로 간다.
+  setTimeout(() => { if (!done) { pick("timeout"); goSurvey(); } }, RETAKE_WAIT_MS);
+}
+
+/** photo.html이 gateFail()로 그려 둔 사유 문구. 재촬영 버튼은 우리가 따로 그린다. */
+function gateHintOf(doc) {
+  const w = doc.querySelector("#status .warn");
+  if (!w) return null;
+  const c = w.cloneNode(true);
+  c.querySelector("#retakeBtn")?.remove();
+  return c.innerHTML.trim() || null;
+}
+
 // ── 계측 (데이터 운영규약 §6-1) ──
 // 이 기능에서 나오는 데이터: 통합측정 1회당 성공 여부와 사유 (scan_unified_measure)
 // 남길 것: photo_ok·scan_ok·frame(선택된 정면 프레임 태그)·fail_reason·draping(answered|skipped|timeout — 웜쿨 판정 질 지표)
@@ -101,7 +152,9 @@ async function runDraping(fr, win, doc, t0) {
   const card = doc.getElementById("drapeCard");
   if (!card || card.style.display === "none") return skipDraping(doc);  // 카드가 안 떴으면 종전 경로
   const st = doc.createElement("style");
-  st.textContent = "#mainContent>h1,#mainContent>p.small,#stepbar{display:none!important}";
+  // 스텝바 한 줄만 가리면 된다 — 제목·안내문은 2026-08-24 셸 전환으로 1단계 안으로 들어갔고,
+  // 드레이핑은 3단계라 그 단계가 통째로 display:none이다.
+  st.textContent = "#stepbar{display:none!important}";
   doc.head.appendChild(st);
   Object.assign(fr.style, { display: "block", position: "fixed", inset: "0",
     width: "100%", height: "100%", border: "0", background: "#FAF7FB", zIndex: "10" });
@@ -163,7 +216,8 @@ async function runPhotoPipe(scan) {
       if (!meta.step || meta.step === "front") fronts.push(tag);
     } catch (e) {}
   }
-  if (!fronts.length) return { ok: false, reason: "no-front-frame" };
+  console.log(`unified-measure fronts=${fronts.length}/${scan.frames.length} · session=${scan.session}`);
+  if (!fronts.length) return { ok: false, reason: "no-front-frame", fronts: 0 };
 
   const fr = document.createElement("iframe");
   fr.style.display = "none";
@@ -172,7 +226,14 @@ async function runPhotoPipe(scan) {
   try {
     await new Promise((res, rej) => {
       fr.onload = res;
-      setTimeout(() => rej(new Error("pipe-load-timeout")), 15000);
+      // 진단 로그(2026-08-24): 이 타임아웃이 곧 "촬영 모듈이 진행 안 됨"의 얼굴이다.
+      // 앱 웹뷰가 photo.html 이동을 가로채면 iframe이 아예 안 뜨고 여기서 15초를 태운다.
+      // about:blank로 남았는지(가로채임) 로드 중인지(느림)를 로그로 갈라 둔다.
+      setTimeout(() => {
+        let u = "?"; try { u = fr.contentWindow.location.href; } catch (e) { u = "cross-origin"; }
+        console.log(`unified-measure pipe-load-timeout · iframe.url=${u} · src=${fr.src}`);
+        rej(new Error("pipe-load-timeout"));
+      }, 15000);
     });
     const win = fr.contentWindow, doc = win.document;
     // 판정 엔진 준비 대기 — photo.html의 init()이 MediaPipe를 올리면 pickBtn이 풀린다.
@@ -183,6 +244,7 @@ async function runPhotoPipe(scan) {
     const chk = doc.getElementById("consentChk");
     if (chk && !chk.checked) { chk.checked = true; chk.dispatchEvent(new win.Event("change")); }
 
+    let hint = null;
     for (const tag of fronts) {
       const img = new win.Image();
       try {
@@ -193,7 +255,8 @@ async function runPhotoPipe(scan) {
       } catch (e) { continue; }
       const t0 = Date.now();
       win.__pm.analyze(img);
-      if (!win.__pm.state) continue;   // 게이트 탈락(밝기·기울기·거리·얼굴) — photo.html이 판정했다
+      // 게이트 탈락(밝기·기울기·거리·기기각도·얼굴) — photo.html이 판정하고 사유까지 써 뒀다.
+      if (!win.__pm.state) { hint = hint || gateHintOf(doc); continue; }
       // 드레이핑 — analyze()가 게이트를 통과하면 askDraping("r1")로 drapeCard가 이미 떠 있다.
       const draping = await runDraping(fr, win, doc, t0);
       let saved = null;
@@ -207,13 +270,13 @@ async function runPhotoPipe(scan) {
       }
       return { ok: false, reason: "finalize-missed", frame: tag, draping };
     }
-    return { ok: false, reason: "gate-fail" };
+    return { ok: false, reason: "gate-fail", hint };
   } finally { fr.remove(); }
 }
 
 // 검증 훅 — photo.html의 __pm과 같은 성격. 네이티브 없는 브라우저에서 Sample 픽스처로
 // iframe 시퀀스(게이트→드레이핑 노출→finalize)를 실제 코드 그대로 돌려보기 위한 노출.
-window.__smr = { runPhotoPipe };
+window.__smr = { runPhotoPipe, retakeAsk };
 
 (async () => {
   try {
@@ -248,9 +311,12 @@ window.__smr = { runPhotoPipe };
           .filter(Boolean).join(" · "),
     });
 
-    // 색을 못 재면 리포트에 퍼스널컬러가 통째로 빠진다 — 오염된 값을 지어내는 대신
-    // 설문 결과로 계속 간다(기존 fail 경로). chugu_photo_result는 쓰지 않았다.
-    if (!photo.ok) return fail(`정면 사진을 재지 못했어요 (${photo.reason})`);
+    // 색을 못 재면 리포트에 퍼스널컬러가 통째로 빠진다. 오염된 값을 지어내지 않는다 —
+    // chugu_photo_result는 쓰지 않았다. 대신 사유를 알리고 다시 찍을 기회를 준다.
+    if (!photo.ok) {
+      console.log(`unified-measure fail · reason=${photo.reason} fronts=${photo.fronts ?? "?"} hint=${photo.hint ? "y" : "n"}`);
+      return retakeAsk(photo.hint, photo.reason);
+    }
 
     // 스캔 지표(scanOk)는 보조라 결측이어도 진행한다 — 색·구조는 이미 손에 있다.
     $("dot").style.animation = "none"; $("dot").style.opacity = ".55";

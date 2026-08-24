@@ -38,6 +38,31 @@ button,input,textarea,select{font-family:inherit;}
   .glass,.ph-glass,.card.ph-glass{background:rgba(255,255,255,.92);}
 }
 
+/* ── 풀스크린 셸 ────────────────────────────────────────────────
+   정본 출처: index.html(2026-07-31 도입). 여기로 올려 전 화면이 같은 문법을 쓴다
+   (P1 레이아웃 통일 2026-08-24). index.html은 자기 <style>에 같은 값을 갖고 있어
+   영향을 받지 않는다(czm-ui.css를 링크하지 않는다).
+   웹은 롱폼, 앱은 숏폼 — 한 화면은 넘기지 않고 끝나야 한다(대표 2026-08-24).
+     .screen      100dvh 세로 3단 (top / body / btm)
+     .screen-top  제목·진행 표시. 스크롤되지 않는다
+     .screen-body 내용. **여기만** 스크롤한다
+     .screen-btm  주 CTA. 세이프에어리어 포함 하단 고정 — 엄지가 닿는 곳
+   100vh를 먼저 쓰고 100dvh로 덮는다 — iOS 주소창 높이 변화 대응이자 구형 폴백. */
+.screen{height:100vh;height:100dvh;display:flex;flex-direction:column;
+  max-width:520px;margin:0 auto;}
+.screen-top{flex-shrink:0;padding:calc(var(--safe-t) + var(--sp-4)) var(--page-x) var(--sp-2);}
+.screen-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:var(--sp-2) var(--page-x) var(--sp-3);display:flex;flex-direction:column;
+  scroll-snap-type:y proximity;scroll-padding-top:var(--sp-2);position:relative;}
+.screen-btm{flex-shrink:0;padding:var(--sp-3) var(--page-x) calc(var(--safe-b) + var(--sp-4));}
+.screen-btm .btn{margin-top:0;}
+.screen-btm .btn + .btn{margin-top:var(--sp-2);}
+/* 손을 떼는 위치에 반쯤 잘린 카드가 남지 않게 (고객팀 G5) */
+.snap{scroll-snap-align:start;}
+/* 앱 하단 탭바가 서면 그만큼 아래를 비운다. czm-app 클래스는 앱 주입 스크립트만 붙인다 */
+body.czm-app .screen-btm{padding-bottom:calc(var(--safe-b) + 64px);}
+body.czm-app .app-only-hide{display:none!important;}
+
 /* 버튼 3형 — 주(.btn) · 테두리(.btn.ghost) · 조용한(.btn.quiet) */
 .btn{display:block;width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;
   padding:15px;min-height:52px;font-size:16px;font-weight:700;cursor:pointer;margin-top:var(--cta-top);}

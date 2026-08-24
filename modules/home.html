@@ -40,13 +40,24 @@
 <link rel="stylesheet" href="czm-ui.css">
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
+/* 밖 여백 0 · 화면 하나 = 100dvh. 문서처럼 세로로 잇지 않는다 (대표 2026-08-24 "앱은 숏폼").
+   셸(.screen / .screen-top / .screen-body / .screen-btm)은 czm-ui.css 정본을 쓴다.
+   대기 화면 그라디언트는 body에 고정 — 화면이 바뀌어도 공기는 같다. */
+body{margin:0;color:var(--ink);
   font:16px/1.6 'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;
-  -webkit-font-smoothing:antialiased;word-break:keep-all;padding-bottom:40px}
-.wrap{max-width:520px;margin:0 auto;padding:20px 18px}
-h1{font-size:19px;margin:0 0 2px;letter-spacing:-.02em}
-.hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px}
-.hd small{color:var(--sub);font-size:12px}
+  -webkit-font-smoothing:antialiased;word-break:keep-all;
+  background:radial-gradient(circle at 12% 6%,rgba(242,169,196,.38) 0%,rgba(242,169,196,0) 42%),
+             radial-gradient(circle at 92% 22%,rgba(156,200,232,.32) 0%,rgba(156,200,232,0) 46%),
+             radial-gradient(circle at 50% 105%,rgba(185,175,209,.30) 0%,rgba(185,175,209,0) 55%),var(--bg);
+  background-attachment:fixed}
+html,body{overscroll-behavior-y:none}
+h1{font-size:21px;margin:0;letter-spacing:-.02em}
+.hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.hd small{color:var(--sub);font-size:12px;flex:none}
+/* 하단 보조 조작 — 주 CTA 아래 한 줄. 버튼 셋을 세로로 쌓지 않는다 */
+.btm-quiet{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:2px}
+.btm-quiet .btn.quiet{margin:0;padding:8px 10px}
+.btm-quiet i{color:var(--line);font-style:normal}
 .card{background:var(--card);border:0;border-radius:16px;padding:24px 20px;
   box-shadow:0 4px 16px rgba(58,43,69,.08);margin-bottom:22px}
 .card h2{font-size:13px;color:var(--accent);margin:0 0 10px;font-weight:700;letter-spacing:.02em}
@@ -81,36 +92,38 @@ button{font:inherit;cursor:pointer}
 .banner{background:#FFF6E8;border:1px solid #F0DEC0;border-radius:12px;padding:11px 13px;font-size:13px;color:#7A5C2E;margin-bottom:14px}
 
 /* ── 프리즘 홈 (고객팀 리디자인 1차, 시안=스펙 2026-08-21) ─────────────
-   여백 토큰(시트①): 화면 좌우24 · 섹션22 · 카드 안쪽 22~30 · CTA 위 14 */
-.ph-bg{background:radial-gradient(circle at 12% 6%,rgba(242,169,196,.38) 0%,rgba(242,169,196,0) 42%),radial-gradient(circle at 92% 22%,rgba(156,200,232,.32) 0%,rgba(156,200,232,0) 46%),radial-gradient(circle at 50% 105%,rgba(185,175,209,.30) 0%,rgba(185,175,209,0) 55%),#FAF7FB;margin:-16px -16px 0;padding:20px 24px 8px;}
-.ph-head{display:flex;flex-direction:column;gap:6px;padding:4px 0 2px;}
+   여백 토큰(시트①): 화면 좌우24 · 섹션22 · 카드 안쪽 22~30 · CTA 위 14
+   .ph-bg는 폐지 — 그라디언트를 body로 올렸다(2026-08-24 셸 전환). */
+.ph-head{display:flex;flex-direction:column;gap:6px;padding:0;}
 .ph-h1{font-size:24px;font-weight:800;letter-spacing:-.015em;margin-left:-1px;color:#2B2233;}
 .ph-sub{font-size:13.5px;color:#6E6478;}
 /* .ph-glass는 czm-ui.css 정본을 쓴다 (2026-08-23 이관) */
-.ph-prism{display:flex;flex-direction:column;gap:12px;padding:22px 22px 20px;margin-top:22px;}
+.ph-prism{display:flex;flex-direction:column;gap:12px;padding:20px 22px 18px;margin-top:0;}
 .ph-prism .row{display:flex;justify-content:space-between;align-items:baseline;}
 .ph-prism .t{font-size:13.5px;font-weight:700;color:#4A2B5C;}
 .ph-prism .d{font-size:12px;color:#6E6478;}
 .ph-bar{position:relative;height:14px;border-radius:7px;}
 .ph-dot{position:absolute;top:-5px;width:24px;height:24px;border-radius:12px;background:rgba(255,255,255,.9);border:2px solid #B76BA3;box-shadow:0 2px 8px rgba(74,43,92,.25);transform:translateX(-12px);}
 .ph-ends{display:flex;justify-content:space-between;font-size:12px;font-weight:600;}
-.ph-hero{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:14px;border-radius:24px;padding:28px 24px;margin-top:22px;box-shadow:0 12px 32px rgba(74,43,92,.10);min-height:264px;}
-.ph-hero .ph-ctas{margin-top:auto;}
+/* CTA가 카드 밖(하단 고정)으로 나가면서 카드가 낮아졌다 — 빈 바닥을 남기지 않는다 */
+.ph-hero{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:14px;border-radius:24px;padding:26px 24px;margin-top:22px;box-shadow:0 12px 32px rgba(74,43,92,.10);min-height:196px;}
 .ph-gumi{position:absolute;right:10px;top:64px;width:136px;height:136px;pointer-events:none;}
 .ph-gumi .pad{position:absolute;left:50%;top:50%;width:132px;height:132px;transform:translate(-50%,-50%);border-radius:999px;background:radial-gradient(circle,rgba(255,255,255,.95) 0%,rgba(255,255,255,.7) 55%,rgba(255,255,255,0) 78%);}
 .ph-gumi img{position:absolute;inset:0;width:136px;height:136px;object-fit:contain;transform:rotate(-6deg);filter:drop-shadow(0 8px 14px rgba(183,107,163,.3));}
 .ph-title{font-size:24px;font-weight:800;line-height:1.35;letter-spacing:-.015em;margin-left:-1px;color:#2B2233;padding-right:120px;word-break:keep-all;}
 .ph-why{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:#2B2233;min-height:44px;background:none;border:none;padding:0;cursor:pointer;}
 .ph-whytxt{font-size:14px;color:#6E6478;line-height:1.6;padding-right:120px;}
-.ph-ctas{display:flex;gap:12px;margin-top:14px;}
-.ph-jelly{flex:1;min-height:52px;border:none;border-radius:14px;background:linear-gradient(180deg,#A85590 0%,#9C4680 100%);color:#fff;font-size:16px;font-weight:700;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 16px rgba(156,70,128,.35);cursor:pointer;}
-.ph-ghost{min-height:52px;padding:0 18px;border:1.5px solid #E4DCE9;border-radius:14px;background:rgba(255,255,255,.6);color:#6E6478;font-size:15.5px;font-weight:600;cursor:pointer;}
-.ph-entries{display:flex;gap:12px;margin-top:22px;margin-bottom:14px;}
+/* 젤리 버튼 — 하단 고정 주 CTA의 기본 모습(구미=젤리, 브랜드 시그니처).
+   .ph-ctas/.ph-jelly/.ph-ghost 규칙은 CTA가 카드 밖으로 나가면서 쓰이지 않아 지웠다. */
+.screen-btm .btn:not(.ghost):not(.quiet){border-radius:14px;
+  background:linear-gradient(180deg,#A85590 0%,#9C4680 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 16px rgba(156,70,128,.35);}
+.ph-entries{display:flex;gap:10px;margin-top:auto;padding-top:22px;}
 .ph-entry{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border:1px solid rgba(255,255,255,.7);border-radius:14px;background:rgba(255,255,255,.44);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);color:#2B2233;font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;}
 </style>
 </head>
 <body>
-<div class="wrap" id="app"></div>
+<div class="screen" id="app"></div>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 저장 키·좌표·측정값 모양을 여기서 꺼내 쓴다 -->
 <script src="czm-core.js"></script>
@@ -203,7 +216,15 @@ async function bootSession(){
 // ── 화면 ─────────────────────────────────────────────────────
 const esc = s => String(s).replace(/[<&]/g, c => ({"<":"&lt;","&":"&amp;"}[c]));
 
-function head(sub){ return `<div class="hd"><h1>추구미즘</h1><small>${sub}</small></div>`; }
+// 화면 셸 — 한 화면은 위(제목)·가운데(내용)·아래(주 CTA) 셋뿐이다.
+// 문서처럼 세로로 잇지 않는다: 가운데만 스크롤하고 주 CTA는 늘 엄지에 닿는 자리에 있다.
+// 한 화면에 기능을 여러 개 얹지 않는다 — 넘치면 화면을 쪼갠다(대표 2026-08-24).
+const shell = ({top = "", body = "", btm = ""}) =>
+  `<div class="screen-top">${top}</div><div class="screen-body">${body}</div><div class="screen-btm">${btm}</div>`;
+
+function head(title, sub = ""){
+  return `<div class="hd"><h1>${title}</h1>${sub ? `<small>${sub}</small>` : ``}</div>`;
+}
 
 function statsCard(){
   const rows = [["item","아이템"],["skill","스킬"],["knowledge","지식"]].map(([k,label])=>{
@@ -247,10 +268,12 @@ const PREVIEW = [
 function renderPreview(i = 0){
   const c = PREVIEW[i], last = i === PREVIEW.length - 1;
   track("preview_shown", {step:i});
-  app.innerHTML = head(`${i+1} / ${PREVIEW.length}`) + `<div class="card">
-    <p class="lead">${c.h}</p>${c.body}
-    <button class="btn" id="next">${last ? "저장하고 시작하기" : "다음"}</button>
-    ${last ? `` : `<button class="btn quiet" id="skip">건너뛰기</button>`}</div>`;
+  app.innerHTML = shell({
+    top: head("추구미즘", `${i+1} / ${PREVIEW.length}`),
+    body: `<div class="card"><p class="lead">${c.h}</p>${c.body}</div>`,
+    btm: `<button class="btn" id="next">${last ? "저장하고 시작하기" : "다음"}</button>
+          ${last ? `` : `<button class="btn quiet" id="skip">건너뛰기</button>`}`,
+  });
   if (last) {                      // 0에서 올라가는 것만 보여준다 — 줄어드는 숫자는 그리지 않는다
     let n = 0; const el = $("cnt");
     const t = setInterval(() => { el.textContent = ++n; if (n >= 12) clearInterval(t); }, 70);
@@ -276,7 +299,7 @@ function renderSignup(mode = "up"){
   const up = mode === "up";
   // 카드 위계(리포트 톤): 리드/부연 → 소셜 버튼 2개(브랜드 색 유지, 크기·라운드는 .btn 토큰) →
   // 이메일은 접힘(details, index.html waitSec와 같은 문법) → 전환·상태는 조용히 아래로.
-  app.innerHTML = head(up ? "시작하기" : "로그인") + `<div class="card">
+  app.innerHTML = shell({ top: head(up ? "시작하기" : "로그인"), body: `<div class="card">
     <p class="lead">${up ? "기록이 남으려면 로그인이 필요해요." : "다시 오셨네요."}</p>
     <p class="note" style="margin-bottom:8px">${up ? "다음에 열어도 지난 진단이 그대로 남습니다. 이름도 나이도 안 물어봐요."
                          : "쓰시던 계정으로 들어오시면 그대로 이어져요."}</p>
@@ -289,8 +312,8 @@ function renderSignup(mode = "up"){
       <input class="field" id="em" type="email" inputmode="email" autocomplete="email" placeholder="이메일 주소">
       <button class="btn ghost" id="go" style="width:100%">메일로 링크 받기</button>
     </details>
-    <button class="btn quiet" id="swap" style="display:block">${up ? "이미 계정이 있어요" : "처음이에요"}</button>
-    <p class="note" id="msg" style="text-align:center"></p></div>`;
+    <p class="note" id="msg" style="text-align:center"></p></div>`,
+    btm: `<button class="btn quiet" id="swap" style="display:block">${up ? "이미 계정이 있어요" : "처음이에요"}</button>` });
   $("kakao").onclick  = () => { track("signup_started", {method:"kakao", mode}); oauthStart("kakao"); };
   $("google").onclick = () => { track("signup_started", {method:"google", mode}); oauthStart("google"); };
   $("swap").onclick  = () => renderSignup(up ? "in" : "up");
@@ -309,38 +332,29 @@ const HUB = [
   { href: "cloth-check.html", label: "옷 색 판정", desc: "가진 옷이 내 쪽 색인지 사진으로 확인" },
   { href: "pick.html",        label: "타입별 추천", desc: "내 타입이 자주 쓰는 아이템 모음" },
 ];
-const hubCard = (extraRows = "") => `<div class="card ph-glass"><h2>도구</h2>` + HUB.map(h =>
-  `<a class="q" href="${h.href}" style="display:block;text-decoration:none">
-     <div class="t">${h.label}</div><div class="m">${h.desc}</div></a>`).join("") + extraRows + `</div>`;
+// 다른 데로 가는 문 한 줄. 앱에는 하단 탭바가 같은 일을 하므로 주입 스크립트가 이 줄을 숨긴다
+// (body.czm-app .app-only-hide) — 같은 기능을 한 화면에 두 번 두지 않는다.
+const entryRow = (...links) => `<div class="ph-entries app-only-hide">${
+  links.map(([label, href, id]) => id
+    ? `<button class="ph-entry" id="${id}">${label}</button>`
+    : `<a class="ph-entry" href="${href}">${label}</a>`).join("")}</div>`;
 
 // 진단 전 — 대표 지시 2026-08-17: "진단을 아직 안 받으셨어요" 한 줄 + 진단으로 보낸다
+// 진단 입구는 이 버튼 하나 — 촬영→설문 통합 흐름(?flow=full)으로 보낸다.
 function renderNoDiag(){
   track("hub_shown", {diagnosed:false});
-  // 진단 입구는 이 버튼 하나 — 촬영→설문 통합 흐름(?flow=full)으로 보낸다.
-  // 따로 두던 "설문 진단"·"촬영 진단" 항목은 없앴다(개별 진단이 흩어져 보이던 원인).
-  app.innerHTML = head("시작 전") + `<div class="card">
-      <p class="lead">아직 진단을 안 받으셨어요.</p>
-      <p class="note">진단을 마치면 여기에 지금 자리와 오늘 할 미션이 들어와요.</p>
-      <a class="btn" href="../photo.html?flow=full" style="display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none">진단 시작하기</a>
-      <p class="note" style="text-align:center;margin-top:8px">사진 한 장, 설문 3~4분이면 됩니다.</p>
-    </div>` + hubCard() + `<button class="btn quiet" id="out" style="display:block">로그아웃</button>`;
-  $("out").onclick = () => { signOut(); route(); };
-}
-
-// 진단 후 — 브리핑. 좌표 수치는 내지 않는다(정본 금지). 축은 방향만 말한다.
-function briefing(){
-  const N = DICT.type_names ?? {};
-  const g = diag.gap_axis ?? {};
-  const AX = { T:["웜·곡선","쿨·직선"], D:["순함","강함"], M:["동안","성숙"] };
-  const top = Object.entries(g).filter(([k,v]) => AX[k] && Number.isFinite(v))
-                .sort((a,b) => Math.abs(b[1]) - Math.abs(a[1]))[0];
-  const dir = top ? AX[top[0]][top[1] > 0 ? 1 : 0] : null;
-  return `<div class="card"><h2>지금 자리</h2>
-    <div class="demo">
-      <div class="demo-l">추구미</div><div class="demo-v">${esc(N[diag.want] ?? diag.want)}</div>
-      <div class="demo-l">지금</div><div class="demo-v">${esc(N[diag.have] ?? diag.have)}</div>
-      ${dir ? `<div class="demo-l">벌어진 쪽</div><div class="demo-v">${esc(dir)}</div>` : ``}
-    </div></div>`;
+  app.innerHTML = shell({
+    top: `<div class="ph-head">
+            <div class="ph-h1">아직 진단을 안 받으셨어요</div>
+            <div class="ph-sub">사진 한 장, 설문 3~4분이면 됩니다</div>
+          </div>`,
+    body: `<div class="ph-glass ph-hero snap">
+        <div class="ph-gumi"><div class="pad"></div><img src="../bg/gumi_base.png" alt="" onerror="this.parentNode.style.display='none'"></div>
+        <div class="ph-title">지금 자리부터<br>재고 시작해요</div>
+        <div class="ph-whytxt">진단을 마치면 여기에 오늘 할 미션 하나가 들어옵니다.</div>
+      </div>` + entryRow(["도구", "#tools"]),
+    btm: `<a class="btn" href="../photo.html?flow=full" style="display:flex;align-items:center;justify-content:center;text-decoration:none">진단 시작하기</a>`,
+  });
 }
 
 function renderHome(){
@@ -356,51 +370,55 @@ function renderHome(){
   // 이론값이 아니다. 이론팀 일치율 산식(요청서 §4-1)이 확정되면 그걸로 교체한다.
   const prog = Math.min(6 + STATS.length*6, 84);
   const weeks = Math.max(1, Math.ceil(days/7));
-  const prism = `
+  const greet = `
     <div class="ph-head">
       <div class="ph-h1">오늘의 미션</div>
       <div class="ph-sub">${wName}${/[가-힣]$/.test(wName)&&(wName.charCodeAt(wName.length-1)-44032)%28>0?"으로":"로"} 가는 ${days}일째예요</div>
-    </div>
-    <div class="ph-glass ph-prism">
+    </div>`;
+  const prism = `
+    <div class="ph-glass ph-prism snap">
       <div class="row"><div class="t">나의 프리즘</div><div class="d">${weeks}주째 물들어가는 중</div></div>
       <div class="ph-bar" style="background:linear-gradient(90deg,${hCol} 0%,#C9BCD8 55%,${wCol} 100%)">
         <div class="ph-dot" style="left:${prog}%"></div>
       </div>
       <div class="ph-ends"><div style="color:#3F5C8A">지금 · ${hName}</div><div style="color:#9C4680">추구미 · ${wName}</div></div>
     </div>`;
-  let today;
   // 히어로 카드 — 구미 전신 136px 받침(시트③: 머리 안 자름·밝은 받침·카드 안).
   // 기존 3상태(모듈 실패/발행됨/미발행) 로직은 그대로, 옷만 갈아입힌다.
+  // CTA는 카드 밖 하단 고정으로 옮겼다(2026-08-24) — 카드가 길어져도 주 행동은 엄지에 닿는다.
   const gumiEl = `<div class="ph-gumi"><div class="pad"></div><img src="../bg/gumi_base.png" alt="" onerror="this.parentNode.style.display='none'"></div>`;
   // "구미가 이걸 고른 이유" — 문구는 오늘 검수 통과한 기존 문장을 그대로 쓴다(신규 창작 금지).
   const whyTxt = `오늘 당장 해볼 수 있는 것 중 ${wName} 쪽으로 가장 크게 움직입니다.`;
+  let today, cta;
   if (!QE) {
-    today = `<div class="ph-glass ph-hero">${gumiEl}
+    today = `<div class="ph-glass ph-hero snap">${gumiEl}
       <div class="ph-title">미션을 지금 불러오지 못했어요</div>
       <div class="ph-whytxt">잠시 뒤 새로고침해 주세요. 쌓인 건 그대로 있어요.</div></div>`;
+    cta = `<button class="btn ghost" onclick="location.reload()">새로고침</button>`;
   } else if (a) {
     const c = cell(a.id);
-    const primary = c.kind === "knowledge" ? `<button class="ph-jelly" id="toQuiz">풀어보기</button>`
-      : c.kind === "item" ? `<button class="ph-jelly" id="toReg">담았어요</button>`
+    const primary = c.kind === "knowledge" ? `<button class="btn" id="toQuiz">풀어보기</button>`
+      : c.kind === "item" ? `<button class="btn" id="toReg">담았어요</button>`
       : c.countable && c.field
-        ? (a.before ? `<button class="ph-jelly" id="toShot">해봤어요</button>`
-                    : `<button class="ph-jelly" id="toShot">지금 얼굴 찍어두기</button>`)
-        : `<button class="ph-jelly" id="tryDone">해봤어요</button>`;
+        ? (a.before ? `<button class="btn" id="toShot">해봤어요</button>`
+                    : `<button class="btn" id="toShot">지금 얼굴 찍어두기</button>`)
+        : `<button class="btn" id="tryDone">해봤어요</button>`;
     const preNote = (c.countable && c.field && !a.before)
       ? `<div class="ph-whytxt">지금 얼굴부터 한 장 찍어둬요. 나중에 지금 모습이랑 비교해봐요.</div>` : ``;
-    today = `<div class="ph-glass ph-hero">${gumiEl}
+    today = `<div class="ph-glass ph-hero snap">${gumiEl}
       <div class="ph-title">${esc(c.copy)}</div>
       ${preNote}
       <button class="ph-why" id="whyBtn">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#B76BA3" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"></circle><path d="M8 5.2v3l2 1.4"></path></svg>
         구미가 이걸 고른 이유</button>
-      <div class="ph-whytxt" id="whyTxt" style="display:none">${whyTxt}</div>
-      <div class="ph-ctas">${primary}<button class="ph-ghost" id="laterBtn">내일 할게요</button></div>
-      <button class="btn quiet" id="drop" style="margin-top:2px">다른 미션으로 바꾸기</button></div>`;
+      <div class="ph-whytxt" id="whyTxt" style="display:none">${whyTxt}</div></div>`;
+    cta = primary + `<div class="btm-quiet">
+      <button class="btn quiet" id="laterBtn">내일 할게요</button><i>·</i>
+      <button class="btn quiet" id="drop">다른 미션으로</button></div>`;
   } else {
-    today = `<div class="ph-glass ph-hero">${gumiEl}
-      <div class="ph-title">고를 수 있는 미션이<br>준비돼 있어요</div>
-      <div class="ph-ctas"><button class="ph-jelly" id="toList">미션 고르기</button></div></div>`;
+    today = `<div class="ph-glass ph-hero snap">${gumiEl}
+      <div class="ph-title">고를 수 있는 미션이<br>준비돼 있어요</div></div>`;
+    cta = `<button class="btn" id="toList">미션 고르기</button>`;
   }
   // §3-5 복귀 — 경과 일수를 적지 않고, 밀린 처방을 쌓아두지 않고, 구미는 실망하지 않는다
   const away = LS.get(K.lastSeen, null);
@@ -409,28 +427,18 @@ function renderHome(){
   track("home_shown", {returning: back, has_active: !!a});
   LS.set(K.lastSeen, new Date().toISOString());
 
-  // 하단 입구 2개(시안) — "내 결과 리포트"·"다시 진단하기" glass 칩
-  const entries = `<div class="ph-entries">
-    ${diag.scores ? `<a class="ph-entry" href="../index.html?view=report">내 결과 리포트</a>` : ``}
-    <a class="ph-entry" href="../index.html?view=start">다시 진단하기</a>
-  </div>`;
-  // briefing()은 프리즘 카드와 정보가 겹쳐서 뺐다(추구미·지금·벌어진 쪽이 다 프리즘에 있다).
-  // 기록·영상은 밑줄 리스트에서 도구 카드의 행으로 — 리포트 카드 문법 하나로 통일.
-  // 관리성 항목(의견·점검·로그아웃)만 조용한 버튼으로 남긴다.
-  const myRows = `
-    <button class="q" id="toRec"><div class="t">기록 · 옷장</div><div class="m">담아둔 것과 해낸 미션</div></button>
-    <button class="q" id="toVid"><div class="t">볼 만한 영상</div><div class="m">내 타입 쪽 영상 모음</div></button>`;
-  app.innerHTML = head("") + downBanner()
-    + (back ? `<div class="banner">쌓아둔 건 그대로 있어요.</div>` : ``)
-    + `<div class="ph-bg">` + prism + today + entries + `</div>`
-    + effortLine() + statsCard() + hubCard(myRows)
-    + `<button class="btn quiet" id="toVoc">하고 싶은 말 남기기</button>
-       ${DEV ? `<button class="btn quiet" id="selfck">엔진 자체 점검</button>` : ``}
-       <button class="btn quiet" id="out">로그아웃</button>`;
-  $("toRec").onclick = renderRecord;
-  $("toVoc").onclick = renderVoc;
-  $("toVid").onclick = renderContent;
-  $("out").onclick   = () => { signOut(); route(); };
+  // 홈에는 오늘 할 것 하나만 둔다 (대표 2026-08-24 "앱은 숏폼").
+  // 쌓인 것·해낸 기록은 기록 화면으로, 도구·영상·계정은 도구 화면으로 나갔다 —
+  // 한 화면에 기능을 여덟 개 올려두면 사람은 그냥 안 본다.
+  app.innerHTML = shell({
+    top: greet,
+    body: downBanner()
+        + (back ? `<div class="banner">쌓아둔 건 그대로 있어요.</div>` : ``)
+        + prism + today
+        + entryRow(...(diag.scores ? [["내 결과", "../index.html?view=report"]] : []),
+                   ["기록", "#record"], ["도구", "#tools"]),
+    btm: cta,
+  });
 
   $("toList")?.addEventListener("click", renderList);
   $("whyBtn")?.addEventListener("click", () => {
@@ -453,11 +461,39 @@ function renderHome(){
                              field:null, sign_match:null, countable:false});
     st.active = null; renderHome();
   });
-  $("selfck")?.addEventListener("click", renderCheck);
+}
+
+// 도구 화면 — 홈에서 덜어낸 것들이 여기 모인다. 자주 안 쓰는 것을 매일 보는 화면에 두지 않는다.
+// 계정(로그아웃)·의견·점검은 관리성 항목이라 조용한 버튼으로 맨 아래.
+function renderTools(){
+  track("tools_shown", {diagnosed: !!diag});
+  const rows = [
+    ...(diag ? [["toVid", "볼 만한 영상", "내 타입 쪽 영상 모음"]] : []),
+    ...HUB.map(h => [null, h.label, h.desc, h.href]),
+    ...(diag ? [[null, "다시 진단하기", "지금 자리를 한 번 더 확인", "../index.html?view=start"]] : []),
+  ].map(([id, label, desc, href]) => href
+    ? `<a class="q" href="${href}" style="display:block;text-decoration:none"><div class="t">${label}</div><div class="m">${desc}</div></a>`
+    : `<button class="q" id="${id}"><div class="t">${label}</div><div class="m">${desc}</div></button>`).join("");
+  app.innerHTML = shell({
+    top: head("도구"),
+    body: rows + `<div style="margin-top:auto;padding-top:22px">
+        <button class="btn quiet" id="toVoc">하고 싶은 말 남기기</button>
+        ${DEV ? `<button class="btn quiet" id="selfck">엔진 자체 점검</button>` : ``}
+        <button class="btn quiet" id="out">로그아웃</button></div>`,
+    // 앱에는 하단 탭바가 홈을 갖고 있다 — 같은 자리에 버튼을 하나 더 두면 중복이다
+    btm: `<button class="btn ghost app-only-hide" id="back">홈으로</button>`,
+  });
+  $("back").onclick = () => nav("home");
+  $("toVoc").onclick = renderVoc;
+  $("toVid") && ($("toVid").onclick = renderContent);
+  $("selfck") && ($("selfck").onclick = renderCheck);
+  $("out").onclick = () => { signOut(); route(); };
 }
 
 function renderList(){
-  const r = issueOffer(DICT, diag.gap_axis, {excluded: st.skipped});
+  // sameType: 축이 가까워도 타입이 다르면 도착이 아니다 — 엔진이 그때 방향 없는 걸음을 낸다
+  const r = issueOffer(DICT, diag.gap_axis,
+                       {excluded: st.skipped, sameType: diag.want === diag.have});
   if (r.status === "arrived") {
     // 막다른 길 → 갈림길 (대표 피드백 2026-08-23 실기기: 청순청량→우아한 유저가 여기서 갇혔다).
     // "지금 매력 강화" 선택지는 넣지 않았다 — quest-dict에 같은 타입 유지·심화 미션이 없다
@@ -469,14 +505,17 @@ function renderList(){
       location.href = "../index.html?view=start";
     };
     // [게이트 통과] 도착은 축하로, 판정 화법 없이. 어미: 왔어요/나옵니다/보세요.
-    app.innerHTML = head("도착") + `<div class="card">
+    app.innerHTML = shell({
+      top: head("도착"),
+      body: `<div class="card">
         <p class="lead">추구미에 거의 다 왔어요.</p>
         <p class="note">지금 자리와 추구미가 많이 겹쳐서 새 미션이 안 나옵니다. 이제 어디로 갈지 골라보세요.</p></div>
       <button class="q" id="fkNew"><div class="t">다른 추구미에 도전하기</div>
         <div class="m">새 방향을 골라 다시 출발</div></button>
       <button class="q" id="fkRetest"><div class="t">테스트 다시 보기</div>
-        <div class="m">지금 자리가 그대로인지 한 번 더 확인</div></button>
-      <button class="btn ghost" id="back" style="width:100%">홈으로</button>`;
+        <div class="m">지금 자리가 그대로인지 한 번 더 확인</div></button>`,
+      btm: `<button class="btn ghost app-only-hide" id="back">홈으로</button>`,
+    });
     $("fkNew").onclick    = () => go("new_want");
     $("fkRetest").onclick = () => go("retest");
     $("back").onclick = renderHome; return;
@@ -496,12 +535,13 @@ function renderList(){
       </div></button>`).join("");
 
   // 목록이 짧은 것은 사전 공백의 정직한 표시다 — 채우려고 없는 걸음을 지어내지 않는다(§4-4)
-  app.innerHTML = head("미션 고르기") + `<div class="card">
-      <p class="lead">마음 가는 걸 하나만 골라보세요.</p>
-      <p class="note">하나씩 해야 뭐가 달라졌는지 알 수 있어요.</p></div>`
-    + cards
-    + `<button class="btn quiet" id="reroll">다른 미션 보기</button>
-       <button class="btn quiet" id="back">홈으로</button>`;
+  app.innerHTML = shell({
+    top: head("미션 고르기"),
+    body: `<div class="card"><p class="lead">마음 가는 걸 하나만 골라보세요.</p>
+      <p class="note">하나씩 해야 뭐가 달라졌는지 알 수 있어요.</p></div>` + cards,
+    btm: `<div class="btm-quiet"><button class="btn quiet" id="reroll">다른 미션 보기</button>
+          <i>·</i><button class="btn quiet" id="back">홈으로</button></div>`,
+  });
 
   app.querySelectorAll(".q").forEach(b => b.onclick = () => {
     const id = b.dataset.id;
@@ -521,12 +561,15 @@ function renderList(){
 
 function renderRegister(){
   const a = st.active, c = cell(a.id);
-  app.innerHTML = head("담기") + `<div class="card">
-    <p class="lead">${esc(c.copy)}</p>
-    <input class="field" id="nm" placeholder="뭐라고 부를까요? (예: 베이지 트렌치)">
-    <p class="note">${esc(c.slot)} · 사진은 옷장 화면이 열리면 붙일게요.</p>
-    <button class="btn" id="save">담기</button>
-    <button class="btn quiet" id="back">나중에</button></div>`;
+  app.innerHTML = shell({
+    top: head("담기"),
+    body: `<div class="card">
+      <p class="lead">${esc(c.copy)}</p>
+      <input class="field" id="nm" placeholder="뭐라고 부를까요? (예: 베이지 트렌치)">
+      <p class="note">${esc(c.slot)} · 사진은 옷장 화면이 열리면 붙일게요.</p></div>`,
+    btm: `<button class="btn" id="save">담기</button>
+          <button class="btn quiet" id="back">나중에</button>`,
+  });
   $("back").onclick = renderHome;
   $("save").onclick = async () => {
     const name = $("nm").value.trim(); if (!name) return $("nm").focus();
@@ -545,7 +588,7 @@ function renderRegister(){
 // 내 HAVE·WANT 타입 행에 속한 어휘로 모은 것만 보여준다. 좌표 거리로 고르면 환산 상수를 창작하게 된다.
 // 카탈로그는 개인정보가 없어 읽기가 열려 있다(공개키로 조회). 재생은 유튜브 공식 페이지로 보낸다(약관).
 async function renderContent(){
-  app.innerHTML = head("영상") + `<div class="card"><p class="lead">불러오는 중이에요.</p></div>`;
+  app.innerHTML = shell({ top: head("영상"), body: `<div class="card"><p class="lead">불러오는 중이에요.</p></div>` });
   const types = [...new Set([diag.want, diag.have].filter(Boolean))].join(",");
   const url = `${PUBLIC.url}/rest/v1/content_items`
     + `?select=video_id,title,channel,thumb_url,content_keywords!inner(type_code)`
@@ -556,7 +599,7 @@ async function renderContent(){
     if (r.ok) rows = await r.json();
   } catch(e){ console.warn("content", e); }
 
-  app.innerHTML = head("영상") + (rows.length
+  app.innerHTML = shell({ top: head("영상"), body: (rows.length
     ? rows.map(v => `<div class="q" style="cursor:default">
         <a href="https://www.youtube.com/watch?v=${encodeURIComponent(v.video_id)}" target="_blank" rel="noopener"
            style="display:flex;gap:11px;text-decoration:none;color:inherit;align-items:flex-start">
@@ -567,9 +610,9 @@ async function renderContent(){
           <button class="btn quiet" style="margin:0" data-v="${v.video_id}" data-k="1">도움됐어요</button>
           <button class="btn quiet" style="margin:0" data-v="${v.video_id}" data-k="-1">별로예요</button>
         </div></div>`).join("")
-    : `<div class="card"><p class="lead">아직 모아둔 영상이 없어요.</p></div>`)
-    + `<button class="btn ghost" id="back">홈으로</button>`;
-  $("back").onclick = renderHome;
+    : `<div class="card"><p class="lead">아직 모아둔 영상이 없어요.</p></div>`),
+    btm: `<button class="btn ghost" id="back">도구로</button>` });
+  $("back").onclick = renderTools;
   app.querySelectorAll("[data-v]").forEach(b => b.onclick = async () => {
     await sbPost("content_feedback", {user_id:UID, video_id:b.dataset.v, vote:+b.dataset.k});
     track("content_voted", {video_id:b.dataset.v, vote:+b.dataset.k, type_code:diag.want});
@@ -583,18 +626,21 @@ function renderQuiz(){
   const a = st.active, c = cell(a.id), q = c.quiz;
   const draw = (picked) => {
     const right = picked === q.answer_index;
-    app.innerHTML = head("알아보기") + `<div class="card">
-      <p class="lead">${esc(q.question)}</p>
-      ${q.choices.map((ch, i) => `<button class="q" data-i="${i}"
-          style="${picked==null ? "" : i===q.answer_index ? "border-color:var(--ok)" : i===picked ? "opacity:.5" : "opacity:.5"}">
-          <div class="t">${esc(ch)}</div></button>`).join("")}
-      ${picked==null ? `` : right
-        ? `<p class="lead" style="margin-top:14px">맞아요.</p><p class="note">${esc(q.why)}</p>
-           <button class="btn" id="done">한 칸 쌓기</button>`
-        : `<p class="lead" style="margin-top:14px">이건 다른 쪽이에요.</p>
-           <p class="note">초록으로 표시된 게 맞아요. ${esc(q.why)}</p>
-           <button class="btn" id="again">다시 풀기</button>`}
-      <button class="btn quiet" id="back">나중에</button></div>`;
+    app.innerHTML = shell({
+      top: head("알아보기"),
+      body: `<div class="card">
+        <p class="lead">${esc(q.question)}</p>
+        ${q.choices.map((ch, i) => `<button class="q" data-i="${i}"
+            style="${picked==null ? "" : i===q.answer_index ? "border-color:var(--ok)" : "opacity:.5"}">
+            <div class="t">${esc(ch)}</div></button>`).join("")}
+        ${picked==null ? `` : right
+          ? `<p class="lead" style="margin-top:14px">맞아요.</p><p class="note">${esc(q.why)}</p>`
+          : `<p class="lead" style="margin-top:14px">이건 다른 쪽이에요.</p>
+             <p class="note">초록으로 표시된 게 맞아요. ${esc(q.why)}</p>`}</div>`,
+      btm: `${picked==null ? `` : right ? `<button class="btn" id="done">한 칸 쌓기</button>`
+                                        : `<button class="btn" id="again">다시 풀기</button>`}
+            <button class="btn quiet" id="back">나중에</button>`,
+    });
     $("back").onclick = renderHome;
     $("again") && ($("again").onclick = () => draw(null));
     if (picked == null) app.querySelectorAll(".q").forEach(b => b.onclick = () => draw(+b.dataset.i));
@@ -620,10 +666,13 @@ function tryJudge(){
 
   if (!a.before) {                       // 첫 촬영은 기준선이다. 비교 대상이 없으니 판정하지 않는다.
     st.active = {...a, before: now};
-    app.innerHTML = head("기준 사진") + `<div class="card">
-      <p class="lead">지금 얼굴을 저장했어요.</p>
-      <p class="note">${esc(c.copy)}<br>해보신 뒤에 다시 찍으면 비교해드릴게요.</p>
-      <button class="btn" id="back">홈으로</button></div>`;
+    app.innerHTML = shell({
+      top: head("기준 사진"),
+      body: `<div class="card">
+        <p class="lead">지금 얼굴을 저장했어요.</p>
+        <p class="note">${esc(c.copy)}<br>해보신 뒤에 다시 찍으면 비교해드릴게요.</p></div>`,
+      btm: `<button class="btn" id="back">홈으로</button>`,
+    });
     $("back").onclick = renderHome; return true;
   }
   if (JSON.stringify(now) === JSON.stringify(a.before)) return false;   // 아직 다시 찍지 않았다
@@ -648,12 +697,15 @@ function tryJudge(){
     track("stat_added", {kind:"skill", ref:c.id, source_kind:"auto_detect"});
   }
   st.active = null;
-  app.innerHTML = head("확인") + `<div class="card">
-    <p class="lead">${v.verdict === "done"
-      ? "방향이 맞게 움직였어요. 한 칸 쌓였어요."
-      : "이번엔 사진에서 방향이 잡히지 않았어요. 다시 해봐도 괜찮아요."}</p>
-    <p class="note">${v.verdict === "done" ? "" : "실패로 세지 않아요."}</p>
-    <button class="btn" id="back">홈으로</button></div>`;
+  app.innerHTML = shell({
+    top: head("확인"),
+    body: `<div class="card">
+      <p class="lead">${v.verdict === "done"
+        ? "방향이 맞게 움직였어요. 한 칸 쌓였어요."
+        : "이번엔 사진에서 방향이 잡히지 않았어요. 다시 해봐도 괜찮아요."}</p>
+      <p class="note">${v.verdict === "done" ? "" : "실패로 세지 않아요."}</p></div>`,
+    btm: `<button class="btn" id="back">홈으로</button>`,
+  });
   $("back").onclick = renderHome;
   return true;
 }
@@ -669,24 +721,31 @@ function renderRecord(){
            <div class="m">${s.at ? day(s.at) : ""}${s.slot ? ` · ${esc(s.slot)}` : ""}</div></div>`).join("")
       : `<p class="note">여기 첫 칸을 채워볼까요.</p>`) + `</div>`;
   };
-  app.innerHTML = head("기록")
-    + group("item", "옷장", s => s.ref.includes(":") ? s.ref.split(":").slice(1).join(":") : s.ref)
-    + group("skill", "해낸 미션", s => cell(s.ref)?.copy ?? s.ref)
-    + group("knowledge", "알아본 것", s => s.ref === "diagnosis" ? "내 추구미와 지금 자리를 확인했어요" : (cell(s.ref)?.copy ?? s.ref))
-    + `<button class="btn ghost" id="back">홈으로</button>`;
-  $("back").onclick = renderHome;
+  // 홈에 있던 "쌓인 것"·"진단 이후"가 여기로 옮겨왔다 — 기록은 기록끼리 한 화면에.
+  app.innerHTML = shell({
+    top: head("기록 · 옷장"),
+    body: statsCard() + effortLine()
+      + group("item", "옷장", s => s.ref.includes(":") ? s.ref.split(":").slice(1).join(":") : s.ref)
+      + group("skill", "해낸 미션", s => cell(s.ref)?.copy ?? s.ref)
+      + group("knowledge", "알아본 것", s => s.ref === "diagnosis" ? "내 추구미와 지금 자리를 확인했어요" : (cell(s.ref)?.copy ?? s.ref)),
+    btm: `<button class="btn ghost app-only-hide" id="back">홈으로</button>`,
+  });
+  $("back").onclick = () => nav("home");
 }
 
 // 고객팀 TestFlight 게이트 ⑧. 자유입력만 받는다 —
 // 선택지를 주면 우리가 만든 범주 안에서만 말하게 되고, 그건 유저의 말이 아니다.
 function renderVoc(){
-  app.innerHTML = head("의견") + `<div class="card">
-    <p class="lead">뭐든 편하게 적어주세요.</p>
-    <textarea class="field" id="voc" rows="5" placeholder="불편했던 것, 이상했던 것, 좋았던 것"></textarea>
-    <button class="btn" id="send">보내기</button>
-    <button class="btn quiet" id="back">닫기</button>
-    <p class="note" id="vmsg"></p></div>`;
-  $("back").onclick = renderHome;
+  app.innerHTML = shell({
+    top: head("의견"),
+    body: `<div class="card">
+      <p class="lead">뭐든 편하게 적어주세요.</p>
+      <textarea class="field" id="voc" rows="5" placeholder="불편했던 것, 이상했던 것, 좋았던 것"></textarea>
+      <p class="note" id="vmsg"></p></div>`,
+    btm: `<button class="btn" id="send">보내기</button>
+          <button class="btn quiet" id="back">닫기</button>`,
+  });
+  $("back").onclick = renderTools;
   $("send").onclick = async () => {
     const text = $("voc").value.trim(); if (!text) return $("voc").focus();
     await track("voc_submitted", {text, where:"home", has_active: !!st.active});
@@ -698,13 +757,16 @@ function renderVoc(){
 function renderCheck(){
   const rows = selfCheck(DICT);
   const bad = rows.filter(r => !r.pass).length;
-  app.innerHTML = head("자체 점검") + `<div class="card"><h2>발행·판정 규칙</h2>
-    <p class="lead">${bad === 0 ? "전부 통과" : `${bad}건 실패`}</p>
-    <div class="chk">${rows.map(r =>
-      `<span class="${r.pass?"p":"f"}">${r.pass?"통과":"실패"}</span>  ${esc(r.name)}` +
-      (r.detail ? `\n        ${esc(r.detail)}` : "")).join("\n")}</div>
-    <button class="btn ghost" id="back">홈으로</button></div>`;
-  $("back").onclick = renderHome;
+  app.innerHTML = shell({
+    top: head("자체 점검"),
+    body: `<div class="card"><h2>발행·판정 규칙</h2>
+      <p class="lead">${bad === 0 ? "전부 통과" : `${bad}건 실패`}</p>
+      <div class="chk">${rows.map(r =>
+        `<span class="${r.pass?"p":"f"}">${r.pass?"통과":"실패"}</span>  ${esc(r.name)}` +
+        (r.detail ? `\n        ${esc(r.detail)}` : "")).join("\n")}</div></div>`,
+    btm: `<button class="btn ghost app-only-hide" id="back">홈으로</button>`,
+  });
+  $("back").onclick = () => nav("home");
 }
 
 // ── 진입 ─────────────────────────────────────────────────────
@@ -712,22 +774,33 @@ function renderCheck(){
 // 로컬에서는 관문을 열어둔다(서버 호출이 어차피 막혀 있어 로그인해도 볼 게 없다) — ?login=1로 강제.
 const GATED = !LOCAL || new URLSearchParams(location.search).has("login");
 
+// 해시 라우트 — 앱 하단 탭바와 웹의 칩 줄이 같은 주소를 쓴다.
+// 탭바는 app-tabbar.js(앱 전용)가 그리고, 여기서는 주소만 받아준다.
+const VIEWS = {home:renderHome, record:renderRecord, tools:renderTools};
+// 같은 해시로는 hashchange가 오지 않는다 — 주소만 조용히 맞추고 화면은 직접 그린다
+const nav = name => { history.replaceState(null, "", `#${name}`); (VIEWS[name] ?? renderHome)(); };
+addEventListener("hashchange", () => {
+  const v = VIEWS[location.hash.slice(1)];
+  if (v) v();
+});
+
 async function route(){
   if (new URLSearchParams(location.search).has("selfcheck")) return renderCheck();
-  if (!QE && !selfCheck) { /* 자체 점검은 걸음 모듈이 있어야 돈다 */ }
   if (GATED && SS && !isSignedIn())
     return LS.get(K.previewDone, false) ? renderSignup("up") : renderPreview();
   await bootSession();
-  if (!tryJudge()) renderHome();
+  if (tryJudge()) return;
+  const v = VIEWS[location.hash.slice(1)];
+  (v ?? renderHome)();
 }
 
 const returned = SS ? captureRedirect() : null;   // 로그인에서 돌아왔는가
 if (returned?.error) {
   track("signin_failed", {reason: returned.error});
-  app.innerHTML = head("로그인") + `<div class="card">
+  app.innerHTML = shell({ top: head("로그인"), body: `<div class="card">
     <p class="lead">로그인이 끝까지 가지 못했어요.</p>
-    <p class="note">${esc(returned.error)}</p>
-    <button class="btn" onclick="location.href=location.pathname">다시 해보기</button></div>`;
+    <p class="note">${esc(returned.error)}</p></div>`,
+    btm: `<button class="btn" onclick="location.href=location.pathname">다시 해보기</button>` });
 } else {
   if (returned) track("signin_succeeded", {});
   route();

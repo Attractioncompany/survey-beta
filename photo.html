@@ -14,10 +14,15 @@
 :root{--ink:#221A2B;--sub:#6E6478;--bg:#FAF7FB;--accent:#B76BA3;--accent-btn:#9C4680;--deep:#4A2B5C;--line:#E7E3EC;
       --radius:16px;--shadow:0 2px 12px rgba(58,43,69,.06);}
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Pretendard Variable','Pretendard',-apple-system,'Malgun Gothic',sans-serif;}
-body{background:var(--bg);color:var(--ink);min-height:100vh;padding:20px 16px 64px;
+/* 문서형 스크롤 → 단계별 풀스크린 (2026-08-24). 한 단계 = 한 화면 = 100dvh.
+   페이지 전체가 스크롤되지 않고, 단계 안의 .step-body만 스크롤한다.
+   주 버튼(.stepnav)은 세이프에어리어 위에 고정 — 길어져도 늘 엄지에 닿는다.
+   카메라 오버레이(#liveWrap)는 position:fixed라 이 셸 밖이다(그대로). */
+body{background:var(--bg);color:var(--ink);height:100vh;height:100dvh;overflow:hidden;
      word-break:keep-all;overflow-wrap:break-word;
      -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
-.wrap{max-width:520px;margin:0 auto;}
+.wrap{max-width:520px;margin:0 auto;height:100%;display:flex;flex-direction:column;
+      padding:calc(env(safe-area-inset-top) + 14px) 16px 0;}
 h1{font-size:23px;font-weight:800;letter-spacing:-0.02em;line-height:1.35;}
 .tag{font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.07em;}
 b,strong{font-variant-numeric:tabular-nums;}
@@ -61,16 +66,20 @@ summary{font-size:13px;color:var(--sub);cursor:pointer;list-style:none;}
 summary::-webkit-details-marker{display:none;}
 summary::after{content:" ▾";}
 details[open] summary::after{content:" ▴";}
-/* 단계별 페이징 */
+/* 단계별 페이징 — 활성 단계가 남은 높이를 전부 쓴다(내용 스크롤 + 버튼 고정) */
 .step{display:none;}
-.step.active{display:block;animation:stepIn .25s ease;}
+.step.active{display:flex;flex-direction:column;flex:1;min-height:0;animation:stepIn .25s ease;}
+/* 스크롤 스냅은 넣지 않는다 — proximity 스냅이 로드 직후 첫 카드로 붙어버려
+   위쪽 제목·안내가 화면 밖으로 밀려났다(실측 2026-08-24). */
+.step-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;}
 @keyframes stepIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
-#stepbar{display:flex;gap:6px;margin-top:14px;}
+#stepbar{display:flex;gap:6px;flex-shrink:0;margin:0 0 12px;}
 #stepbar .sb{flex:1;text-align:center;font-size:11px;color:var(--sub);padding:7px 2px 8px;border-radius:10px;background:#fff;border:1.5px solid var(--line);}
 #stepbar .sb b{display:block;font-size:14px;margin-bottom:2px;}
 #stepbar .sb.on{border-color:var(--accent);color:var(--accent);font-weight:700;}
 #stepbar .sb.done{border-color:var(--line);color:#B9AFC2;}
-.stepnav{margin-top:4px;}
+/* 단계의 주 버튼 — 화면 하단 고정. 아래 여백에 세이프에어리어를 더한다 */
+.stepnav{flex-shrink:0;margin:10px 0 calc(env(safe-area-inset-bottom) + 14px);}
 /* 촬영 가이드 스텝 시퀀스 (P0-7) — 한 카드 = 선화 SVG 1 + 지시 1. 표시 전용 */
 .gstep{display:none;text-align:center;padding:8px 0 2px;animation:stepIn .25s ease;}
 .gstep.on{display:block;}
@@ -139,8 +148,9 @@ body.cam-open{overflow:hidden;}
 </head>
 <body>
 <main class="wrap" id="mainContent">
-  <h1>사진 한 장으로, 나에게 어울리는 컬러 찾기</h1>
-  <p class="small">사진은 이 기기 안에서만 분석되고, 어디로도 전송·저장되지 않아요. 진단을 개선하려고 얼굴이 아닌 <b>측정 수치만 익명</b>으로 받아요.</p>
+  <!-- 제목·안내문은 1단계(준비) 안으로 옮겼다 (2026-08-24) — 촬영·분석·결과 화면에서는
+       맥락이 없는 머리글이었고, 단계마다 화면 위를 차지해 정작 할 일이 밀려났다.
+       화면 위에 늘 남는 것은 스텝바 한 줄뿐이다("한 페이지 = 한 메시지"). -->
   <div id="stepbar">
     <div class="sb" data-s="1" id="sb1"><b>1</b>준비</div>
     <div class="sb" data-s="2" id="sb2"><b>2</b>사진</div>
@@ -149,6 +159,11 @@ body.cam-open{overflow:hidden;}
   </div>
 
   <div class="step" id="step1" tabindex="-1" aria-labelledby="sb1">
+  <div class="step-body">
+  <h1>사진 한 장으로, 나에게 어울리는 컬러 찾기</h1>
+  <!-- 머리말 문단을 지웠다 (2026-08-24) — "사진은 기기 안에서만 분석되고 전송·저장되지 않는다"는
+       바로 아래 동의 카드 첫 줄과 같은 말이었다. 같은 말을 두 번 하느라 화면 하나가 넘쳤다.
+       (원문은 동의 문안 정본 v1.2 안에 그대로 있다 — 한 글자도 줄이지 않았다.) -->
 
   <!-- 동의 게이트 — 문안 정본: theory/동의문안_원격측정수집_v1_초안_2026-08-08.md §A (v1.2 [확정])
        개발팀은 문안을 쓰지 않는다. 위 문서 §A를 그대로 옮긴 것이며 수정 시 그 문서가 먼저 바뀌어야 한다.
@@ -265,10 +280,12 @@ body.cam-open{overflow:hidden;}
       <label class="seg"><input type="radio" name="dye" value="y"> 염색모</label>
     </div>
   </div>
+  </div><!-- /step-body -->
   <button class="btn stepnav" id="toStep2Btn" disabled>동의하고 촬영 시작</button>
   </div><!-- /step1 -->
 
   <div class="step" id="step2" tabindex="-1" aria-labelledby="sb2">
+  <div class="step-body">
   <div class="card">
     <div class="tag">촬영</div>
 <input type="file" id="file" accept="image/*" style="display:none">
@@ -307,10 +324,12 @@ body.cam-open{overflow:hidden;}
     </div>
     <canvas id="cv" style="display:none;margin-top:12px"></canvas>
   </div>
+  </div><!-- /step-body -->
   <button class="btn sub stepnav" id="backStep1Btn">← 촬영 준비로 돌아가기</button>
   </div><!-- /step2 -->
 
   <div class="step" id="step3" tabindex="-1" aria-labelledby="sb3">
+  <div class="step-body">
   <div class="card" id="drapeCard" style="display:none">
     <div class="drape-step" id="drapeStep"></div>
     <div style="font-size:15px;font-weight:700;margin-top:6px" id="drapeQ">어느 쪽에서 얼굴이 더 살아 보여요?</div>
@@ -321,9 +340,11 @@ body.cam-open{overflow:hidden;}
 
   <!-- P3 (REQUEST_dev_ui_p123): 결과 위계 고정 — 경고(1개)→타입 카드→구미의 관찰→염색모→드레이핑 요약→지표→JSON(dev)
        신뢰도 박스는 P3 목록에 없지만 헌법 신뢰보호(정직 표기) 대상이라 유지, 드레이핑 요약 뒤에 배치 -->
+  </div><!-- /step-body -->
   </div><!-- /step3 -->
 
   <div class="step" id="step4" tabindex="-1" aria-labelledby="sb4">
+  <div class="step-body">
   <div class="card" id="resultCard" style="display:none">
     <div id="warnBox"></div>
     <div id="pcBox"></div>
@@ -369,14 +390,15 @@ body.cam-open{overflow:hidden;}
       <div id="sigCards"></div>
     </div>
   </div>
+  </div><!-- /step-body -->
   <button class="btn sub stepnav" id="restartBtn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v5h5"/></svg> 처음부터 다시 진단하기</button>
   </div><!-- /step4 -->
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="modules/czm-core.js?v=c5e68f5"></script>
-<script src="modules/measure-color.js?v=c5e68f5"></script>
-<script src="modules/measure-structure.js?v=c5e68f5"></script>
+<script src="modules/czm-core.js?v=1e66c62"></script>
+<script src="modules/measure-color.js?v=1e66c62"></script>
+<script src="modules/measure-structure.js?v=1e66c62"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -395,10 +417,11 @@ function goStep(n){
     el.classList.toggle("on", k===n);
     el.classList.toggle("done", k<n);
   });
-  // 단계 전환 스크롤·포커스: 히스토리 조작 없이 새 단계 컨테이너로 시선·포커스만 이동 (Plan C Task5)
+  // 단계 전환: 페이지가 아니라 새 단계의 본문을 맨 위로 되돌린다 (풀스크린 셸 전환 2026-08-24).
+  // 페이지 자체는 스크롤하지 않으므로 scrollIntoView는 아무 일도 하지 않는다 — 대신 본문을 감는다.
   const stepEl=$("step"+n);
   if(stepEl){
-    stepEl.scrollIntoView({behavior:"smooth", block:"start"});
+    stepEl.querySelector(".step-body")?.scrollTo(0,0);
     stepEl.focus({preventScroll:true});
   }
 }
@@ -412,8 +435,8 @@ window.__pm={ analyze:img=>analyze(img), get state(){ return STATE; } };
 // 개발/검수 모드: 주소 뒤에 ?dev=1 — 출력 JSON·랜드마크 오버레이·엔진 버전 표기 등 순수 개발용만.
 // 지표(수치+해설)는 기본 화면에 항상 표시한다 (대표 2회 확정 07-11·07-20, REQUEST_dev_ux_restore §1).
 // 과거의 "수치는 내부·검증·B2B 전용" 근거는 폐기됨 — 지표를 다시 숨기려면 대표 승인 필요.
-const DEV = new URLSearchParams(location.search).get("c5e68f5")==="1";
-if(DEV) document.body.classList.add("c5e68f5");
+const DEV = new URLSearchParams(location.search).get("1e66c62")==="1";
+if(DEV) document.body.classList.add("1e66c62");
 // 성별 전달 경로 (이론 이목구비앵커 §3, 2026-07-30) — index GENDER를 ?gender=f/m 로 수신. 여성한정 앵커(eye_len F1)·성별밴드(U30) 검증용.
 // ⚠ photo_measurements payload에는 넣지 않음(성별은 app_users.gender 조인, backend 결정 2026-07-30). 현재는 경로만 확보, 실사용은 통합/eye_len 카드 구현 시.
 const GENDER_PM = new URLSearchParams(location.search).get("gender")||null;
