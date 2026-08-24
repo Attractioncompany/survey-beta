@@ -164,7 +164,8 @@ function renderResult(rgb, res, dataURL){
   ctTrack("cloth_result",{win:res.win.key, pc:MYPC});
   $("app").innerHTML = `
     <h1>${MYPC} 기준으로 봤어요</h1>
-    <div class="stage" style="aspect-ratio:16/10"><img src="${dataURL}" alt=""></div>
+    <div class="stage" style="aspect-ratio:16/10"><img src="${dataURL}" alt="" style="object-fit:contain"></div>
+    <p class="note" style="margin-top:8px">색을 읽은 영역이에요. 벽이나 바닥이 크게 잡혔다면 옷만 더 크게 담아 다시 해보세요.</p>
     <div class="card">
       <div class="verdict">이 색은 ${head}</div>
       <div class="pair">
@@ -196,22 +197,40 @@ async function startCam(){
 }
 function stopCam(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }
 
-function analyze(source, W, H){
+/* 화면에 보이는 것과 재는 곳을 일치시킨다.
+   .stage는 3:4인데 후면카메라 프레임은 대개 16:9다. object-fit:cover가 프레임의
+   가운데 30%만 보여주므로, 프레임 전체에 12%/14%를 적용하면 유저가 가이드 안을
+   옷으로 채워도 측정 영역은 가이드보다 2.4배 넓어진다 — 나머지는 전부 배경이다.
+   그래서 가이드 박스를 cover 변환 그대로 프레임 좌표로 되돌린다. */
+const STAGE_AR = 3/4;   // .stage의 aspect-ratio와 반드시 같아야 한다
+function guideRect(W, H, cover){
+  let vw = W, vh = H, ox = 0, oy = 0;
+  if(cover){
+    if(W/H > STAGE_AR){ vw = H*STAGE_AR; ox = (W-vw)/2; }
+    else              { vh = W/STAGE_AR; oy = (H-vh)/2; }
+  }
+  return {x0:Math.round(ox+vw*0.14), y0:Math.round(oy+vh*0.12),
+          w :Math.round(vw*0.72),    h :Math.round(vh*0.76)};
+}
+
+function analyze(source, W, H, cover){
   const cv = document.createElement("canvas");
   cv.width = W; cv.height = H;
   const ctx = cv.getContext("2d", {willReadFrequently:true});
   ctx.drawImage(source, 0, 0, W, H);
-  // 가이드 프레임과 같은 비율(안쪽 12%/14%)만 본다 — 배경을 최대한 뺀다
-  const x0 = Math.round(W*0.14), y0 = Math.round(H*0.12);
-  const w  = Math.round(W*0.72), h  = Math.round(H*0.76);
-  const rgb = dominantColor(ctx, x0, y0, w, h);
+  const r = guideRect(W, H, cover);
+  const rgb = dominantColor(ctx, r.x0, r.y0, r.w, r.h);
   if(!rgb){ alert("색을 읽지 못했어요. 다시 찍어주세요."); return null; }
-  return {rgb, dataURL: cv.toDataURL("image/jpeg", 0.8)};
+  // 미리보기는 잰 영역 그대로 — 벽을 쟀으면 유저 눈에 벽이 보여야 한다
+  const crop = document.createElement("canvas");
+  crop.width = r.w; crop.height = r.h;
+  crop.getContext("2d").drawImage(cv, r.x0, r.y0, r.w, r.h, 0, 0, r.w, r.h);
+  return {rgb, dataURL: crop.toDataURL("image/jpeg", 0.8)};
 }
 
 function shoot(){
   const v = $("v");
-  const out = analyze(v, v.videoWidth, v.videoHeight);
+  const out = analyze(v, v.videoWidth, v.videoHeight, true);
   stopCam();
   if(out) renderResult(out.rgb, judge(out.rgb), out.dataURL);
   else renderStart();
@@ -222,7 +241,7 @@ function fromFile(input){
   if(!f) return;
   const img = new Image();
   img.onload = () => {
-    const out = analyze(img, img.naturalWidth, img.naturalHeight);
+    const out = analyze(img, img.naturalWidth, img.naturalHeight, false);
     if(out) renderResult(out.rgb, judge(out.rgb), out.dataURL);
   };
   img.src = URL.createObjectURL(f);
@@ -258,6 +277,12 @@ if(new URLSearchParams(location.search).get("selfcheck")==="1"){
     ok(judge(toRGB(b)).win.key === "best",  "베스트 색을 베스트로 판정");
     ok(judge(toRGB(w)).win.key === "worst", "워스트 색을 워스트로 판정");
     ok(judge(toRGB(b)).win.near.d < 0.01,   "자기 자신과의 색거리는 0");
+    // 가이드 박스와 측정 영역이 같은 곳을 가리키는지 — 2026-08-24 「배경을 재고 있던」 버그
+    const r169 = guideRect(1280, 720, true);
+    ok(Math.abs(r169.x0/1280 - 0.348) < 0.01, "16:9 프레임의 가이드 좌측 = 34.8%");
+    ok(Math.abs(r169.w /1280 - 0.304) < 0.01, "16:9 프레임의 가이드 폭 = 30.4%");
+    const rFull = guideRect(1000, 1000, false);
+    ok(rFull.x0===140 && rFull.w===720, "앨범 사진은 원본 기준 12%/14% 안쪽");
     // 12타입 전부 팔레트가 갖춰졌는지
     for(const k of Object.keys(P.palettes)){
       const q = P.palettes[k];
