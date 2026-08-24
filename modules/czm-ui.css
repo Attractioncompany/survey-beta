@@ -1,30 +1,103 @@
 /* ============================================================
-   czm-ui.css — 추구미즘 공통 UI 토큰 정본 (P0-1, 2026-08-23)
-   정본 출처: index.html 리포트 화면. 여기 값이 바뀌면 index.html :root와 같이 바꾼다.
-   로드 순서 계약: 각 페이지의 인라인 <style>보다 **먼저** 링크한다 —
-   페이지 전용 규칙이 이 파일을 덮어쓸 수 있어야 한다(전용 규칙이 이긴다).
-   다크모드는 만들지 않는다(단일 룩 확정 2026-08-23) — 배경·글자색을 여기서 명시한다.
+   czm-ui.css — 추구미즘 공통 UI 토큰 정본
+   v2 (2026-08-24) — 여백 시스템 · 프리즘 색 시스템 · 스크롤 금지 규칙
+
+   이것이 해결하는 고객 불편 (대표 지적 2026-08-24)
+     ① 상단은 글자가 화면 끝에 붙고, 본문 아래는 300px 넘게 텅 비고,
+        하단 탭바와 CTA 사이는 2px밖에 없었다 — 여백이 있어야 할 자리엔 없고
+        없어야 할 자리엔 있었다. 눈이 쉴 곳도 머물 곳도 정해지지 않은 화면이다.
+     ② 주 버튼이 #B76BA3 단색이었다. 흰 글자 대비 3.72:1로 접근성 기준(4.5:1) 미달이고,
+        브랜드의 프리즘(핑크·블루·퍼플)과도 아무 관계가 없는 색이었다.
+     ③ 한 화면이 넘치면 스크롤을 붙여 넘겼다. 넘친다는 건 화면을 못 쪼갠 것이다.
+
+   로드 순서 계약 (v1에서 이어짐)
+     각 페이지의 인라인 <style>보다 **먼저** 링크한다 — 페이지 전용 규칙이 이긴다.
+     따라서 페이지가 여기 있는 규칙을 로컬에 다시 써 두면 이 파일은 그 화면에 닿지 않는다.
+     새 화면은 여기 있는 것을 다시 쓰지 않는다. 다시 쓰는 순간 정본이 둘이 된다.
+
+   다크모드는 만들지 않는다 (단일 룩 확정 2026-08-23).
+   상세 문서: docs/디자인시스템_v1_2026-08-24.md
    ============================================================ */
+
 :root{
-  /* 팔레트 */
-  --bg:#FAF7FB; --card:#fff; --ink:#2B2233; --sub:#6E6478; --line:#E4DCE9;
-  --accent:#B76BA3; --accent-btn:#9C4680; --deep:#4A2B5C; --soft:#F7EBF4; --ok:#5B8C6E;
-  --glass-bg:rgba(255,255,255,.48); --glass-brd:rgba(255,255,255,.62); --glass-blur:15px;
-  /* 여백 시트① — 화면 좌우 24 · 섹션 간 22 · 카드 안쪽 22~30 · CTA 위 14 */
-  --page-x:24px; --sec-gap:22px; --card-pad:22px; --card-pad-lg:30px; --cta-top:14px;
-  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
-  /* 타이포 스케일 */
-  --fs-title:28px; --fs-h:21px; --fs-body:15.5px; --fs-sub:13.5px; --fs-cap:12px;
-  --radius:16px; --shadow:0 4px 16px rgba(58,43,69,.08);
+  /* ── 여백 스케일 ────────────────────────────────────────────
+     4의 배수만 쓴다. 스케일에 없는 값(18px·22px·26px)을 손으로 적지 않는다 —
+     그 한 번이 다음 화면에서 근거 없는 여백을 낳는다. */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+  --sp-5:24px; --sp-6:32px; --sp-7:48px;
+
+  /* ── 구조 여백 (어느 자리에 얼마) ──────────────────────────
+     스케일이 '얼마'라면 여기는 '어디에'다. 화면을 짤 때는 이 이름만 쓴다. */
+  --gutter:24px;                              /* 화면 좌우 거터 — 전 화면 동일 */
+  --screen-top:calc(var(--safe-t) + 24px);    /* 상태바 아래 제목이 숨 쉬는 자리 */
+  --screen-btm:calc(var(--safe-b) + 16px);    /* 홈 인디케이터 위 CTA가 앉는 자리 */
+  --gap-block:24px;                           /* 카드와 카드 사이 */
+  --gap-cta:16px;                             /* 본문 끝과 주 CTA 사이 */
+  --card-pad:22px; --card-pad-lg:30px;        /* 카드 안쪽 */
+  --tabbar-h:calc(62px + var(--safe-b));      /* 앱 하단 탭바 실측 높이(app-tabbar.js) */
   --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
+  /* v1 별칭 — 기존 화면(stat-preview 등)이 쓰고 있어 남긴다. 새 화면은 위 이름을 쓴다. */
+  --page-x:var(--gutter); --sec-gap:var(--gap-block); --cta-top:var(--gap-cta);
+
+  /* ── 색: 잉크 ──────────────────────────────────────────────
+     최상위 잉크는 로고색이다(brand/logo/…_v1.svg 원색 #211C26).
+     v1의 --ink:#2B2233은 로고와 미묘하게 어긋난 두 번째 검정이었다 — 하나로 합친다. */
+  --ink:#211C26;      /* 제목·본문 · 배경 위 15.7:1 */
+  --sub:#6E6478;      /* 부연·캡션 · 5.26:1 */
+  --line:#E4DCE9;     /* 경계선 (텍스트 아님 — 대비 기준 미적용) */
+
+  /* ── 색: 표면 ────────────────────────────────────────────── */
+  --bg:#FAF7FB; --card:#fff; --soft:#F7EBF4; --mute:#EBE5F1;
+  --glass-bg:rgba(255,255,255,.48); --glass-brd:rgba(255,255,255,.62); --glass-blur:15px;
+
+  /* ── 색: 프리즘 원색 — 데이터·장식 전용 ────────────────────
+     구미의 프리즘이자 배경 그라데이션의 세 색. 밝아서 흰 글자가 안 읽힌다(1.8:1).
+     **이 세 색 위에는 흰 글자를 올리지 않는다.** 잉크(--ink)만 올린다(8:1 이상). */
+  --prism-pink:#F2A9C4; --prism-blue:#9CC8E8; --prism-purple:#B9AFD1;
+
+  /* ── 색: 프리즘 딥 — 행동(버튼·강조) 전용 ──────────────────
+     같은 세 색을 흰 글자가 읽히는 깊이까지 내린 것이다. 새 색을 지어내지 않았다.
+     흰 글자 대비: rose 4.83 · violet 6.25 · indigo 6.16 — 그라데이션 전 구간 4.5:1 통과. */
+  --prism-rose:#C93B72; --prism-violet:#7A4AA6; --prism-indigo:#3E5FA8;
+  --cta:linear-gradient(135deg,var(--prism-rose) 0%,var(--prism-violet) 52%,var(--prism-indigo) 100%);
+
+  /* ── 색: 역할 ──────────────────────────────────────────────
+     --accent는 '강조 텍스트·테두리·포커스'다. 버튼 배경은 --cta가 맡는다.
+     v1의 #B76BA3(3.5:1)을 버리고 --accent-btn이던 #9C4680(5.49:1)으로 합쳤다. */
+  --accent:#9C4680; --deep:#4A2B5C;
+  --ok:#45745A;      /* 5.39:1 — v1 #5B8C6E는 3.87:1로 미달이었다 */
+  --danger:#B03A2F;  /* 6.01:1 */
+  --disabled-bg:#EBE5F1; --disabled-ink:#5F5568;   /* 5.70:1 */
+  /* v1 별칭 */
+  --accent-btn:var(--accent);
+
+  /* ── 타이포 · 모양 ────────────────────────────────────────── */
+  --fs-title:28px; --fs-h:21px; --fs-body:15.5px; --fs-sub:13.5px; --fs-cap:12px;
+  --radius:16px; --radius-btn:14px;
+  --shadow:0 4px 16px rgba(33,28,38,.08);
 }
+
+/* ── 8타입 색에 대한 규칙 ────────────────────────────────────
+   8타입 색(index.html TYPES[].color)은 **데이터 표현 전용**이다.
+   버튼·링크·포커스·경고 같은 UI 역할에 타입 색을 쓰지 않는다 —
+   쓰는 순간 "이 화면이 무슨 색인가"가 "이 사람이 무슨 타입인가"에 따라 흔들리고,
+   유저는 색을 상태 신호로 못 읽게 된다. 타입 색이 나가는 자리는 셋뿐이다:
+   프리즘 진행 바 · 타입 배지 · 리포트 차트.
+   ──────────────────────────────────────────────────────────── */
+
 body{background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;
   font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
   word-break:keep-all;overflow-wrap:break-word;}
 button,input,textarea,select{font-family:inherit;}
+/* 키보드로 다니는 사람에게 지금 어디인지 보인다 — 마우스 클릭에는 안 뜬다 */
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px;}
 
-/* 카드 — index.html 리포트 카드 문법 */
-.card{background:var(--card);border-radius:var(--radius);padding:24px 20px;box-shadow:var(--shadow);}
+/* 카드 — 카드 사이 간격은 여기서 강제하지 않는다.
+   기존 화면들이 이미 .card에 margin-bottom을 각자 갖고 있어, 여기에 gap이나
+   `.card + .card{margin-top}`을 더하면 두 값이 겹쳐 두 배로 벌어진다.
+   대신 페이지가 쓸 값을 --gap-block(24px)으로 정해 둔다 — 손으로 22px을 적지 않는다. */
+.card{background:var(--card);border-radius:var(--radius);padding:var(--card-pad);
+  box-shadow:var(--shadow);}
 
 /* 글라스 문법 — 홈 프리즘(시안=스펙 2026-08-21)에서 성문화.
    .card.ph-glass 셀렉터는 페이지 로컬 .card(단일 클래스)보다 특이도가 높아
@@ -39,41 +112,88 @@ button,input,textarea,select{font-family:inherit;}
 }
 
 /* ── 풀스크린 셸 ────────────────────────────────────────────────
-   정본 출처: index.html(2026-07-31 도입). 여기로 올려 전 화면이 같은 문법을 쓴다
-   (P1 레이아웃 통일 2026-08-24). index.html은 자기 <style>에 같은 값을 갖고 있어
-   영향을 받지 않는다(czm-ui.css를 링크하지 않는다).
-   웹은 롱폼, 앱은 숏폼 — 한 화면은 넘기지 않고 끝나야 한다(대표 2026-08-24).
+   정본 출처: index.html(2026-07-31 도입). 웹은 롱폼, 앱은 숏폼 —
+   한 화면은 넘기지 않고 끝난다(대표 2026-08-24).
      .screen      100dvh 세로 3단 (top / body / btm)
      .screen-top  제목·진행 표시. 스크롤되지 않는다
      .screen-body 내용. **여기만** 스크롤한다
      .screen-btm  주 CTA. 세이프에어리어 포함 하단 고정 — 엄지가 닿는 곳
-   100vh를 먼저 쓰고 100dvh로 덮는다 — iOS 주소창 높이 변화 대응이자 구형 폴백. */
+   100vh를 먼저 쓰고 100dvh로 덮는다 — iOS 주소창 높이 변화 대응이자 구형 폴백.
+
+   시선 흐름 — 세로 F: 제목(위 왼쪽) → 본문(가운데) → CTA(아래 가로 전폭).
+   그래서 .screen-top과 .screen-body는 왼쪽 정렬로 두고, CTA만 전폭으로 눕힌다.
+   본문을 가운데 정렬(text-align:center)로 흩뜨리면 이 흐름이 끊긴다.
+   ──────────────────────────────────────────────────────────── */
 .screen{height:100vh;height:100dvh;display:flex;flex-direction:column;
   max-width:520px;margin:0 auto;}
-.screen-top{flex-shrink:0;padding:calc(var(--safe-t) + var(--sp-4)) var(--page-x) var(--sp-2);}
-.screen-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  padding:var(--sp-2) var(--page-x) var(--sp-3);display:flex;flex-direction:column;
-  scroll-snap-type:y proximity;scroll-padding-top:var(--sp-2);position:relative;}
-.screen-btm{flex-shrink:0;padding:var(--sp-3) var(--page-x) calc(var(--safe-b) + var(--sp-4));}
+.screen-top{flex-shrink:0;padding:var(--screen-top) var(--gutter) var(--sp-3);}
+.screen-btm{flex-shrink:0;padding:var(--gap-cta) var(--gutter) var(--screen-btm);}
 .screen-btm .btn{margin-top:0;}
 .screen-btm .btn + .btn{margin-top:var(--sp-2);}
+
+/* 본문 — "콘텐츠가 적으면 아래가 텅 빈다"를 여기서 구조로 막는다.
+   항목 수를 세어 분기하지 않는다(세는 순간 화면마다 기준이 갈린다).
+   `safe center`가 그 일을 정확히 한다 — 내용이 화면에 들어가면 세로 중앙,
+   넘치면 자동으로 위 정렬로 돌아가 첫 줄이 잘리지 않는다.
+   앞줄 flex-start는 safe 키워드를 모르는 구형 브라우저의 폴백이다. */
+.screen-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:var(--sp-2) var(--gutter) var(--sp-3);display:flex;flex-direction:column;
+  justify-content:flex-start;
+  justify-content:safe center;
+  scroll-snap-type:y proximity;scroll-padding-top:var(--sp-2);position:relative;}
 /* 손을 떼는 위치에 반쯤 잘린 카드가 남지 않게 (고객팀 G5) */
 .snap{scroll-snap-align:start;}
-/* 앱 하단 탭바가 서면 그만큼 아래를 비운다. czm-app 클래스는 앱 주입 스크립트만 붙인다 */
-body.czm-app .screen-btm{padding-bottom:calc(var(--safe-b) + 64px);}
+/* 바닥에 붙여야 하는 줄이 있을 때만 붙인다. 이 클래스를 쓰면 그 화면은 중앙 정렬을
+   포기하는 것이고, 위쪽에 빈 자리가 생긴다 — 카드가 3장 이상일 때만 쓴다. */
+.push-btm{margin-top:auto;}
+
+/* 앱 하단 탭바가 서면 그 높이만큼 + 여백만큼 비운다.
+   v1은 64px 고정이라 탭바(62px+safe-b)와 CTA 사이가 2px였다 — 붙어 보이던 원인. */
+body.czm-app .screen-btm{padding-bottom:calc(var(--tabbar-h) + var(--sp-3));}
 body.czm-app .app-only-hide{display:none!important;}
 
-/* 버튼 3형 — 주(.btn) · 테두리(.btn.ghost) · 조용한(.btn.quiet) */
-.btn{display:block;width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;
-  padding:15px;min-height:52px;font-size:16px;font-weight:700;cursor:pointer;margin-top:var(--cta-top);}
-.btn:disabled{background:#DED5E6;color:#8E82A0;opacity:1;cursor:default;}
-.btn.ghost{background:transparent;color:var(--sub);border:1.5px solid var(--line);
-  font-weight:600;font-size:14px;min-height:48px;padding:12px;}
-.btn.quiet{display:block;background:none;border:0;color:var(--sub);font-size:13px;font-weight:500;
-  padding:10px 0;width:auto;margin:6px auto 0;min-height:0;}
+/* ── 스크롤 금지 규칙 ───────────────────────────────────────────
+   원칙: 한 화면이 넘치면 스크롤이 아니라 **페이지 분할**이다.
+   넘쳤다면 셋 중 하나를 한다 — ①문장을 줄인다 ②접는다(details.fold)
+   ③화면을 쪼갠다. 스크롤바를 붙여 넘기는 것은 셋 다 안 한 것이다.
+   .screen-body에 overflow-y:auto가 남아 있는 이유는 폰트 확대·가로 회전처럼
+   우리가 못 정하는 상황의 안전망일 뿐, 설계 수단이 아니다.
 
-/* 접힘 상자 — index.html details#waitSec · home.html details.fold와 같은 문법 */
-details.fold{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:14px;}
+   개발이 알아채는 법: 콘솔에서 document.body.classList.add('czm-dev')
+   → 실제로 스크롤이 생기는 .screen-body에만 붉은 테두리가 뜬다.
+   스크롤 타임라인은 넘칠 때만 활성이라 "넘쳤다"의 정확한 신호가 된다.
+   (미지원 브라우저에서는 아무것도 안 뜬다 — 그때는 개발자도구로 본다) */
+@supports (animation-timeline:scroll()){
+  @keyframes czm-overflow{from{outline-color:var(--danger)}to{outline-color:var(--danger)}}
+  body.czm-dev .screen-body{outline:2px solid transparent;outline-offset:-2px;
+    animation:czm-overflow 1s linear both;animation-timeline:scroll(self);}
+}
+
+/* ── 버튼 ───────────────────────────────────────────────────────
+   3형 — 주(.btn) · 테두리(.btn.ghost) · 조용한(.btn.quiet).
+   주 버튼은 프리즘 딥 그라데이션 하나뿐이다. 한 화면에 주 버튼은 하나다 —
+   둘이면 유저는 무엇이 다음인지 못 고른다.
+   눌림은 색을 새로 정의하지 않고 같은 그라데이션을 어둡게 한다(토큰 1개 절약). */
+.btn{display:block;width:100%;background:var(--cta);color:#fff;border:none;
+  border-radius:var(--radius-btn);padding:15px;min-height:52px;font-size:16px;font-weight:700;
+  cursor:pointer;margin-top:var(--gap-cta);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 16px rgba(122,74,166,.28);}
+.btn:active{filter:brightness(.92);box-shadow:inset 0 1px 2px rgba(33,28,38,.2);}
+.btn:disabled{background:var(--disabled-bg);color:var(--disabled-ink);opacity:1;
+  cursor:default;box-shadow:none;filter:none;}
+.btn.ghost{background:var(--card);color:var(--accent);border:1.5px solid var(--line);
+  font-weight:600;font-size:14px;min-height:48px;padding:12px;box-shadow:none;}
+.btn.ghost:active{background:var(--soft);border-color:var(--accent);filter:none;}
+.btn.quiet{display:block;background:none;border:0;color:var(--sub);font-size:13px;font-weight:500;
+  padding:10px 0;width:auto;margin:6px auto 0;min-height:0;box-shadow:none;}
+.btn.quiet:active{color:var(--ink);filter:none;}
+/* 위험한 행동(삭제·해지)에만. 지금 쓰는 화면은 없다 — 생길 때 이 색을 쓴다. */
+.btn.danger{background:var(--danger);box-shadow:none;}
+
+/* 접힘 상자 — index.html details#waitSec · home.html details.fold와 같은 문법.
+   화면이 넘칠 때 스크롤 대신 쓰는 첫 번째 수단이다. */
+details.fold{border:1.5px solid var(--line);border-radius:12px;padding:var(--sp-3) var(--sp-4);
+  margin-top:var(--sp-4);}
 details.fold summary{font-size:14px;color:var(--sub);font-weight:600;cursor:pointer;list-style:none;
   display:flex;align-items:center;justify-content:space-between;min-height:24px;}
 details.fold summary::-webkit-details-marker{display:none;}
@@ -84,3 +204,8 @@ details.fold[open] summary::after{content:"▴";}
    사용: <svg class="ic" viewBox="0 0 24 24"><path d="…"/></svg> */
 .ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;
   stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;flex-shrink:0;}
+
+/* 움직임을 줄여달라고 설정한 사람에게는 줄인다 */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}
+}

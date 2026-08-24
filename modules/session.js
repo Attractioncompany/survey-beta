@@ -143,7 +143,15 @@ export async function attachEmail(email){
   return true;
 }
 
-/** 내 계정으로 묶인 모든 uid의 스탯. own_read가 걸러주므로 user_id 조건을 붙이지 않는다. */
+/** 내 계정으로 묶인 모든 uid의 스탯. own_read가 걸러주므로 user_id 조건을 붙이지 않는다.
+ *  id·attrs가 같이 온다 — 옷장(인벤토리)이 아이템을 지목하려면 id가, 착용 태그를 표시 시점에
+ *  만들려면 attrs.color가 필요하다(스키마 §2-1: 태그는 저장하지 않는다). */
 export async function fetchStats(){
-  return await sbFetch("stat_entries?select=kind,ref,slot,acquired_at&removed_at=is.null&order=acquired_at");
+  return await sbFetch("stat_entries?select=id,kind,ref,slot,attrs,acquired_at&removed_at=is.null&order=acquired_at");
+}
+
+/** 옷장에서 버리기 — removed_at을 채우는 유일한 경로(스키마 §2-5).
+ *  영구 가산은 안 내려간다(버려도 그 옷을 갖게 된 사건은 일어났다). 오늘 입을 후보에서만 빠진다. */
+export async function removeStat(id){
+  return await sbFetch("rpc/stat_remove", {method:"POST", body:JSON.stringify({p_entry:id})}) !== null;
 }

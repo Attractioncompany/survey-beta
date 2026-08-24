@@ -59,7 +59,8 @@
     if (/view=report/.test(location.search)) return "report";
     if (/\/home\.html$/.test(p)) {
       var h = location.hash.slice(1);
-      return (h === "record" || h === "tools") ? h : "home";
+      if (h === "closet") return "record";    // 옷장은 기록 탭의 안쪽 화면이다
+      return (h === "record" || h === "tools") ? h : "home";   // #outfit은 홈에서 들어간다
     }
     return "";   // cloth-check·pick 등 — 어느 탭도 켜지 않는다(여기 있다고 거짓말하지 않는다)
   }
@@ -124,8 +125,10 @@
 
     // .screen 셸이 아닌 페이지(옷 색 판정·추천·리포트)는 바닥이 탭바에 가린다 — 그만큼 비운다.
     // 셸 페이지는 czm-ui.css의 body.czm-app 규칙이 이미 처리한다.
+    // 탭바 실측 높이는 6+50+6 = 62px(+세이프에어리어). 64px이면 콘텐츠가 탭바에 2px까지
+    // 붙어 여백이 없어 보였다(대표 지적 2026-08-24) — 62 + 여백 12로 띄운다.
     if (!document.querySelector(".screen")) {
-      document.body.style.paddingBottom = "calc(env(safe-area-inset-bottom) + 64px)";
+      document.body.style.paddingBottom = "calc(env(safe-area-inset-bottom) + 74px)";
     }
     // 탭바가 홈으로 가는 길을 이미 준다 — 임시로 넣었던 우측 상단 홈 버튼은 뺀다
     var hb = document.getElementById("czmHomeBtn");

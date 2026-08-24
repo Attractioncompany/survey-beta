@@ -58,23 +58,24 @@ h1{font-size:21px;margin:0;letter-spacing:-.02em}
 .btm-quiet{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:2px}
 .btm-quiet .btn.quiet{margin:0;padding:8px 10px}
 .btm-quiet i{color:var(--line);font-style:normal}
-.card{background:var(--card);border:0;border-radius:16px;padding:24px 20px;
-  box-shadow:0 4px 16px rgba(58,43,69,.08);margin-bottom:22px}
+/* .card·.btn 3종은 czm-ui.css 정본을 쓴다 — 여기 복제본이 남아 있어서 v2 토큰(프리즘
+   그라데이션 CTA·로고 잉크)이 이 화면에만 안 왔다(대표 지적 2026-08-24). 지운 자리다. */
+/* 본문 블록 사이 간격 — czm-ui v2는 이 간격을 페이지에 맡긴다(값은 --gap-block 토큰).
+   목록으로 늘어선 .q끼리는 예외다: 자기 margin-bottom(8px)이 이미 잇고 있다. */
+.screen-body > * + *{margin-top:var(--gap-block)}
+.screen-body > .q{margin-bottom:0}
+.screen-body > .q + .q{margin-top:var(--sp-2)}
 .card h2{font-size:13px;color:var(--accent);margin:0 0 10px;font-weight:700;letter-spacing:.02em}
 .lead{font-size:18px;line-height:1.5;margin:0 0 4px;letter-spacing:-.01em;font-weight:600}
 .note{font-size:13.5px;color:var(--sub);margin:6px 0 0;line-height:1.6}
 button{font:inherit;cursor:pointer}
-.btn{display:block;width:100%;padding:15px;min-height:52px;border-radius:12px;border:0;
-  background:var(--accent);color:#fff;font-size:16px;font-weight:700;margin-top:14px}
-.btn.ghost{background:transparent;color:var(--sub);border:1.5px solid var(--line);font-weight:600;font-size:14px;min-height:48px;padding:12px}
-.btn.quiet{display:block;background:none;border:0;color:var(--sub);font-size:13px;font-weight:500;padding:10px 0;width:auto;margin:6px auto 0;min-height:0}
 .q{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);
-   border-radius:12px;padding:14px 16px;margin-bottom:10px;color:var(--ink)}
+   border-radius:12px;padding:var(--sp-4);margin-bottom:var(--sp-2);color:var(--ink)}
 .q:active{background:var(--soft);border-color:var(--accent)}
 .q .t{font-size:15.5px;line-height:1.45;font-weight:600}
 .q .m{font-size:12.5px;color:var(--sub);margin-top:5px;display:flex;gap:7px;flex-wrap:wrap;align-items:center;font-weight:400}
 .tag{border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-size:11px;color:var(--sub)}
-.tag.free{border-color:#CFE0D4;color:#4C7A5E}
+.tag.free{border-color:#CFE0D4;color:var(--ok)}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
 .st{background:var(--soft);border-radius:13px;padding:13px 11px;text-align:center}
 .st b{display:block;font-size:24px;font-weight:700;letter-spacing:-.02em}
@@ -88,38 +89,48 @@ button{font:inherit;cursor:pointer}
 .demo-l{font-size:12px;color:var(--sub)} .demo-v{font-size:15px;font-weight:600}
 .hidden{display:none}
 .chk{font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap}
-.chk .p{color:var(--ok)} .chk .f{color:#B4443A;font-weight:700}
-.banner{background:#FFF6E8;border:1px solid #F0DEC0;border-radius:12px;padding:11px 13px;font-size:13px;color:#7A5C2E;margin-bottom:14px}
+.chk .p{color:var(--ok)} .chk .f{color:var(--danger);font-weight:700}
+.banner{background:#FFF6E8;border:1px solid #F0DEC0;border-radius:12px;padding:11px 13px;font-size:13px;color:#7A5C2E}
 
 /* ── 프리즘 홈 (고객팀 리디자인 1차, 시안=스펙 2026-08-21) ─────────────
    여백 토큰(시트①): 화면 좌우24 · 섹션22 · 카드 안쪽 22~30 · CTA 위 14
    .ph-bg는 폐지 — 그라디언트를 body로 올렸다(2026-08-24 셸 전환). */
 .ph-head{display:flex;flex-direction:column;gap:6px;padding:0;}
-.ph-h1{font-size:24px;font-weight:800;letter-spacing:-.015em;margin-left:-1px;color:#2B2233;}
-.ph-sub{font-size:13.5px;color:#6E6478;}
+.ph-h1{font-size:24px;font-weight:800;letter-spacing:-.015em;margin-left:-1px;color:var(--ink);}
+.ph-sub{font-size:13.5px;color:var(--sub);}
 /* .ph-glass는 czm-ui.css 정본을 쓴다 (2026-08-23 이관) */
-.ph-prism{display:flex;flex-direction:column;gap:12px;padding:20px 22px 18px;margin-top:0;}
+.ph-prism{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--card-pad);}
 .ph-prism .row{display:flex;justify-content:space-between;align-items:baseline;}
-.ph-prism .t{font-size:13.5px;font-weight:700;color:#4A2B5C;}
-.ph-prism .d{font-size:12px;color:#6E6478;}
+.ph-prism .t{font-size:13.5px;font-weight:700;color:var(--deep);}
+.ph-prism .d{font-size:12px;color:var(--sub);}
 .ph-bar{position:relative;height:14px;border-radius:7px;}
-.ph-dot{position:absolute;top:-5px;width:24px;height:24px;border-radius:12px;background:rgba(255,255,255,.9);border:2px solid #B76BA3;box-shadow:0 2px 8px rgba(74,43,92,.25);transform:translateX(-12px);}
+.ph-dot{position:absolute;top:-5px;width:24px;height:24px;border-radius:12px;background:rgba(255,255,255,.9);border:2px solid var(--accent);box-shadow:0 2px 8px rgba(74,43,92,.25);transform:translateX(-12px);}
 .ph-ends{display:flex;justify-content:space-between;font-size:12px;font-weight:600;}
-/* CTA가 카드 밖(하단 고정)으로 나가면서 카드가 낮아졌다 — 빈 바닥을 남기지 않는다 */
-.ph-hero{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:14px;border-radius:24px;padding:26px 24px;margin-top:22px;box-shadow:0 12px 32px rgba(74,43,92,.10);min-height:196px;}
+/* 카드 사이 간격은 .screen-body의 gap(--gap-block)이 준다 — margin-top으로 또 벌리지 않는다 */
+.ph-hero{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:var(--sp-4);border-radius:20px;padding:26px var(--gutter);box-shadow:0 12px 32px rgba(74,43,92,.10);min-height:196px;}
 .ph-gumi{position:absolute;right:10px;top:64px;width:136px;height:136px;pointer-events:none;}
 .ph-gumi .pad{position:absolute;left:50%;top:50%;width:132px;height:132px;transform:translate(-50%,-50%);border-radius:999px;background:radial-gradient(circle,rgba(255,255,255,.95) 0%,rgba(255,255,255,.7) 55%,rgba(255,255,255,0) 78%);}
 .ph-gumi img{position:absolute;inset:0;width:136px;height:136px;object-fit:contain;transform:rotate(-6deg);filter:drop-shadow(0 8px 14px rgba(183,107,163,.3));}
-.ph-title{font-size:24px;font-weight:800;line-height:1.35;letter-spacing:-.015em;margin-left:-1px;color:#2B2233;padding-right:120px;word-break:keep-all;}
-.ph-why{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:#2B2233;min-height:44px;background:none;border:none;padding:0;cursor:pointer;}
-.ph-whytxt{font-size:14px;color:#6E6478;line-height:1.6;padding-right:120px;}
-/* 젤리 버튼 — 하단 고정 주 CTA의 기본 모습(구미=젤리, 브랜드 시그니처).
-   .ph-ctas/.ph-jelly/.ph-ghost 규칙은 CTA가 카드 밖으로 나가면서 쓰이지 않아 지웠다. */
-.screen-btm .btn:not(.ghost):not(.quiet){border-radius:14px;
-  background:linear-gradient(180deg,#A85590 0%,#9C4680 100%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 16px rgba(156,70,128,.35);}
-.ph-entries{display:flex;gap:10px;margin-top:auto;padding-top:22px;}
-.ph-entry{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border:1px solid rgba(255,255,255,.7);border-radius:14px;background:rgba(255,255,255,.44);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);color:#2B2233;font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;}
+.ph-title{font-size:24px;font-weight:800;line-height:1.35;letter-spacing:-.015em;margin-left:-1px;color:var(--ink);padding-right:120px;word-break:keep-all;}
+.ph-why{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:13.5px;font-weight:600;color:var(--ink);min-height:44px;background:none;border:none;padding:0;cursor:pointer;}
+.ph-whytxt{font-size:14px;color:var(--sub);line-height:1.6;padding-right:120px;}
+/* 주 CTA의 자체 그라데이션은 지웠다 — czm-ui.css의 --cta(프리즘 딥 3색)가 정본이다. */
+/* ── 오늘의 착용 · 옷장 ────────────────────────────────────────────
+   무드 칩 한 줄(가로 스크롤) — 아침 화면의 유일한 선택 조작(설계도 T-H) */
+.chips{display:flex;gap:var(--sp-2);overflow-x:auto;-webkit-overflow-scrolling:touch;
+  padding:var(--sp-1) 0 var(--sp-2);scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{flex:none;border:1.5px solid var(--line);background:var(--card);border-radius:99px;
+  padding:9px var(--sp-4);min-height:40px;font-size:13.5px;font-weight:600;color:var(--sub);}
+.chip.on{border-color:var(--accent);background:var(--soft);color:var(--deep);}
+/* 색 고르기 — 팔레트 정본(pc-palette.json)의 베스트 색을 타입 순서대로 편다 */
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:var(--sp-2);margin-top:var(--sp-2);}
+.swatch{aspect-ratio:1;min-height:38px;padding:0;border-radius:9px;border:1px solid rgba(0,0,0,.10);}
+.swatch.on{outline:3px solid var(--accent);outline-offset:1px;}
+/* margin-top:auto가 셸의 중앙 정렬을 이겨서 히어로 아래 330px 구멍을 만들고 있었다
+   (대표 지적 2026-08-24). 간격은 .screen-body의 gap이 준다. */
+.ph-entries{display:flex;gap:var(--sp-3);}
+.ph-entry{flex:1;display:flex;align-items:center;justify-content:center;gap:var(--sp-2);min-height:48px;border:1px solid rgba(255,255,255,.7);border-radius:var(--radius-btn);background:rgba(255,255,255,.44);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);color:var(--ink);font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -127,6 +138,8 @@ button{font:inherit;cursor:pointer}
 
 <!-- 계약층. 모듈보다 먼저 온다 — 저장 키·좌표·측정값 모양을 여기서 꺼내 쓴다 -->
 <script src="czm-core.js"></script>
+<!-- 스탯·착용 산식 정본(theory/산식_RPG스탯성장_v1 구현체). 여기서 산식을 다시 만들지 않는다 -->
+<script src="czm-stats.js"></script>
 <script type="module">
 // 모듈 캐시 무력화. "?v=dev"는 배포 시 커밋 해시로 치환된다(deploy_survey.sh).
 // 로컬에서는 매번 다른 값이어야 한다 — 고정값이면 개발 중 고친 코드가 캐시에 가려진다(두 번 겪었다).
@@ -144,7 +157,7 @@ async function mod(path, label){
 const QE = await mod("./quest-engine.js", "미션");   // 유저향 표기 — 내부 용어 '걸음'은 화면에 내지 않는다 [게이트 통과]
 const SS = await mod("./session.js", "계정");
 const { issueOffer, judgeSkill, selfCheck, withKnowledge } = QE ?? {};
-const { ensureUser, linkUid, sbFetch, fetchStats, PUBLIC,
+const { ensureUser, linkUid, sbFetch, fetchStats, removeStat, PUBLIC,
         isSignedIn, oauthStart, captureRedirect, emailLink, signOut } = SS ?? {};
 const downBanner = () => DOWN.length
   ? `<div class="banner">${DOWN.join("·")} 기능이 잠깐 안 되고 있어요. 나머지는 그대로 쓰실 수 있어요.</div>` : ``;
@@ -179,11 +192,12 @@ const track = (event, props={}, extra={}) => sbPost("events", {user_id:UID, even
 
 // ── 상태 ─────────────────────────────────────────────────────
 // 서버가 원천이다. 로컬은 조회가 실패했을 때만 쓰는 사본 — 두 벌을 동시에 진실로 삼지 않는다.
-let STATS = LS.get(K.stats, []);          // [{kind, ref, slot, at}]
+let STATS = LS.get(K.stats, []);          // [{id, kind, ref, slot, attrs, at}]
 const st = {
   get active(){ return LS.get(K.activeQuest, null); },
   set active(v){ LS.set(K.activeQuest, v); },
   add(e){ STATS = [...STATS, e]; LS.set(K.stats, STATS); },
+  drop(id){ STATS = STATS.filter(s => s.id !== id); LS.set(K.stats, STATS); },
   get skipped(){ return LS.get(K.skipped, []); },
   set skipped(v){ LS.set(K.skipped, v); },
 };
@@ -203,7 +217,8 @@ async function bootSession(){
   if (!LS.get(K.userEnsured, false) && await ensureUser(UID)) LS.set(K.userEnsured, true);
   await linkUid(UID);
   const remote = await fetchStats();
-  if (remote) { STATS = remote.map(r => ({kind:r.kind, ref:r.ref, slot:r.slot, at:r.acquired_at}));
+  if (remote) { STATS = remote.map(r => ({id:r.id, kind:r.kind, ref:r.ref, slot:r.slot,
+                                          attrs:r.attrs ?? {}, at:r.acquired_at}));
                 LS.set(K.stats, STATS); }
   // 진단을 마치면 지식 한 칸이 자동으로 열린다 — 전 화면이 0인 첫날을 만들지 않는다(설계서 §3-4)
   if (diag && !STATS.some(s => s.ref === "diagnosis")) {
@@ -420,6 +435,16 @@ function renderHome(){
       <div class="ph-title">고를 수 있는 미션이<br>준비돼 있어요</div></div>`;
     cta = `<button class="btn" id="toList">미션 고르기</button>`;
   }
+  // 오늘의 착용 진입 — 매일 열 이유. 설계도 §4-1은 히어로 자리를 이쪽에 주지만,
+  // 1차는 미션 히어로 위에 카드 한 장으로 얹는다(미션 루프를 건드리지 않고 진입로부터 연다).
+  // 미션을 착장 슬롯 안에 ✦로 품는 통합은 2차. 옷장이 비어 있어도 초라하지 않게 문구가 갈린다.
+  const nIt = nItems();
+  const outfitEntry = `<button class="q snap" id="toOutfit" style="display:flex;align-items:center;gap:12px"
+      aria-label="${nIt ? "오늘 뭐 입지 — 오늘의 착용 열기" : "오늘 입은 것 담아두기"}">
+      <span style="flex:1"><span class="t">${nIt ? "오늘 뭐 입지" : "오늘 입은 것 담아두기"}</span>
+      <span class="m">${nIt ? `옷장에 담긴 ${nIt}개로 오늘 조합을 골라드려요` : "한 벌만 담아두면 내일 아침부터 골라드려요"}</span></span>
+      <span aria-hidden="true" style="color:var(--accent);font-weight:700;font-size:20px">›</span></button>`;
+
   // §3-5 복귀 — 경과 일수를 적지 않고, 밀린 처방을 쌓아두지 않고, 구미는 실망하지 않는다
   const away = LS.get(K.lastSeen, null);
   const gapD = away ? (Date.now() - new Date(away)) / 864e5 : 0;
@@ -434,12 +459,13 @@ function renderHome(){
     top: greet,
     body: downBanner()
         + (back ? `<div class="banner">쌓아둔 건 그대로 있어요.</div>` : ``)
-        + prism + today
+        + prism + outfitEntry + today
         + entryRow(...(diag.scores ? [["내 결과", "../index.html?view=report"]] : []),
                    ["기록", "#record"], ["도구", "#tools"]),
     btm: cta,
   });
 
+  $("toOutfit")?.addEventListener("click", () => nav("outfit"));
   $("toList")?.addEventListener("click", renderList);
   $("whyBtn")?.addEventListener("click", () => {
     const t=$("whyTxt"); t.style.display = t.style.display==="none" ? "" : "none";
@@ -559,29 +585,266 @@ function renderList(){
   $("back").onclick = renderHome;
 }
 
+/* ══ 옷장 · 「오늘 아이템 착용하기」 (설계도 R4·R5·R11) ═══════════════════
+   이것이 해결하는 고객 불편: 진단은 한 번이고 미션은 주 단위인데 **옷 고르기는 매일 아침의
+   문제**다. 가진 것 안에서 오늘의 답을 낸다 — 사지 않아도 되는 처방이 매일 나온다.
+
+   산식은 czm-stats.js(이론 §6-1 recommendOutfit)를 그대로 쓴다. 여기서 다시 만들지 않는다.
+   화면이 하는 일은 셋뿐이다 — 아이템에 태그를 붙여 넘기고, 결과를 그리고, 확정을 남긴다.
+
+   계측 (데이터 운영규약 §6-1)
+     나오는 데이터: 목표 무드 · 추천 원안 · 확정 조합 · 등록 아이템(슬롯·색 유무)
+     남길 것: 위 전부 (재획득 불가·판단 변경·이론 검증) / 안 남길 것: shown 합산값(파생)
+     어디에: events(outfit_*·item_added) · daily_outfits(그날의 확정) · stat_entries(아이템)
+     대시보드: 착용 퍼널 4단(open→goal→recommended→confirmed) · 추천 교체율 · 빈 옷장 비율 */
+
+// 슬롯 표시명 — 키는 산식 §4-3 정본 9종(czm-stats.SLOTS), 한글은 표시 토큰이다
+const SLOTS = CZMStats.SLOTS;
+const SLOT_LABEL = {hair:"헤어", makeup_base:"베이스", lip:"립", top:"상의", bottom:"하의",
+                    outer:"아우터", shoes:"신발", bag:"가방", accessory:"액세서리"};
+
+/* 색 → 타입. **새 매핑을 만들지 않는다** — 이미 쓰는 정본 둘을 잇기만 한다:
+     pc-palette.json(퍼스널컬러 베스트 팔레트) × CZM.PC8(8매력타입 ↔ 8계절 1:1).
+   cloth-check.html이 같은 팔레트로 "이 옷이 내 쪽 색인가"를 이미 판정하고 있다.
+   ⚠ 강도(강중약)는 실측이 있어야 나온다(산식 §4-2 '색 판별 가능' 행). 골라 담은 색은 측정이
+     아니라 신고라서 같은 절의 기본값 **약 = +1**을 쓴다. 우리가 정한 상수가 아니다.
+   ponytail: tag_power 1 고정 — cloth-check 촬영 색 판정 파이프가 붙으면 그 강중약으로 교체. */
+let PALETTE = null;
+async function palette(){
+  if (PALETTE) return PALETTE;
+  const p = await fetch("pc-palette.json", {cache:"no-store"}).then(r => r.json()).catch(() => null);
+  const rows = [], seen = new Set();
+  for (const t of (p ? CZM.PC8 : []))
+    for (const hex of (p.palettes[t.label]?.best ?? []))
+      if (!seen.has(hex)) { seen.add(hex); rows.push({hex, type:t.key}); }   // 겹치는 색은 먼저 나온 타입이 갖는다
+  return (PALETTE = rows);
+}
+const typeOfHex = (pal, hex) => (hex && pal.find(r => r.hex === hex)?.type) || null;
+const safeHex = h => /^#[0-9A-Fa-f]{6}$/.test(h || "") ? h : null;
+
+// 오늘 입을 후보. 태그는 저장돼 있지 않다(스키마 §2-1) — attrs.color로 표시 시점에 만든다.
+const closet = pal => STATS.filter(s => s.kind === "item").map(s => {
+  const type = typeOfHex(pal, safeHex(s.attrs?.color));
+  return {...s, tag_type:type, tag_power: type ? 1 : 0};
+});
+const itemName = s => s.attrs?.name
+  || (s.ref?.includes(":") ? s.ref.split(":").slice(1).join(":") : s.ref) || "이름 없는 것";
+const dot = hex => hex ? `<span style="display:inline-block;width:14px;height:14px;border-radius:7px;
+  border:1px solid rgba(0,0,0,.12);background:${hex};vertical-align:-2px;margin-right:7px"></span>` : ``;
+const GUMI = `<div class="ph-gumi"><div class="pad"></div>
+  <img src="../bg/gumi_base.png" alt="" onerror="this.parentNode.style.display='none'"></div>`;
+const nItems = () => STATS.filter(s => s.kind === "item").length;
+// 하루의 경계는 사는 사람의 하루다 — UTC로 자르면 아침 9시 전에 어제가 된다
+const kstDate = () => new Date(Date.now() + 9*36e5).toISOString().slice(0, 10);
+
+let OUT = null;   // 이 화면에서만 사는 상태 {goal, swap:{slot:itemId}}
+
+// R11 오늘의 착용 (유형 H 조합형). 열자마자 답이 보인다 — 탭 0회가 이 화면의 설계 목표다.
+async function renderOutfit(first = true){
+  const pal = await palette();
+  const items = closet(pal);
+  const N = {...CZM.TYPE_NAMES, ...(DICT?.type_names ?? {})};
+  const goal = OUT?.goal ?? diag?.want ?? CZM.TYPE_KEYS[0];
+  if (first) { OUT = {goal, swap:{}}; track("outfit_open", {owned_n: items.length, has_goal: !!diag?.want}); }
+
+  // 좌측 첫 칸은 늘 내 추구미(설계도 T-H). 상황 칩(면접·소개팅)은 별칭→타입 매핑이
+  // 아직 이론 확정 전이라 넣지 않는다 — 없는 매핑의 버튼을 만들지 않는다.
+  const order = diag?.want ? [diag.want, ...CZM.TYPE_KEYS.filter(k => k !== diag.want)] : CZM.TYPE_KEYS;
+  const chips = `<div class="chips">${order.map(k =>
+    `<button class="chip${k === goal ? " on" : ""}" data-t="${k}">${k === diag?.want ? "✦ " : ""}${esc(N[k] ?? k)}</button>`
+  ).join("")}</div>`;
+
+  const r = CZMStats.recommendOutfit(items, goal);
+  // 슬롯별 교체(설계도 §4-4 ①) — 그 슬롯만 바꾼다. 전체 재추천이 아니다:
+  // 다시 뽑으면 마음에 들었던 슬롯까지 날아간다.
+  const pick = {...r.pick};
+  for (const [slot, id] of Object.entries(OUT.swap)) {
+    const it = items.find(x => x.id === id && x.slot === slot);
+    if (it) pick[slot] = it;
+  }
+  const filled = SLOTS.filter(s => pick[s]);
+  const shown = filled.reduce((a, s) => a + pick[s].tag_power, 0);
+
+  let body, btm;
+  if (!items.length) {
+    // 빈 옷장이 기본 상태다. 요구하지 않고 권한다 — 첫 등록은 "지금 몸에 있는 것 한 벌"이다.
+    track("outfit_empty", {owned_n:0, missing_slots:SLOTS});
+    body = `<div class="ph-glass ph-hero snap">${GUMI}
+      <div class="ph-title">옷장이 아직<br>비어 있어요</div>
+      <div class="ph-whytxt">오늘 입은 것부터 담아두면 아침마다 골라드려요.</div></div>`;
+    btm = `<button class="btn" id="add">오늘 입은 것 담기</button>`;
+  } else if (!filled.length) {
+    track("outfit_empty", {owned_n:items.length, missing_slots:r.empty});
+    body = `<div class="card ph-glass">
+      <p class="lead">${esc(N[goal] ?? goal)} 쪽으로 담긴 게 아직 없어요.</p>
+      <p class="note">위에서 다른 무드를 눌러보셔도 되고, 지금 입은 것을 담아두시면 내일 아침이 편해집니다.</p></div>`;
+    btm = `<button class="btn" id="add">옷장에 담기</button>`;
+  } else {
+    // 슬롯 교체로 다시 그릴 때마다 세면 퍼널 분모가 부푼다 — 목표당 한 번만 센다
+    if (OUT.rec !== goal) { OUT.rec = goal;
+      track("outfit_recommended", {goal, slots:filled, n:filled.length, rec_version:CZMStats.version}); }
+    // 빈 슬롯을 회색 박스로 그리지 않는다(결핍 화법의 시각 버전). 가진 것만 조합한다.
+    const rows = filled.map(slot => {
+      const it = pick[slot];
+      const more = items.filter(x => x.slot === slot && x.tag_type === goal && x.tag_power).length > 1;
+      const sub = SLOT_LABEL[slot] ?? esc(slot);
+      return `<div class="q" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="flex:1"><span class="t">${dot(safeHex(it.attrs?.color))}${esc(itemName(it))}</span>
+        ${itemName(it) === sub ? `` : `<span class="m">${sub}</span>`}</span>   <!-- 이름을 안 적으면 부위명이 이름이 된다 — 같은 말을 두 줄로 쓰지 않는다 -->
+        ${more ? `<button class="btn quiet" style="margin:0;flex:none" data-swap="${slot}">다른 걸로</button>` : ``}</div>`;
+    }).join("");
+    // 없는 것을 다 읊으면 그게 결핍 목록이 된다 — 앞 셋만 말하고 만다
+    const miss = r.empty.filter(s => !pick[s]).map(s => SLOT_LABEL[s] ?? s).slice(0, 3);
+    // 한 덩어리로 묶는다 — .screen-body는 자식 사이에 24px 간격을 준다(czm-ui v2).
+    // 조합은 한 벌이라 슬롯 행이 흩어지면 안 된다.
+    body = `<div><div class="hd" style="margin-bottom:10px">
+        <p class="lead" style="margin:0">오늘은 이렇게 입어보세요</p>
+        <span class="tag" style="border-color:var(--accent);color:var(--accent)">${esc(N[goal] ?? goal)} +${shown}</span></div>`
+      + rows
+      + (miss.length ? `<p class="note">${miss.join("·")} 자리는 아직 비어 있어요. 지금 있는 것만으로 골랐습니다.</p>` : ``)
+      + `</div>`;
+    // 담기 문은 여기서도 열어둔다 — 한 벌만 담은 사람이 이 화면에 도착하면
+    // 옷장으로 돌아가는 길이 없어서 옷장이 한 벌에서 멈춘다(실제로 그렇게 됐다).
+    btm = `<button class="btn" id="go">이걸로 갈게요</button>
+           <button class="btn quiet" id="add">옷장에 담기</button>`;
+  }
+
+  // 무드 칩은 제목 자리에 붙인다 — 본문(.screen-body)은 내용을 세로 중앙에 모으므로
+  // 거기 두면 칩 줄이 화면 한가운데로 내려간다. 상단 고정이 설계도 T-H의 자리이기도 하다.
+  app.innerHTML = shell({ top: head("오늘 뭐 입지") + chips, body, btm });
+
+  app.querySelectorAll("[data-t]").forEach(b => b.onclick = () => {
+    if (b.dataset.t === OUT.goal) return;
+    track("outfit_goal_selected", {type:b.dataset.t, prev_type:OUT.goal});
+    OUT = {goal:b.dataset.t, swap:{}};   // 무드가 바뀌면 교체 이력도 같이 지운다
+    renderOutfit(false);                 // 같은 화면에서 갱신 — 화면 전환 없음
+  });
+  app.querySelectorAll("[data-swap]").forEach(b => b.onclick = () => {
+    const slot = b.dataset.swap;
+    const cand = items.filter(x => x.slot === slot && x.tag_type === goal && x.tag_power);
+    const i = cand.findIndex(x => x.id === pick[slot].id);
+    OUT.swap[slot] = cand[(i + 1) % cand.length].id;
+    renderOutfit(false);
+  });
+  $("add")?.addEventListener("click", () => renderAddItem({back:() => renderOutfit(false)}));
+  $("go")?.addEventListener("click", async () => {
+    const idOf = o => Object.fromEntries(Object.entries(o).map(([s, it]) => [s, it.id]));
+    const chosen = idOf(pick), rec = idOf(r.pick);
+    const changed = [...new Set([...Object.keys(chosen), ...Object.keys(rec)])]
+                      .filter(s => chosen[s] !== rec[s]);
+    await sbPost("daily_outfits", {user_id:UID, wear_date:kstDate(), goal_type:goal,
+      items:chosen, recommended:rec, rec_version:CZMStats.version, source:"app"});
+    track("outfit_confirmed", {changed_slots:changed, n:filled.length, rec_version:CZMStats.version});
+    app.innerHTML = shell({
+      top: head("오늘의 착용"),
+      body: `<div class="ph-glass ph-hero snap">${GUMI}
+        <div class="ph-title">오늘은 이걸로</div>
+        <div class="ph-whytxt">저녁에 거울 볼 때 어, 좀 다른데? 싶으면 성공입니다.</div></div>`,
+      btm: `<button class="btn" id="back">홈으로</button>`,
+    });
+    $("back").onclick = () => nav("home");
+  });
+}
+
+// R4 옷장(인벤토리). 담아둔 것을 볼 데가 없으면 담을 이유도 없어진다.
+async function renderCloset(){
+  const pal = await palette();
+  const items = STATS.filter(s => s.kind === "item");
+  // 슬롯 순서는 산식 9종 순서를 따르고, 그 밖의 값(옛 한글 슬롯 행)은 뒤에 그대로 붙인다
+  const order = [...new Set(items.map(i => i.slot))]
+    .sort((a, b) => (SLOTS.indexOf(a) + 1 || 99) - (SLOTS.indexOf(b) + 1 || 99));
+  // 부위마다 카드를 씌우면 5벌짜리 옷장도 한 화면을 넘긴다(실측 630/548) — 제목 줄 + 행으로 낸다
+  const groups = `<div>` + order.map(sl =>
+    `<h2 style="font-size:12px;color:var(--accent);font-weight:700;margin:14px 0 7px;letter-spacing:.02em">${esc(SLOT_LABEL[sl] ?? sl ?? "그 밖")}</h2>`
+    + items.filter(i => i.slot === sl).map(i => `<div class="q" style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+      <span class="t" style="flex:1">${dot(safeHex(i.attrs?.color))}${esc(itemName(i))}</span>
+      <button class="btn quiet" style="margin:0;flex:none" data-del="${esc(i.id ?? "")}">버리기</button></div>`).join("")
+  ).join("") + `</div>`;
+
+  app.innerHTML = shell({
+    top: head("옷장", items.length ? `${items.length}개` : ""),
+    body: items.length ? groups : `<div class="card ph-glass">
+      <p class="lead">아직 담긴 게 없어요.</p>
+      <p class="note">오늘 입은 것 한 벌부터 담아두면, 내일 아침에 골라드릴 수 있어요.</p></div>`,
+    btm: `<button class="btn" id="add">옷장에 담기</button>
+          <button class="btn quiet" id="back">기록으로</button>`,
+  });
+  $("add").onclick = () => renderAddItem({back:renderCloset});
+  $("back").onclick = () => nav("record");
+  app.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    const id = b.dataset.del;
+    if (!id || !confirm("옷장에서 뺄까요? 지금까지 쌓인 건 그대로 남아요.")) return;
+    if (!LOCAL && removeStat) await removeStat(id);
+    st.drop(id);
+    track("item_removed", {id});
+    renderCloset();
+  });
+}
+
+/* R5 아이템 등록 — 3탭 폴백 경로(설계도 §4-3 ③). 사진 촬영 등록은 이번 범위 밖이다.
+   슬롯 1탭 + 색 1탭 + 담기 1탭. 이름은 안 적어도 담긴다 — 아침에 쓰는 기능의 재료라서
+   등록에 노동을 붙이면 옷장이 영영 비어 있게 된다.
+   opts.quest가 있으면 미션의 '담기' 흐름이다(완료 처리까지 이어진다). */
+function renderAddItem(opts = {}){
+  const q = opts.quest ?? null;
+  let slot = q?.slot ?? null, color = null;
+  (async () => {
+    const pal = await palette();
+    app.innerHTML = shell({
+      top: head("담기"),
+      body: `<div class="card">
+        <p class="lead">${q ? esc(q.copy) : "오늘 입은 것, 하나만 담아볼까요."}</p>
+        <input class="field" id="nm" placeholder="이름 — 안 적어도 돼요">
+        <p class="note" style="margin-top:14px">어느 부위예요?</p>
+        <div class="chips">${SLOTS.map(s =>
+          `<button class="chip${s === slot ? " on" : ""}" data-s="${s}">${SLOT_LABEL[s]}</button>`).join("")}</div>
+        <p class="note" style="margin-top:14px">색은 어느 쪽에 가까워요? <span style="opacity:.7">(건너뛰어도 담겨요)</span></p>
+        <div class="sw">${pal.map(r =>
+          `<button class="swatch" data-c="${r.hex}" style="background:${r.hex}" aria-label="${r.hex}"></button>`).join("")}</div>
+        </div>`,
+      btm: `<button class="btn" id="save"${slot ? "" : " disabled"}>담기</button>
+            <button class="btn quiet" id="back">나중에</button>`,
+    });
+    // 다시 그리지 않는다 — 색을 고르려고 한참 내려온 화면이 맨 위로 튀어오르면 그게 이탈이다
+    app.querySelectorAll("[data-s]").forEach(b => b.onclick = () => {
+      slot = b.dataset.s;
+      app.querySelectorAll("[data-s]").forEach(x => x.classList.toggle("on", x.dataset.s === slot));
+      $("save").disabled = false;
+    });
+    app.querySelectorAll("[data-c]").forEach(b => b.onclick = () => {
+      color = b.dataset.c;
+      app.querySelectorAll("[data-c]").forEach(x => x.classList.toggle("on", x.dataset.c === color));
+    });
+    $("back").onclick = () => q ? renderHome() : (opts.back ?? renderCloset)();
+    $("save").onclick = async () => {
+      if (!slot) return;
+      const name = $("nm").value.trim() || SLOT_LABEL[slot];
+      const id = crypto.randomUUID();
+      const attrs = {name, ...(color ? {color} : {})};
+      const ref = `${slot}:${name}`;
+      st.add({id, kind:"item", ref, slot, attrs, at:new Date().toISOString()});
+      // gain(등록 자체의 영구 +1 · 산식 §4-1)은 **아직 쓰지 않는다.** 영구 가산은 되돌릴 수 없어
+      // 태그 근거가 굳기 전에 박제하면 안 된다 — 이론팀 판정 후 붙인다(보고서 미구현 항목).
+      await sbPost("stat_entries", {id, user_id:UID, kind:"item", slot, ref,
+                                    source_kind:"self_report", attrs, evidence:"observed"});
+      track("item_added", {slot, has_color: !!color, from: q ? "quest" : "closet"});
+      if (!q) return (opts.back ?? renderCloset)();
+      track("stat_added", {kind:"item", ref, source_kind:"self_report"});
+      track("quest_completed", {offer_id:q.offer_id, quest_id:q.id, kind:"item",
+                                field:null, sign_match:null, countable:true});
+      st.active = null; renderHome();
+    };
+  })();
+}
+
+/* 미션의 '담기' — 옷장 등록 화면을 그대로 쓴다.
+   옛 화면은 quest-dict의 한글 슬롯('립'·'실루엣·소재')을 그대로 저장했는데, 08-24 스키마의
+   slot check(영문 9종)가 그 값을 거부한다 → 서버 저장이 조용히 실패하고 있었다.
+   슬롯을 유저가 고르게 해서 값이 항상 정본 9종 안에 들어오게 한다. */
+const QSLOT = {"립":"lip", "액세서리":"accessory"};   // '실루엣·소재'는 슬롯이 아니라 속성(§4-3) — 유저가 고른다
 function renderRegister(){
   const a = st.active, c = cell(a.id);
-  app.innerHTML = shell({
-    top: head("담기"),
-    body: `<div class="card">
-      <p class="lead">${esc(c.copy)}</p>
-      <input class="field" id="nm" placeholder="뭐라고 부를까요? (예: 베이지 트렌치)">
-      <p class="note">${esc(c.slot)} · 사진은 옷장 화면이 열리면 붙일게요.</p></div>`,
-    btm: `<button class="btn" id="save">담기</button>
-          <button class="btn quiet" id="back">나중에</button>`,
-  });
-  $("back").onclick = renderHome;
-  $("save").onclick = async () => {
-    const name = $("nm").value.trim(); if (!name) return $("nm").focus();
-    const ref = `${c.slot}:${name}`;
-    st.add({kind:"item", ref, slot:c.slot, at:new Date().toISOString()});
-    await sbPost("stat_entries", {user_id:UID, kind:"item", slot:c.slot, ref,
-                                  source_kind:"self_report", attrs:{name}});
-    track("stat_added", {kind:"item", ref, source_kind:"self_report"});
-    track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"item",
-                              field:null, sign_match:null, countable:true});
-    st.active = null; renderHome();
-  };
+  renderAddItem({quest:{copy:c.copy, slot:QSLOT[c.slot] ?? null, id:a.id, offer_id:a.offer_id}});
 }
 
 // 볼 만한 영상 — 사전 §3-8-1 규칙 1·3.
@@ -725,11 +988,14 @@ function renderRecord(){
   app.innerHTML = shell({
     top: head("기록 · 옷장"),
     body: statsCard() + effortLine()
-      + group("item", "옷장", s => s.ref.includes(":") ? s.ref.split(":").slice(1).join(":") : s.ref)
+      // 옷장은 목록이 아니라 화면이 됐다(슬롯별 정렬·담기·버리기) — 같은 것을 두 군데 그리지 않는다
+      + `<button class="q" id="toCloset"><div class="t">옷장 열기</div>
+         <div class="m">${nItems() ? `담아둔 ${nItems()}개` : "아직 담긴 게 없어요"}</div></button>`
       + group("skill", "해낸 미션", s => cell(s.ref)?.copy ?? s.ref)
       + group("knowledge", "알아본 것", s => s.ref === "diagnosis" ? "내 추구미와 지금 자리를 확인했어요" : (cell(s.ref)?.copy ?? s.ref)),
     btm: `<button class="btn ghost app-only-hide" id="back">홈으로</button>`,
   });
+  $("toCloset").onclick = () => nav("closet");
   $("back").onclick = () => nav("home");
 }
 
@@ -754,8 +1020,30 @@ function renderVoc(){
   };
 }
 
-function renderCheck(){
-  const rows = selfCheck(DICT);
+/* 착용·옷장 자체 점검 — 이 화면들이 조용히 깨지는 방식은 둘뿐이다:
+   색→타입 정본이 안 붙거나(팔레트 파일·PC8 라벨이 어긋남), 추천이 목표 아닌 걸 채우거나.
+   둘 다 화면에는 "그냥 아무것도 안 나옴"으로 보여서 눈으로는 못 잡는다. */
+function outfitCheck(pal){
+  const types = new Set(pal.map(r => r.type));
+  const fake = [{id:"a", slot:"top", tag_type:"chic", tag_power:1},
+                {id:"b", slot:"top", tag_type:"pure", tag_power:1},
+                {id:"c", slot:"lip", tag_type:"chic", tag_power:1}];
+  const r1 = CZMStats.recommendOutfit(fake, "chic"), r2 = CZMStats.recommendOutfit(fake, "chic");
+  const errs = CZMStats.selfCheck(200);
+  return [
+    {name:"색→타입 정본이 붙었다", pass: pal.length > 0, detail:`${pal.length}색`},
+    {name:"팔레트가 8타입을 전부 덮는다", pass: types.size === 8, detail:[...types].join(",")},
+    {name:"슬롯 표시명이 산식 9종을 전부 덮는다", pass: SLOTS.every(s => SLOT_LABEL[s]), detail:`${SLOTS.length}종`},
+    {name:"추천이 결정적이다(같은 입력 → 같은 답)", pass: JSON.stringify(r1) === JSON.stringify(r2)},
+    {name:"목표와 다른 타입으로 슬롯을 채우지 않는다", pass: r1.pick.top?.id === "a" && r1.shown === 2},
+    {name:"없는 슬롯은 빈 슬롯으로 둔다", pass: r1.empty.length === SLOTS.length - 2},
+    {name:"보유 0이면 조합을 만들지 않는다", pass: CZMStats.recommendOutfit([], "chic").shown === 0},
+    {name:"스탯 산식 자체 점검", pass: errs.length === 0, detail: errs.join(" / ")},
+  ];
+}
+
+async function renderCheck(){
+  const rows = [...selfCheck(DICT), ...outfitCheck(await palette())];
   const bad = rows.filter(r => !r.pass).length;
   app.innerHTML = shell({
     top: head("자체 점검"),
@@ -776,7 +1064,8 @@ const GATED = !LOCAL || new URLSearchParams(location.search).has("login");
 
 // 해시 라우트 — 앱 하단 탭바와 웹의 칩 줄이 같은 주소를 쓴다.
 // 탭바는 app-tabbar.js(앱 전용)가 그리고, 여기서는 주소만 받아준다.
-const VIEWS = {home:renderHome, record:renderRecord, tools:renderTools};
+const VIEWS = {home:renderHome, record:renderRecord, tools:renderTools,
+               outfit:() => renderOutfit(true), closet:renderCloset};
 // 같은 해시로는 hashchange가 오지 않는다 — 주소만 조용히 맞추고 화면은 직접 그린다
 const nav = name => { history.replaceState(null, "", `#${name}`); (VIEWS[name] ?? renderHome)(); };
 addEventListener("hashchange", () => {

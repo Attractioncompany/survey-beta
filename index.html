@@ -171,7 +171,9 @@ body.result-mode .progress{display:none;}
    짧은 페이지가 허전한 건 레이아웃이 아니라 콘텐츠 문제다(2026-08-09). */
 .result-stage .cpage.info-page{display:flex;align-items:center;padding:calc(var(--safe-t) + 22px) 16px calc(var(--safe-b) + 22px);}
 /* 결과 히어로 — 젤리 프리즘 (고객팀 리디자인 2026-08-21, 시안=스펙) */
-.result-stage .cpage.hero-page{display:flex;flex-direction:column;padding:calc(var(--safe-t) + 40px) 24px calc(var(--safe-b) + 20px);overflow:hidden;}
+/* 아래 여백은 고정 도트 오버레이가 먹는 자리다(.cp-inner의 padding-bottom:74px와 같은 이유).
+   20px일 땐 도트 알약이 넘김 안내 위에 얹혀 글자를 가렸다. */
+.result-stage .cpage.hero-page{display:flex;flex-direction:column;padding:calc(var(--safe-t) + 40px) 24px calc(var(--safe-b) + 62px);overflow:hidden;}
 .hero-top{position:relative;min-height:224px;flex-shrink:0;}
 .hero-gumi{position:absolute;right:-46px;top:0;width:210px;height:210px;pointer-events:none;}
 .hero-gumi .pad{position:absolute;left:50%;top:50%;width:196px;height:196px;transform:translate(-50%,-50%);border-radius:999px;background:radial-gradient(circle,rgba(255,255,255,.95) 0%,rgba(255,255,255,.7) 52%,rgba(255,255,255,0) 76%);}
@@ -194,7 +196,16 @@ body.result-mode .progress{display:none;}
 .result-stage .dots{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--sp-4) + var(--safe-b));z-index:20;margin:0;background:rgba(43,34,51,.52);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:9px 15px;border-radius:22px;box-shadow:0 2px 12px rgba(0,0,0,.28);}
 .result-stage .dot{background:rgba(255,255,255,.5);}
 .result-stage .dot.on{background:#fff;}
-.swipe-hint{font-size:12px;color:var(--sub);text-align:center;margin-top:8px;}
+/* 캐러셀 넘김 안내 (고객팀 문구원칙 §6-7) — 도트만으로는 "더 있다"가 안 읽힌다.
+   글자는 장수를, 화살표 움직임은 방향을 말한다. */
+.swipe-hint{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;font-weight:600;color:#6E6478;margin-top:10px;}
+.swipe-hint i{font-style:normal;font-size:15px;line-height:1;animation:shNudge 1.5s ease-in-out infinite;}
+@keyframes shNudge{0%,60%,100%{transform:translateX(0);opacity:.55}30%{transform:translateX(5px);opacity:1}}
+/* 설문→결과 처리 화면 */
+.proc-bar{width:150px;height:5px;margin:0 auto;border-radius:3px;background:var(--line);overflow:hidden;}
+.proc-fill{height:100%;width:40%;border-radius:3px;background:linear-gradient(90deg,#F2A9C4,#B76BA3,#4A2B5C);animation:procRun 1.1s ease-in-out infinite;}
+@keyframes procRun{0%{transform:translateX(-105%)}100%{transform:translateX(255%)}}
+@media (prefers-reduced-motion:reduce){.swipe-hint i,.proc-fill{animation:none}.proc-fill{width:100%}}
 /* 코칭 접이식 (P5 원페이지 최적화) */
 details#waitSec{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:14px;}
 details#waitSec summary{font-size:15px;color:var(--accent);font-weight:700;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;}
@@ -245,9 +256,9 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=1e66c62"></script>
+<script src="modules/czm-core.js?v=1d9001f"></script>
 <!-- 스탯 산식 정본(theory/산식_RPG스탯성장_v1_2026-08-24.md). 표시 층 전용 — 좌표·판정은 손대지 않는다. -->
-<script src="modules/czm-stats.js?v=1e66c62"></script>
+<script src="modules/czm-stats.js?v=1d9001f"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -308,7 +319,7 @@ const VIEW = new URLSearchParams(location.search).get("view");
 // ?flow=lecture — 강의용 흐름(modules/lecture.html)에서 온 경우. 결과 뒤 그리로 돌려보낸다.
 const FLOW_LECTURE = new URLSearchParams(location.search).get("flow")==="lecture";
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.35+1e66c62"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.35+1d9001f"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -582,12 +593,13 @@ function qTxt(q){ return (GENDER==="m"&&q.txtm)?q.txtm:q.txt; }
 
 function render(){
   window.scrollTo({top:0,behavior:"instant"});
-  document.body.classList.toggle("result-mode", phase==="result");
+  document.body.classList.toggle("result-mode", phase==="result" && procDone);
   if(phase==="step") renderStep();
   else if(phase==="start") renderStart();
   else if(phase==="survey") renderQ();
   else if(phase==="extra") renderExtra();
-  else if(phase==="result") renderResult();
+  // 결과로 가는 문은 둘(문항 끝 · 정밀문항 끝)이라 각 호출처가 아니라 여기서 한 번만 가로챈다.
+  else if(phase==="result") procDone ? renderResult() : renderProcessing();
   const el=app.querySelector(".screen,.result-stage");
   if(el) el.classList.add("enter");
   markScrollable();
@@ -621,13 +633,13 @@ function renderStart(){
   // 여정 리셋으로 읽힌다 (고객팀 진단 2026-08-23 최상 순위). 이어달리기 한 줄로 받는다.
   const intro = FLOW_FULL
    ? `<div><h1>얼굴은 다 쟀습니다</h1>
-      <p style="font-size:var(--fs-sub);color:var(--accent);font-weight:700;margin-top:var(--sp-1)">이제 마음을 물을 차례</p></div>
-      <p style="color:var(--sub);font-size:var(--fs-body);line-height:1.7">방금 잰 것이 지금의 나라면,<br>지금부터 고르는 것은 내가 되고 싶은 모습이에요.</p>`
+      <p style="font-size:var(--fs-sub);color:var(--accent);font-weight:700;margin-top:var(--sp-1)">다음은 설문 ${totalQ}문항 · 3~4분</p></div>
+      <p style="color:var(--sub);font-size:var(--fs-body);line-height:1.7">방금 잰 얼굴이 지금의 나라면,<br>지금부터 고르는 건 되고 싶은 나예요.</p>`
    : `<img src="bg/main.jpg" alt="추구미즘" style="width:150px;height:150px;object-fit:cover;border-radius:28px;margin:0 auto;display:block;box-shadow:0 8px 24px rgba(74,43,92,.20)">
       <div><h1>추구미즘</h1>
       <p style="font-size:var(--fs-sub);color:var(--accent);font-weight:700;margin-top:var(--sp-1)">나의 추구미 찾기</p></div>
-      <p style="color:var(--sub);font-size:var(--fs-body);line-height:1.7">시작점을 알아야 목적지에 닿듯이,<br>지금 내 매력을 알아야 추구미로 갈 수 있어요.<br>같이 확인해봐요.</p>
-      <p style="font-size:var(--fs-sub);color:var(--accent);font-weight:700">총 ${totalQ}문항 · 약 3~4분 · 전부 탭으로 선택만!</p>`;
+      <p style="color:var(--sub);font-size:var(--fs-body);line-height:1.7">지금 내 매력이 어느 쪽인지 측정합니다.<br>여기서 나온 좌표가 매주 미션의 기준이 돼요.</p>
+      <p style="font-size:var(--fs-sub);color:var(--accent);font-weight:700">총 ${totalQ}문항 · 3~4분 · 전부 탭으로 고르면 끝</p>`;
   app.innerHTML=`<div class="screen">
    <div class="screen-body" style="justify-content:center;text-align:center;gap:var(--sp-3)">
      ${intro}
@@ -637,7 +649,7 @@ function renderStart(){
        <button id="gF" onclick="setG('f')">여성</button>
        <button id="gM" onclick="setG('m')">남성</button>
      </div>
-     <button class="btn" id="startBtn" disabled onclick="start()">진단 시작하기</button>
+     <button class="btn" id="startBtn" disabled onclick="start()">측정 시작하기</button>
      <p class="small" id="startHint" style="color:var(--accent);font-weight:600;margin-top:var(--sp-2);text-align:center">위에서 성별을 골라주세요</p>
      <p class="small" style="text-align:center">추구미즘 · 응답은 익명으로 진단 개선에만 쓰여요</p>
    </div>
@@ -667,7 +679,7 @@ function deviceFamily(){
   return d;
 }
 function start(){
-  phase="survey"; idx=0; startTs=Date.now(); pushNav();
+  phase="survey"; idx=0; startTs=Date.now(); procDone=false; pushNav();
   if(!USER_ROW_SENT){ USER_ROW_SENT=true;
     const di=deviceFamily();
     const compact=di.os==="ios"?("ios_"+di.model):di.os==="android"?("android_"+di.brand):di.os==="desktop"?("desktop_"+di.brand):"unknown";
@@ -1106,6 +1118,31 @@ function prepExtra(){
   if(extraQ.length){ phase="extra"; extraIdx=-1; renderExtraIntro(); }
   else { phase="result"; render(); }
 }
+/* 설문 끝 → 결과 사이 처리 화면 (고객팀 문구원칙 §7-3).
+   35문항을 답한 직후 아무 신호 없이 결과가 튀어나오던 자리다.
+   채점은 동기라 실제로는 즉시 끝난다 — 그래서 이 화면의 값은 "끝났다는 신호"에 있고,
+   너무 빨리 지나가면 신호가 안 되므로 1.2초를 준다. 로딩 흉내가 아니라 전환 고지다. */
+// 기본값 true = "이 결과는 이미 처리가 끝난 것". 새 설문을 시작할 때(start)만 false로 내린다.
+// 저장된 리포트 재열람·'내 결과 보기'도 phase="result"로 들어오는데, 그쪽엔 옮길 답이 없다.
+let procDone=true;
+function renderProcessing(){
+  document.body.classList.add("screen-mode");
+  $("prog").classList.add("hidden");
+  const n=Object.keys(answers).length;
+  track("survey_processing_shown",{answered:n, extra:extraQ.length});
+  app.innerHTML=`<div class="screen">
+   <div class="screen-body" style="justify-content:center;text-align:center;gap:var(--sp-4)">
+     <img class="gumi-lg" src="bg/gumi_think.png" alt="">
+     <div>
+       <h1 style="font-size:var(--fs-h)">다 물어봤습니다</h1>
+       <p style="color:var(--sub);font-size:var(--fs-body);line-height:1.8;margin-top:var(--sp-3)">
+         구미가 답 ${n}개를 좌표로 옮기고 있어요.<br>곧 결과가 나옵니다.</p>
+     </div>
+     <div class="proc-bar"><div class="proc-fill"></div></div>
+   </div>
+  </div>`;
+  setTimeout(()=>{ procDone=true; render(); }, 1200);
+}
 function renderExtraIntro(){
   $("prog").classList.add("hidden");
   app.innerHTML=`<div class="card break-card glass">
@@ -1436,6 +1473,7 @@ function heroPage(W,Hv,wKey,hKey){
        자세한 풀이 보기
        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#6E6478" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5 9 7l-4 3.5"/></svg>
      </button>
+     <p class="swipe-hint" id="swHint">옆으로 넘기면 이어집니다<i>›</i></p>
    </div>`;
 }
 
@@ -1557,7 +1595,7 @@ function renderResult(){
          ${FLOW_LECTURE
            ? `<a class="btn" href="modules/lecture.html" style="display:block;text-align:center;text-decoration:none">강의 리포트로 돌아가기 →</a>`
            : `<!-- 웹(강의) → 앱으로 넘어가는 유일한 다리. 문구는 마케팅 검수본(2026-08-17) 적용 -->
-              <a class="btn ghost" href="modules/home.html" style="display:block;text-align:center;text-decoration:none">오늘 해볼 것 하나 받기</a>`}
+              <a class="btn ghost" href="modules/home.html" style="display:block;text-align:center;text-decoration:none">첫 미션 받고 홈으로 가기</a>`}
          <button class="btn ghost" onclick="restart()">처음부터 다시</button></div>
        <details class="sec coach-fold" id="waitSec" style="width:100%"><summary>내 추구미로 가는 4주 코칭 <span class="coach-cue">알림 신청 ▾</span></summary>
          <p class="small" style="margin:4px 0 10px;text-align:left">구미가 매주 딱 하나씩, 나에게 맞는 변화 미션을 처방해드려요. 곧 열려요 — 가장 먼저 알림 받기:</p>
@@ -1604,6 +1642,10 @@ function carDot(){ // 결과 캐러셀 현재 페이지 → 도트 표시 동기
     box.innerHTML=Array.from({length:n},()=>'<span class="dot"></span>').join("");
   const i=Math.round(c.scrollLeft/c.clientWidth);
   document.querySelectorAll(".dots .dot").forEach((d,k)=>d.classList.toggle("on",k===i));
+  // 장수는 사진 측정 유무로 5~6장을 오간다. 하드코딩하면 없는 장을 찾게 만든다.
+  const sh=$("swHint");
+  if(sh){ if(!sh.dataset.n){ sh.dataset.n=n; sh.innerHTML=`옆으로 넘기면 ${n-1}장이 더 있어요<i>›</i>`; }
+          sh.style.visibility = i===0 ? "visible" : "hidden"; }
   // 캐릭터 시트 도달을 1회만 남긴다 — 캐러셀은 스크롤마다 이 함수를 부른다
   if(!carDot._seen && c.children[i] && c.children[i].querySelector("#statSheet")){
     carDot._seen=1;
@@ -1646,7 +1688,11 @@ function saveLog(){
     + (selfPick?"|SELF:"+selfPick:"") + (fbVal!==null?"|FB:"+fbVal:"") + "|TXT:"+($("fbTxt").value||"").slice(0,300);
   const log={ts:new Date().toISOString(),gender:GENDER,dur:durS,answers,result:window._result,fb:fbVal,selfPick,fbText:$("fbTxt").value||""};
   try{ const arr=JSON.parse(localStorage.getItem("aim_logs")||"[]"); arr.push(log); localStorage.setItem("aim_logs",JSON.stringify(arr)); }catch(e){}
-  track("survey_submit",{fb:fbVal,selfPick,hasText:!!($("fbTxt").value)});
+  // 본문을 남긴다. 여태 hasText 플래그만 남겨서 "유저가 뭔가 썼다"는 사실만 있고 문장이 없었다
+  // (헌법 §6-1 "다시 얻을 수 없는 것은 남긴다" 위반 · 고객팀 §8). props는 jsonb라 스키마 변경이 없다.
+  // 500자 상한 — 자유입력이라 개인정보가 섞일 수 있고, 익명 UID 외에 식별자는 붙지 않는다.
+  const fbText=($("fbTxt").value||"").trim().slice(0,500);
+  track("survey_submit",{fb:fbVal,selfPick,hasText:!!fbText,text:fbText});
   // 구글폼 사전작성 링크 (결과 자동 입력)
   const formUrl = FORM_BASE
     + "&entry."+FORM_ENTRY.want+"="+encodeURIComponent(TYPES[wr[0][0]].name)
@@ -1991,9 +2037,9 @@ if(FLOW_LECTURE){
 <script type="module">
   try{
     const [AS, PR, SE, snapRes] = await Promise.all([
-      import("./modules/asset-score.js?v=1e66c62"),
-      import("./modules/part-report.js?v=1e66c62"),
-      import("./modules/step-engine.js?v=1e66c62"),
+      import("./modules/asset-score.js?v=1d9001f"),
+      import("./modules/part-report.js?v=1d9001f"),
+      import("./modules/step-engine.js?v=1d9001f"),
       fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
     ]);
     window.__PART = { AS, PR, SNAP: snapRes };

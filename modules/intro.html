@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>추구미즘 소개</title>
+<!--
+  앱 첫 실행 소개 시퀀스 — 5장
+  정본: brand/앱소개페이지_설계_v1_2026-08-24.md (마케팅 확정본)
+  · 카피는 §2 표가 정본이다. 여기서 문구를 만들지 않는다.
+  · 한 장 = 한 화면. 세로 스크롤이 생기면 설계 위반이다(375×804 실측 통과 기준).
+  · 자동 넘김 없음 — 읽는 속도는 유저가 정한다.
+  · 구미는 그림으로만 나온다. 말풍선·1인칭 대사 금지(§1 화자 규칙).
+
+  앱 전용 화면이지만 웹 트리(modules/)에 둔다 — scan-measure-run.html 선례.
+
+  계측(헌법 §6-1): intro_view{step} · intro_skip{step} · intro_done
+    남길 것: 장별 노출·이탈 지점, 건너뛰기 여부 / 안 남길 것: 체류 시간(장별 이탈로 충분)
+    어디에: events 테이블(app_version=intro_v1)
+    대시보드: 소개 완주율(1장 노출 → intro_done) · 장별 이탈
+-->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="czm-ui.css">
+<style>
+*{box-sizing:border-box}
+/* 화면 하나가 전부다 — 세로 스크롤을 원천 차단한다.
+   .screen 셸(czm-ui.css)은 세로 3단이라 가로 스와이프에 맞지 않아 여기서 직접 짠다. */
+html,body{height:100%;overflow:hidden;margin:0;overscroll-behavior:none}
+body{position:relative;display:flex;flex-direction:column;color:var(--ink);
+  font:16px/1.6 'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;
+  -webkit-font-smoothing:antialiased;word-break:keep-all;
+  /* home.html과 같은 공기 — 소개에서 홈으로 넘어갈 때 배경이 바뀌면 다른 앱처럼 보인다 */
+  background:radial-gradient(circle at 12% 6%,rgba(242,169,196,.38) 0%,rgba(242,169,196,0) 42%),
+             radial-gradient(circle at 92% 22%,rgba(156,200,232,.32) 0%,rgba(156,200,232,0) 46%),
+             radial-gradient(circle at 50% 105%,rgba(185,175,209,.30) 0%,rgba(185,175,209,0) 55%),var(--bg)}
+
+/* 가로 스와이프는 브라우저 네이티브 스크롤 스냅에 맡긴다 — 제스처 코드를 직접 쓰지 않는다 */
+.track{flex:1;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;-ms-overflow-style:none}
+.track::-webkit-scrollbar{display:none}
+
+/* 그림·제목·설명을 한 덩어리로 세로 가운데에 둔다. 위에서부터 쌓으면 그림 아래에
+   빈 공간이 크게 남아 화면이 미완성으로 보인다(375×812 실측 후 교정) */
+.slide{flex:0 0 100%;width:100%;scroll-snap-align:start;min-height:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:calc(var(--safe-t) + 52px) var(--page-x) var(--sp-4)}
+.pic{flex:0 1 auto;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+/* character/ 원본은 배경이 채워진 정사각 PNG다. 그냥 얹으면 배경 위에 흰 네모가 뜬다 —
+   라운드 프레임으로 감싸 카드로 읽히게 한다 (에셋 매핑 규약) */
+.pic img{max-height:46vh;max-width:92%;object-fit:contain;border-radius:28px;
+  box-shadow:0 8px 28px rgba(74,43,92,.10);-webkit-user-drag:none;user-select:none}
+.slide h2{margin:0;padding-top:var(--sp-4);font-size:22px;font-weight:800;letter-spacing:-.02em;
+  text-align:center;line-height:1.35}
+.slide p{margin:10px 0 0;font-size:15px;line-height:1.55;color:var(--sub);text-align:center;max-width:19em}
+
+/* 우상단 건너뛰기 — 5장에서는 감춘다(그 자리 역할을 시작하기가 가져간다) */
+.skip{position:absolute;top:calc(var(--safe-t) + 8px);right:8px;z-index:2;
+  background:none;border:0;color:var(--sub);font-size:14px;font-weight:500;
+  padding:10px 14px;cursor:pointer}
+
+.foot{flex-shrink:0;padding:var(--sp-3) var(--page-x) calc(var(--safe-b) + var(--sp-4))}
+/* 점 5개. 진행률 바를 쓰지 않는다 — 숙제처럼 읽힌다(설계 §1) */
+.dots{display:flex;gap:9px;justify-content:center;height:8px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--line);transition:background .2s}
+.dots i.on{background:var(--accent)}
+/* 버튼은 5장에만 보이지만 자리는 늘 잡아둔다 — 나타날 때 레이아웃이 튀면 스크롤 위치가 어긋난다 */
+.hide{visibility:hidden}
+</style>
+</head>
+<body>
+
+<button id="skip" class="skip" type="button">건너뛰기</button>
+
+<div id="track" class="track"></div>
+
+<footer class="foot">
+  <div id="dots" class="dots"></div>
+  <button id="go" class="btn hide" type="button">시작하기</button>
+</footer>
+
+<!-- 저장 키·8타입 등 계약층. window.CZM를 연다 -->
+<script src="czm-core.js"></script>
+<script type="module">
+// 모듈 캐시 무력화 — home.html과 같은 규율. "?v=dev"는 배포 시 커밋 해시로 치환된다
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=dev";
+
+// ── 이미지 상수 — 교체 지점은 여기 한 곳뿐 ────────────────────────
+// 생성 대기: 미션.png · 옷장.png · 프리즘.png (brand/앱소개페이지_설계_v1_2026-08-24.md §3-2)
+// 세 파일이 character/ 에 들어오면 아래 세 줄의 파일명만 바꾼다. 다른 곳은 손대지 않는다.
+const IMG = {
+  s1: "../character/기본형.png",   // 확정 (§3-1)
+  s2: "../character/분석중.png",   // 확정 (§3-1)
+  s3: "../character/기본형.png",   // 임시 → 미션.png
+  s4: "../character/기본형.png",   // 임시 → 옷장.png
+  s5: "../character/기본형.png",   // 임시 → 프리즘.png
+};
+
+// ── 카피 — 설계서 §2 표 정본. 여기서 문구를 만들지 않는다 ──────────
+const SLIDES = [
+  {img:IMG.s1, t:"내 매력을 측정하고, 바꿔갑니다",  d:"사진 한 장과 설문으로 시작해서, 매주 미션으로 원하는 모습에 가까워집니다."},
+  {img:IMG.s2, t:"사진과 설문으로 매력을 측정합니다", d:"얼굴선과 색을 재서, 여덟 가지 매력이 지금 어떤 배합인지 보여드려요."},
+  {img:IMG.s3, t:"매주 미션 하나를 받습니다",       d:"지금 상태에서 바로 할 수 있는 것 하나를 골라 드려요. 해내면 그만큼 쌓입니다."},
+  {img:IMG.s4, t:"오늘 뭘 입을지 골라 드립니다",     d:'갖고 있는 옷을 옷장에 넣어두면, "오늘은 시크하게" 한마디로 조합을 찾아줍니다.'},
+  {img:IMG.s5, t:"변화가 눈에 보입니다",            d:"미션이 쌓이면 내 프리즘 색이 추구미 쪽으로 옮겨가요. 얼마나 왔는지 매주 확인합니다."},
+];
+const LAST = SLIDES.length - 1;
+
+const $ = id => document.getElementById(id);
+const trk = $("track"), dotsEl = $("dots"), skipBtn = $("skip"), goBtn = $("go");
+const Q = new URLSearchParams(location.search);
+// 도구 탭에서 다시 볼 때(?again=1) 는 진단으로 밀지 않고 왔던 자리로 돌려보낸다
+const AGAIN = Q.get("again") === "1";
+
+// ── 서버 기록 ────────────────────────────────────────────────
+// 로컬 계측 오염 방지 (index.html·home.html과 같은 규율). ?live=1 로 열면 실제로 쏜다.
+const LOCAL = /^(localhost|127\.|$)/.test(location.hostname) && !Q.has("live");
+// 디버그 앱 빌드는 계측하지 않는다 — 시뮬레이터 테스트가 실계측에 섞인 적이 있다(index.html:322)
+const DEVBUILD = !!window.__CHUGU_DEV;
+const SS = (LOCAL || DEVBUILD) ? null
+  : await import(`./session.js${MODV}`).catch(e => { console.warn("session 로드 실패", e); return null; });
+
+const K = CZM.KEYS;
+let UID = CZM.store.raw(K.uid);   // index.html이 생문자열로 저장한다
+if (!UID) { UID = crypto.randomUUID(); try { localStorage.setItem(K.uid, UID); } catch(e){} }
+
+// ⚠ session.js의 sbFetch를 쓰지 않는다. 그건 `if (!s) return null` 로 **로그인 세션이 없으면
+//   조용히 버린다.** 소개는 로그인 이전 화면이라 그 경로로는 5장 전체가 0건으로 남는다.
+//   익명 키로 직접 쏘는 index.html sbInsert(:330)와 같은 경로를 쓴다. 키는 session.js
+//   PUBLIC에서 읽는다 — 이 파일에 키를 박지 않는다.
+// extra는 fetch 옵션 통로 — 페이지를 떠나는 전송은 {keepalive:true} 필수(데이터 운영규약).
+const track = (event, props = {}, extra = {}) => {
+  if (!SS) return Promise.resolve(true);
+  const { url, key } = SS.PUBLIC;
+  return fetch(`${url}/rest/v1/events`, {method:"POST",
+    headers:{"Content-Type":"application/json", apikey:key, Authorization:`Bearer ${key}`,
+             Prefer:"return=minimal"},
+    body: JSON.stringify({user_id:UID, event, props, app_version:"intro_v1"}), ...extra
+  }).catch(e => console.warn("track", event, e));
+};
+
+// ── 그리기 ───────────────────────────────────────────────────
+const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+trk.innerHTML = SLIDES.map(s => `<section class="slide">
+    <div class="pic"><img src="${s.img}" alt="" draggable="false"></div>
+    <h2>${esc(s.t)}</h2><p>${esc(s.d)}</p></section>`).join("");
+dotsEl.innerHTML = SLIDES.map(() => `<i></i>`).join("");
+const dots = [...dotsEl.children];
+
+if (AGAIN) goBtn.textContent = "닫기";
+
+// ── 넘기기 ───────────────────────────────────────────────────
+let i = -1;
+function setIndex(n){
+  if (n === i || n < 0 || n > LAST) return;
+  i = n;
+  dots.forEach((d, k) => d.classList.toggle("on", k === n));
+  skipBtn.classList.toggle("hide", n === LAST);
+  goBtn.classList.toggle("hide", n !== LAST);
+  track("intro_view", {step: n + 1});
+}
+const goTo = n => trk.scrollTo({left: n * trk.clientWidth, behavior: "smooth"});
+
+trk.addEventListener("scroll", () => setIndex(Math.round(trk.scrollLeft / trk.clientWidth)), {passive:true});
+// 스와이프를 모르는 유저 대비 — 화면 아무 데나 탭해도 넘어간다. 스와이프는 click을 만들지 않아 이중 이동이 없다
+trk.addEventListener("click", () => { if (i < LAST) goTo(i + 1); });
+// 회전하면 스냅 위치가 어긋난다. 보고 있던 장을 다시 물린다
+addEventListener("resize", () => { trk.scrollLeft = i * trk.clientWidth; });
+
+// ── 나가기 ───────────────────────────────────────────────────
+async function finish(event, props){
+  skipBtn.disabled = goBtn.disabled = true;
+  CZM.store.set(K.introSeen, true);              // 완주·건너뛰기 모두 남긴다 — 다시 뜨지 않는다
+  await track(event, props, {keepalive: true});  // 페이지를 떠나는 전송
+  if (AGAIN) { history.length > 1 ? history.back() : location.href = "home.html"; }
+  else location.href = "home.html";              // 로그인이 관문이다(대표 2026-08-17) — 진단 CTA는 홈에 있다
+}
+skipBtn.onclick = () => finish("intro_skip", {step: i + 1});
+goBtn.onclick   = () => finish("intro_done", {});
+
+setIndex(0);
+</script>
+</body>
+</html>

@@ -29,6 +29,7 @@
     skipped:    "czm_skipped",
     lastSeen:   "czm_last_seen",
     previewDone:"czm_preview_done",
+    introSeen:  "czm_intro_seen",      // 앱 소개 5장(intro.html)을 봤는가 — 완주·건너뛰기 모두 남는다
     aimLogs:    "aim_logs"
   };
 
