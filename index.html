@@ -113,6 +113,9 @@ h1{font-size:var(--fs-title);line-height:1.3;} h2{font-size:var(--fs-h);line-hei
 .carousel::-webkit-scrollbar{display:none;}
 .cpage{flex:0 0 100%;min-width:100%;scroll-snap-align:start;box-sizing:border-box;padding:0 2px;}
 .cp-inner{border-radius:20px;padding:22px 20px 24px;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:0 4px 16px rgba(58,43,69,.10);box-sizing:border-box;}
+/* 결과 캐러셀에서는 카드 높이를 내용에 맡긴다 — height:100%면 짧은 장의 카드 안이
+   텅 비고, 그게 "카드가 여백을 만든다"는 인상이 된다. 시작점은 위에서 고정됐다. */
+.result-stage .cp-inner{height:auto;max-height:100%;}
 /* 본문이 들어가는 페이지는 좌측정렬. 중앙정렬은 줄 끝이 들쭉날쭉해서
    문장이 길수록 읽기 힘들고, 마지막 한 줄이 가운데 떠서 어색해진다(대표 지적 2026-08-09).
    캐릭터 페이지(.char)는 타입명 한 덩어리라 중앙 유지. */
@@ -152,10 +155,21 @@ h1{font-size:var(--fs-title);line-height:1.3;} h2{font-size:var(--fs-h);line-hei
 .statsheet .ring.base{stroke:#D8CDE0;}
 .statsheet .spoke{stroke:var(--line);stroke-width:1;}
 .statsheet .poly{fill:url(#csFill);stroke:var(--accent);stroke-width:2;stroke-linejoin:round;}
+/* 성장 전 윤곽 — 어디가 자랐는지는 겹쳐 봐야 보인다 (modules/stat-preview.html A안) */
+.statsheet .poly-ghost{fill:none;stroke:#C6B6D2;stroke-width:1.4;stroke-dasharray:4 4;stroke-linejoin:round;}
 .statsheet .tlab{font-size:12.5px;font-weight:700;fill:var(--ink);}
 .statsheet .tnum{font-size:11px;font-weight:800;opacity:0;transition:opacity .25s;}
 .statsheet.nums .tnum{opacity:1;}
 .statsheet .hint{font-size:12px;color:var(--sub);text-align:center;margin:2px 0 0;}
+/* 「나의 4주」 — 주차 · 미션 · 얼마나. 한 줄에 셋 */
+.wk{display:flex;align-items:baseline;gap:9px;padding:11px 12px;margin-bottom:7px;
+  background:rgba(255,255,255,.55);border:1px solid var(--line);border-radius:12px;}
+.wk b{flex:none;font-size:12px;font-weight:800;color:var(--accent);min-width:30px;}
+.wk span{flex:1;font-size:13.5px;line-height:1.5;word-break:keep-all;}
+.wk em{flex:none;font-style:normal;font-size:11.5px;font-weight:800;color:var(--accent);
+  background:rgba(183,107,163,.13);border-radius:999px;padding:3px 8px;}
+.wk-last{background:transparent;border-style:dashed;}
+.wk-last span{color:var(--sub);}
 .statsheet.nums .hint{visibility:hidden;}
 .cp-inner .sec:first-of-type{margin-top:0;}
 .dots{display:flex;justify-content:center;gap:7px;margin:14px 0 0;}
@@ -173,7 +187,11 @@ body.result-mode .progress{display:none;}
    짧은 페이지가 허전한 건 레이아웃이 아니라 콘텐츠 문제다(2026-08-09). */
 /* 아래 54px은 고정 도트 알약(bottom safe+16 · 높이 약 34)이 먹는 자리다.
    22px이던 시절엔 카드 마지막 줄 위에 알약이 얹혀 글자를 가렸다. */
-.result-stage .cpage.info-page{display:flex;align-items:center;align-items:safe center;padding:calc(var(--safe-t) + var(--sp-4)) var(--sp-4) calc(var(--safe-b) + 54px);}
+/* 카드는 **항상 같은 높이에서 시작한다**. 세로 중앙 정렬은 카드 길이에 따라 시작점이
+   페이지마다 달라져서, 넘길 때마다 카드가 위로 갔다 아래로 갔다 한다 — 내용이 적어
+   생기는 여백보다 그 들쭉날쭉함이 산만함의 원인이다(대표 2026-08-24).
+   남는 아래 공간은 그대로 둔다. 카드 시작점이 고정되면 여백은 여백으로 읽힌다. */
+.result-stage .cpage.info-page{display:flex;align-items:flex-start;padding:calc(var(--safe-t) + var(--sp-4)) var(--sp-4) calc(var(--safe-b) + 54px);}
 /* 결과 히어로 — 젤리 프리즘 (고객팀 리디자인 2026-08-21, 시안=스펙) */
 /* 아래 여백은 고정 도트 오버레이가 먹는 자리다(.cp-inner의 padding-bottom:74px와 같은 이유).
    20px일 땐 도트 알약이 넘김 안내 위에 얹혀 글자를 가렸다. */
@@ -267,9 +285,9 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=a2f7afa"></script>
+<script src="modules/czm-core.js?v=1d28e40"></script>
 <!-- 스탯 산식 정본(theory/산식_RPG스탯성장_v1_2026-08-24.md). 표시 층 전용 — 좌표·판정은 손대지 않는다. -->
-<script src="modules/czm-stats.js?v=a2f7afa"></script>
+<script src="modules/czm-stats.js?v=1d28e40"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -329,8 +347,15 @@ const FLOW_FULL = new URLSearchParams(location.search).get("flow")==="full";
 const VIEW = new URLSearchParams(location.search).get("view");
 // ?flow=lecture — 강의용 흐름(modules/lecture.html)에서 온 경우. 결과 뒤 그리로 돌려보낸다.
 const FLOW_LECTURE = new URLSearchParams(location.search).get("flow")==="lecture";
+/* ?flow=want — 추구미 테스트(대표 확정 2026-08-24: 진단을 둘로 나눈다).
+   최초 진단은 '지금의 나'만 묻고, 추구미는 나중에 필요해질 때 정한다.
+   저장된 지금의 나를 물려받아 part A(추구미 문항)만 낸다. */
+const FLOW_WANT = new URLSearchParams(location.search).get("flow")==="want";
+// ?want=<타입키> — 추구미를 문항 없이 직접 고른 경우(modules/career.html에서 온다)
+const WANT_PARAM = new URLSearchParams(location.search).get("want");
+let WANT_PICK = null, WANT_SRC = null;   // 문항 점수 없이 물려받은 추구미(타입만)와 그 출처
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.35+a2f7afa"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.35+1d28e40"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -413,7 +438,8 @@ const MOODS = {
 };
 /* 문항: t=여성/공용 텍스트, tm=남성 텍스트, opts/optsm=성별별 선택지 */
 const Q = [
- {part:"A",intro:"<b>되고 싶은 모습</b>부터 찾아볼게요.<br>지금의 나와 달라도 괜찮아요 — 끌리는 대로 골라주세요"},
+ {part:"A",intro:"<b>되고 싶은 모습</b>부터 찾아볼게요.<br>지금의 나와 달라도 괜찮아요 — 끌리는 대로 골라주세요",
+  introFirst:"<b>되고 싶은 모습</b>을 찾아볼게요.<br>지금의 나와 달라도 괜찮아요 — 끌리는 대로 골라주세요"},
  {part:"A",id:"A1",kind:"mood",set:"r1",txt:"보자마자 <b>마음이 가는 사진</b>을 모두 골라주세요",multi:true,want:true},
  {part:"A",id:"A2",kind:"mood",set:"r2",txt:"<b>입어보고 싶은 스타일</b>을 모두 골라주세요",multi:true,want:true},
  {part:"A",id:"A3",kind:"mood",set:"r3",txt:"<b>이 장면 속의 나</b>, 상상만 해도 좋다! 싶은 걸 모두 골라주세요",multi:true,want:true},
@@ -427,7 +453,8 @@ const Q = [
    {t:"\u201c맑고 단정하다\u201d는 말을 듣는 순간",w:{pure:2,elegant:1}},
    {t:"\u201c화려하다, 멋있다\u201d는 말을 듣는 순간",w:{gorgeous:2,charisma:1}},
    {t:"\u201c세련됐다, 품격 있다\u201d는 말을 듣는 순간",w:{chic:2,classic:1}}]},
- {part:"B",intro:"좋아요! 이제 <b>지금의 나</b>를 봅니다.<br>기준은 '가장 자주' — 잘 보이려고 고르지 않아도 돼요"},
+ {part:"B",intro:"좋아요! 이제 <b>지금의 나</b>를 봅니다.<br>기준은 '가장 자주' — 잘 보이려고 고르지 않아도 돼요",
+  introFirst:"<b>지금의 나</b>부터 봅니다.<br>기준은 '가장 자주' — 잘 보이려고 고르지 않아도 돼요"},
  {part:"B",id:"B1",kind:"eyelid",txt:"내 <b>쌍꺼풀</b>과 가장 비슷한 건?",opts:[
    {t:"얇고 선명한 라인",w:{romantic:2,pure:1},svg:"thin"},
    {t:"두껍고 뚜렷한 라인",w:{gorgeous:2,charisma:1},svg:"thick"},
@@ -596,7 +623,18 @@ const scoreWant={}, scoreHave={}, axisWant={warm:0,cool:0,soft:0,deep:0}, axisHa
 TKEYS.forEach(k=>{scoreWant[k]=0;scoreHave[k]=0;});
 const $=id=>document.getElementById(id);
 const app=$("app");
-const totalQ = Q.filter(q=>q.id).length;
+/* 출제 범위 — 문항·가중·판정은 그대로 두고 "이번에 무엇을 묻는가"만 나눈다.
+   part A = 추구미(want) 문항 전체, part B~D = 지금의 나. 둘의 경계가 곧 part A다.
+   · 최초 진단(기본) : part A를 뺀다 — 추구미 없이 8축 방사형만 낸다
+   · 추구미 테스트(?flow=want) : part A만 낸다
+   · 강의(?flow=lecture) : 한 자리에서 다 물어야 하므로 나누지 않는다 */
+const ASK = FLOW_LECTURE ? Q : Q.filter(q => (q.part === "A") === FLOW_WANT);
+const totalQ = ASK.filter(q=>q.id).length;
+// 추구미 점수가 실제로 매겨졌는가 — 결과지 모드를 가르는 기준.
+// 저장된 옛 진단(want 있음)도 여기서 자동으로 2모드가 된다.
+const wantScored = () => TKEYS.some(k=>scoreWant[k]>0);
+// 정해진 추구미(문항 1위 또는 직접 선택). 없으면 null = 아직 안 정한 것.
+const wantKey = () => wantScored() ? topTwo(scoreWant)[0][0] : (TYPES[WANT_PICK] ? WANT_PICK : null);
 // 성별 치환: {여성스러운} 등 토큰을 성별에 맞게
 function g(t){ return t.replace(/\{여성스러운\}/g, GENDER==="m"?"온화한":"여성스러운").replace(/\{여성스러움\}/g, GENDER==="m"?"부드러운 온화함":"여성스러움"); }
 function qOpts(q){ return (GENDER==="m"&&q.optsm)?q.optsm:q.opts; }
@@ -650,7 +688,7 @@ function renderStart(){
   const intro = FLOW_FULL
    ? `<div><h1>얼굴은 다 쟀습니다</h1>
       <p style="font-size:var(--fs-sub);color:var(--accent);font-weight:700;margin-top:var(--sp-1)">다음은 설문 ${totalQ}문항 · 3~4분</p></div>
-      <p style="color:var(--sub);font-size:var(--fs-body);line-height:1.7">방금 잰 얼굴이 지금의 나라면,<br>지금부터 고르는 건 되고 싶은 나예요.</p>`
+      <p style="color:var(--sub);font-size:var(--fs-body);line-height:1.7">방금 잰 건 타고난 얼굴이고,<br>지금부터 고르는 건 요즘 하고 있는 스타일이에요.</p>`
    : `<img src="bg/main.jpg" alt="추구미즘" style="width:150px;height:150px;object-fit:cover;border-radius:28px;margin:0 auto;display:block;box-shadow:0 8px 24px rgba(74,43,92,.20)">
       <div><h1>추구미즘</h1>
       <p style="font-size:var(--fs-sub);color:var(--accent);font-weight:700;margin-top:var(--sp-1)">나의 추구미 찾기</p></div>
@@ -695,7 +733,8 @@ function deviceFamily(){
   return d;
 }
 function start(){
-  phase="survey"; idx=0; startTs=Date.now(); procDone=false; photoGate=true; pushNav();
+  // 추구미 테스트는 얼굴을 다시 재지 않는다 — 촬영 갈림길은 '지금의 나' 진단의 관문이다.
+  phase="survey"; idx=0; startTs=Date.now(); procDone=false; photoGate=!FLOW_WANT; pushNav();
   if(!USER_ROW_SENT){ USER_ROW_SENT=true;
     const di=deviceFamily();
     const compact=di.os==="ios"?("ios_"+di.model):di.os==="android"?("android_"+di.brand):di.os==="desktop"?("desktop_"+di.brand):"unknown";
@@ -710,20 +749,20 @@ function start(){
   render();
 }
 function prog(){
-  const answered=Q.filter((q,i)=>q.id&&i<idx&&answers[q.id]!==undefined).length;
+  const answered=ASK.filter((q,i)=>q.id&&i<idx&&answers[q.id]!==undefined).length;
   const total=totalQ+(phase==="extra"?extraQ.length:0);
   $("prog").classList.remove("hidden");
   $("pfill").style.width=Math.min(100,Math.round(answered/total*100))+"%";
   $("pnum").textContent=`${Math.min(answered+1,total)} / ${total}`;
 }
 function canGoBack(){ // 이전으로 갈 수 있는 위치인지 (첫 문항 전엔 불가)
-  for(let i=idx-1;i>=0;i--){ if(Q[i]&&Q[i].id) return true; }
+  for(let i=idx-1;i>=0;i--){ if(ASK[i]&&ASK[i].id) return true; }
   return false;
 }
 function goBack(){
-  const cur=Q[idx];
+  const cur=ASK[idx];
   track("question_back",{from:cur&&cur.id?cur.id:"intro"});
-  for(let i=idx-1;i>=0;i--){ if(Q[i]&&Q[i].id){ idx=i; render(); return; } }
+  for(let i=idx-1;i>=0;i--){ if(ASK[i]&&ASK[i].id){ idx=i; render(); return; } }
 }
 function navRow(nextDisabled,nextLabel){
   const back=canGoBack()?`<button class="btn back" onclick="history.back()">← 이전</button>`:"";
@@ -736,13 +775,17 @@ const topType = o => {
   return e.length ? e[0][0] : null;
 };
 function renderQ(){
-  const q=Q[idx];
+  const q=ASK[idx];
   if(!q){ prepExtra(); return; }
   if(q.intro){
+    // 파트 인트로가 첫 화면으로 올라온 경우(추구미 문항을 뺀 최초 진단) 앞 파트를 전제한
+    // 문장이 남으면 앞뒤가 안 맞는다. 그 자리용 문장을 따로 둔다.
+    // 강의 흐름은 문항을 나누지 않았으므로 문구도 그대로 둔다.
+    const introTxt = (!FLOW_LECTURE && ASK[0]===q && q.introFirst) ? q.introFirst : q.intro;
     document.body.classList.add("screen-mode");
     $("prog").classList.add("hidden");
     app.innerHTML=`<div class="screen"><div class="screen-body" style="justify-content:center;text-align:center;gap:var(--sp-4)"><img class="gumi-lg" src="bg/gumi_base.png" alt="">
-     <p style="font-size:var(--fs-body);line-height:1.8">${q.intro}</p></div>
+     <p style="font-size:var(--fs-body);line-height:1.8">${introTxt}</p></div>
      <div class="screen-btm"><button class="btn" onclick="next()">계속하기</button></div></div>`;
     return;
   }
@@ -750,7 +793,7 @@ function renderQ(){
   $("prog").classList.add("hidden");
   qShownAt = Date.now();
   const opts=qOpts(q);
-  const answered=Q.filter((qq,i)=>qq.id&&i<idx&&answers[qq.id]!==undefined).length;
+  const answered=ASK.filter((qq,i)=>qq.id&&i<idx&&answers[qq.id]!==undefined).length;
   const total=totalQ+(phase==="extra"?extraQ.length:0);
   const pct=Math.min(100,Math.round(answered/total*100)), pnum=`${Math.min(answered+1,total)} / ${total}`;
   let html=`<div class="screen"><div class="screen-top"><div class="prog-row"><img class="gumi-sm" src="bg/gumi_base.png" alt=""><div class="progress prog-shell" style="flex:1"><div class="pbar"><div class="pfill" style="width:${pct}%"></div></div><div class="pnum">${pnum}</div></div></div></div><div class="screen-body"><div class="q-part">${q.part==="A"?"PART A · 되고 싶은 나":q.part==="B"?"PART B · 지금의 나":q.part==="C"?"PART C · 나의 표현":"PART D · 마무리"}</div>
@@ -925,9 +968,12 @@ function stepColor(step, wantKey){
   return pal.slice().sort((x,y)=>score(y)-score(x))[0];
 }
 
+/* 저장된 진단. want는 **없을 수 있다** — 최초 진단이 '지금의 나'만 묻게 바뀌었기 때문이다
+   (2026-08-24). 여기서 want를 요구하면 방금 진단을 마친 유저의 리포트 재열람이 통째로 막힌다.
+   want·gap_axis가 꼭 필요한 곳(미션 처방)은 각자 확인한다 — 아래 renderStep. */
 function loadDiag(){
   try{ const d=JSON.parse(localStorage.getItem("chugu_diag")||"null");
-       return (d && d.want && d.gap_axis) ? d : null; }catch(e){ return null; }
+       return (d && d.have) ? d : null; }catch(e){ return null; }
 }
 function doneSteps(){
   try{ return JSON.parse(localStorage.getItem("chugu_steps")||"[]"); }catch(e){ return []; }
@@ -937,7 +983,8 @@ function renderStep(){
   document.body.classList.add("screen-mode");
   const el=$("prog"); if(el) el.classList.add("hidden");
   const d=loadDiag();
-  if(!d || !STEP_ENGINE){ phase="start"; return renderStart(); }
+  // 미션은 '어디로 가는지'가 있어야 나온다. 추구미를 아직 안 정했으면 처방할 방향이 없다.
+  if(!d || !d.want || !d.gap_axis || !STEP_ENGINE){ phase="start"; return renderStart(); }
   const done=doneSteps();
   STEP = STEP_ENGINE.buildStep({
     gapAxis:d.gap_axis, wantName:TYPES[d.want].name, haveName:TYPES[d.have].name,
@@ -1015,6 +1062,10 @@ function stepDone(){
 // 다만 __diagSaved는 풀어야 새 진단이 저장된다 — 안 풀면 두 번째 결과가 조용히 사라진다.
 function restart(){
   track("restart_clicked", {});
+  // 다시 재는 건 '지금의 나'다. 이미 정한 추구미는 들고 간다 — 재진단 때마다
+  // 추구미를 다시 고르게 하면 진단을 나눈 이유가 사라진다(2026-08-24).
+  const d0=loadDiag();
+  if(d0 && d0.want){ WANT_PICK=d0.want; WANT_SRC=d0.want_src||"test"; }
   answers={}; extraQ=[]; extraIdx=0; idx=-1; startTs=0; GENDER=""; phase="start";
   window.__diagSaved=false;
   document.body.classList.remove("result-mode");
@@ -1022,7 +1073,7 @@ function restart(){
   render();
 }
 function next(){
-  const q=Q[idx];
+  const q=ASK[idx];
   if(q && q.id && answers[q.id]!==undefined) trackAnswer(q.id);
   pushNav(); idx++; render();
 }
@@ -1126,7 +1177,9 @@ function prepExtra(){
   }
   const hrank=topTwo(scoreHave);
   const hgap=hrank[0][1]>0?(hrank[0][1]-hrank[1][1])/hrank[0][1]:1;
-  if(hgap<0.15){
+  // 추구미 테스트에서는 '지금의 나' 동점 확인을 다시 묻지 않는다 — 이미 정해진 값이고,
+  // 추구미를 물으러 온 사람에게 지금의 나를 되묻는 건 흐름이 끊긴다.
+  if(hgap<0.15 && !FLOW_WANT){
     const pr=PAIRS.find(p=>p.pair.includes(hrank[0][0])&&p.pair.includes(hrank[1][0]));
     if(pr&&!extraQ.find(e=>e.q===pr.q))extraQ.push({...pr,axis:"have"});
     else if(!pr)extraQ.push(fallbackPair(hrank[0][0],hrank[1][0],"have"));
@@ -1202,9 +1255,10 @@ function pickExtra(i){
 // 좌표는 8타입 점수의 가중평균이라, 축 부호가 맞아도 유저 직관과 어긋난다 —
 // "카리스마가 화려함보다 부드럽다"가 좌표상으론 참인데 아무도 그렇게 안 읽는다(대표 실기기 지적).
 // 유저가 이미 아는 이름(타입명)으로만 말한다. 좌표는 히어로 지도가 그림으로 보여준다.
-function gapSection(sw, sh, W, Hv){
-  const top=sc=>topTwo(sc)[0][0];
-  if(top(sw)===top(sh))
+// 인자를 점수 뭉치에서 **타입 키**로 바꿨다(2026-08-24) — 추구미를 직접 고른 경우엔
+// 추구미 점수가 아예 없어서, 점수로 1위를 다시 뽑으면 아무도 안 고른 타입이 나온다.
+function gapSection(wKey, hKey, W, Hv){
+  if(wKey===hKey)
     return `<div class="sec" style="width:100%"><p class="verdict-line">지금 매력과 추구미가 <b>같은 타입</b>으로 나왔어요.</p>
       <p style="margin-top:8px">방향을 바꿀 게 아니라 지금 하고 있는 것을 더 선명하게 하면 됩니다.</p></div>`;
   return `<div class="sec" style="width:100%">
@@ -1356,15 +1410,22 @@ function partSection(d, surveyHaveType){
    그림 코드는 modules/stat-preview.html A안에서 가져왔다(새로 그리지 않았다).
    눈금은 최댓값에 맞춰 늘리되 하한 12를 둔다 — 봉우리 하나가 화면을 다 먹지 않게. */
 const STAT_RING=["pure","elegant","chic","charisma","gorgeous","classic","romantic","energetic"];
-function statSheetPage(bg, hKey){   // bg = 다른 절과 같은 prismBg(추구미 색) · hKey = 결과가 정한 '지금' 타입
-  const st=window.CZMStats && CZMStats.initialStats(normed(scoreHave));
-  if(!st) return "";
+// first = 이 장이 결과지 첫 장인가(추구미가 없는 최초 진단). 넘김 안내가 여기로 온다.
+function statSheetPage(bg, hKey, first){   // bg = 다른 절과 같은 prismBg · hKey = 결과가 정한 '지금' 타입
+  if(!window.CZMStats) return "";
+  // 출발선 + 미션으로 쌓은 것. 지금까지는 매번 출발선만 다시 그려서, 무슨 짓을 해도
+  // 시트가 그대로였다 — 성장 엔진(applyGains·finalStats)이 있는데 아무도 안 불렀다.
+  const base=CZMStats.initialStats(normed(scoreHave));
+  const gains=CZMStats.gainsOf(CZM.store.get(CZM.KEYS.stats, []));
+  const st=CZMStats.finalStats(base, gains, null);   // 착용 효과는 오늘의 옷 화면 몫이다
+  const up=CZMStats.sum(st)-CZMStats.sum(base);
   // 30을 8칸에 나누면 해상도가 낮아 1·2위가 같은 정수로 떨어지는 일이 흔하다(원점수 순위는
   // 보존되지만 그림에서는 봉우리가 둘로 보인다 — 대표 실기기 지적 2026-08-24).
   // 그래서 '가장 강한 것'은 차트 최댓값이 아니라 **결과가 정한 타입(hKey)**을 정본으로 삼고,
   // 그 꼭짓점만 크게 찍어 어느 쪽이 1위인지 그림에서 바로 읽히게 한다.
-  const topK = (hKey && st[hKey]!==undefined) ? hKey
-             : TKEYS.slice().sort((a,b)=>st[b]-st[a])[0];
+  // 다만 미션으로 다른 타입이 실제로 앞질렀다면 그때는 그림이 정본이다 — 자란 결과를 숨기지 않는다.
+  const peak = TKEYS.slice().sort((a,b)=>st[b]-st[a])[0];
+  const topK = (hKey && st[hKey]!==undefined && st[hKey]>=st[peak]) ? hKey : peak;
   // 차트가 카드 안에서 작아 보이지 않게 — 세로 viewBox를 라벨에 딱 맞춰 조인다.
   // (SVG는 폭 100%로 스케일되므로 세로가 남으면 그만큼 그림이 줄어든다)
   const CX=190, CY=158, R=120;
@@ -1393,7 +1454,9 @@ function statSheetPage(bg, hKey){   // bg = 다른 절과 같은 prismBg(추구�
   const bold  = k => `<b style="color:${colOf(k)}">${nmOf(k)}</b>`;
   const topLine = peers.length
     ? `<p class="verdict-line">${bold(topK)}${jong(nmOf(topK))?"과":"와"} ${peers.map(bold).join(", ")}${jong(nmOf(peers[peers.length-1]))?"이":"가"} 같은 높이로 나왔어요.</p>
-       <p style="margin-top:8px">30점을 8칸에 정수로 나누다 보니 생긴 동점입니다. 소수점까지 본 원점수에서는 ${nmOf(topK)}${jong(nmOf(topK))?"이":"가"} 앞서서, 결과 타입은 ${ieyo(nmOf(topK))}.</p>`
+       <p style="margin-top:8px">${up
+         ? `미션으로 쌓은 만큼 올라와서 나란해졌어요. 결과 타입은 진단이 정한 ${ieyo(nmOf(topK))}.`
+         : `30점을 8칸에 정수로 나누다 보니 생긴 동점입니다. 소수점까지 본 원점수에서는 ${nmOf(topK)}${jong(nmOf(topK))?"이":"가"} 앞서서, 결과 타입은 ${ieyo(nmOf(topK))}.`}</p>`
     : `<p class="verdict-line">지금 가장 크게 자리 잡은 건 ${bold(topK)}${jong(nmOf(topK))?"이에요":"예요"}.</p>`;
   return `<div class="cpage info-page" style="${bg}"><div class="cp-inner info glass">
     <div class="cp-title">내 캐릭터 시트</div>
@@ -1406,6 +1469,7 @@ function statSheetPage(bg, hKey){   // bg = 다른 절과 같은 prismBg(추구�
             <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="${TYPES[topK].color}" flood-opacity=".55"/>
           </filter></defs>
         ${grid}
+        ${up?`<polygon class="poly-ghost" points="${STAT_RING.map((k,i)=>pt(i,base[k]).map(n=>n.toFixed(1)).join(",")).join(" ")}"/>`:``}
         <polygon class="poly" points="${STAT_RING.map((k,i)=>pt(i,st[k]).map(n=>n.toFixed(1)).join(",")).join(" ")}"/>
         ${vtx}${lab}
       </svg>
@@ -1413,8 +1477,11 @@ function statSheetPage(bg, hKey){   // bg = 다른 절과 같은 prismBg(추구�
     </div>
     <div class="sec" style="width:100%">
       ${topLine}
-      <p class="note" style="margin-top:10px;opacity:.72">누구나 30을 나눠 가집니다. 총량은 같고, 어디에 몰렸는지가 사람마다 달라요.</p>
+      <p class="note" style="margin-top:10px;opacity:.72">${up
+        ? `점선이 진단 직후 모양이에요. 미션으로 <b>${up}</b>만큼 밖으로 나갔습니다.`
+        : `누구나 30을 나눠 가집니다. 총량은 같고, 어디에 몰렸는지가 사람마다 달라요.`}</p>
     </div>
+    ${first?`<p class="swipe-hint" id="swHint">옆으로 넘기면 이어집니다<i>›</i></p>`:``}
   </div></div>`;
 }
 function toggleStatNums(){
@@ -1426,7 +1493,9 @@ function toggleStatNums(){
 // 두 장이 하던 일(HAVE·WANT 소개)은 지도 위 창문 칩 투샷과 P3 "지금의 나" 절이 이어받는다.
 // 좌표는 coordOf 실제 값으로 찍는다 — 장식이 아니라 진짜 위치다. t>0=Cool, d>0=Deep(COORD 정의).
 function heroPage(W,Hv,wKey,hKey){
-  const w=coordOf(scoreWant), h=coordOf(scoreHave);
+  // 문항으로 찾은 추구미는 8타입 점수의 가중평균 좌표를 쓰고, 직접 고른 추구미는
+  // 그 타입의 좌표 그 자체를 쓴다(CZM.COORD = 이론값). 없는 분포를 지어내지 않는다.
+  const w=coordOf(scoreWant) || (CZM.COORD[wKey]||null), h=coordOf(scoreHave);
   // viewBox 300×210 안으로. 축 범위 ±0.9를 x±120/y±80으로.
   const pt=v=>({x:150 - Math.max(-1,Math.min(1,v[0]))*120, y:105 + Math.max(-1,Math.min(1,v[1]))*80});
   const H0=h?pt(h):{x:98,y:70}, W0=w?pt(w):{x:206,y:70};
@@ -1518,10 +1587,19 @@ function heroPage(W,Hv,wKey,hKey){
 function saveDiagnosis(){
   if(window.__diagSaved) return;
   const wr=topTwo(scoreWant), hr=topTwo(scoreHave);
+  /* 추구미가 아직 없는 진단이 정상 경로가 됐다(2026-08-24 분리). want 문항을 안 냈으면
+     scoreWant는 전부 0이고, 그때 topTwo는 TKEYS 선언 순서로 1위를 뽑는다 —
+     그걸 그대로 저장하면 아무도 고르지 않은 '로맨틱'이 전 유저의 추구미로 적재된다.
+     그래서 점수가 실제로 매겨졌는지를 먼저 보고, 없으면 want 칸을 통째로 비운다.
+     (diagnoses의 want_* 컬럼은 전부 nullable — 스키마 변경 없음, 2026-08-24 확인) */
+  const wOn = wantScored(), wKey0 = wantKey();
+  // 직접 고른 추구미는 좌표가 그 타입의 좌표 그 자체다. 점수 1점짜리 가짜 분포를 넘기면
+  // coordOf(가중평균)가 정확히 COORD[type]을 돌려준다 — 산식을 새로 쓰지 않는다.
+  const wSrcScores = wOn ? normed(scoreWant) : (wKey0 ? {[wKey0]:1} : null);
   {
     window.__diagSaved = true;
     const durS = Math.round((Date.now()-startTs)/1000);
-    sbInsert("diagnoses", {user_id:UID, want_type:wr[0][0], have_type:hr[0][0],
+    sbInsert("diagnoses", {user_id:UID, want_type:wKey0, have_type:hr[0][0],
       // scores = 8타입 전체 점수 (전략팀 요청 2026-08-08 §1).
       // top-3만 저장하면 좌표 가중평균이 극단 쪽으로 편향된다 — 빠지는 하위 5개가 대체로 반대 방향이라
       // 상쇄돼야 할 성분이 통째로 사라진다(한미 리포트 have_sd_mean·gap_role_axis_d에 직접 걸림).
@@ -1529,26 +1607,36 @@ function saveDiagnosis(){
       // ceil = 이 진단에 쓰인 천장(분모). 문항 세트가 바뀌면 천장이 바뀌므로,
       // 이게 있어야 "이 rank가 어떤 자로 잰 것인지"를 행 단위로 복원할 수 있다
       // (코호트 기준선 판정 2026-08-22 — 충북 5건의 단위를 배포 이력으로 고증해야 했던 일 재발 방지).
-      want_coord:{rank:wr.slice(0,3), scores:{...scoreWant}, ceil:ceilOf(true), norm:"v3.34"},
+      want_coord: wOn ? {rank:wr.slice(0,3), scores:{...scoreWant}, ceil:ceilOf(true), norm:"v3.34"}
+                      : (wKey0 ? {rank:[[wKey0,null]], src:"pick", norm:"v3.34"} : null),
       have_coord:{rank:hr.slice(0,3), scores:{...scoreHave}, ceil:ceilOf(false), norm:"v3.34"},
       // gap_flag = 기존 gap 개명(1위 타입 일치 0/1, 의미 불변). 백엔드 개명 완료 2026-08-08
-      gap_flag: wr[0][0]===hr[0][0]?0:1,
+      gap_flag: wKey0 ? (wKey0===hr[0][0]?0:1) : null,
       // 격차 산식도 계약층이 소유한다(dist는 T·D 2축, axis는 M 포함 — 이유는 czm-core.js 주석)
-      ...(()=>{ const g=CZM.gapOf(normed(scoreWant), normed(scoreHave));
+      ...(()=>{ const g=CZM.gapOf(wSrcScores, normed(scoreHave));
                 return {gap_dist:g.dist, gap_axis:g.axis}; })(),
       extra_used:extraQ.length, duration_sec:durS, answers:answers});
-    track("diagnosis_completed",{want:wr[0][0], have:hr[0][0], extra:extraQ.length, dur:durS, gender:GENDER});
+    track("diagnosis_completed",{want:wKey0, have:hr[0][0], extra:extraQ.length, dur:durS, gender:GENDER,
+      flow: FLOW_WANT?"want":FLOW_LECTURE?"lecture":"have"});
   }
   // 재방문 때 '오늘의 한 걸음'을 내려면 진단 결과가 기기에 남아 있어야 한다.
   // 서버는 RLS가 insert_only라 조회가 안 되고, 조회되더라도 첫 화면이 네트워크에 묶인다.
   try{
-    const g0=CZM.gapOf(normed(scoreWant), normed(scoreHave));
+    const g0=CZM.gapOf(wSrcScores, normed(scoreHave));
     // scores·answers를 같이 남긴다 — 이게 없으면 리포트를 다시 그릴 수 없다.
     // 서버(diagnoses.want_coord.scores)에도 같은 값이 있지만, 그걸 읽으려면 여기에
     // 세션을 붙여야 한다. 같은 기기 재열람은 이걸로 충분하고 훨씬 싸다.
     localStorage.setItem("chugu_diag", JSON.stringify({
-      v:2, ts:Date.now(), want:wr[0][0], have:hr[0][0], gender:GENDER,
+      v:2, ts:Date.now(), want:wKey0, have:hr[0][0], gender:GENDER,
+      want_src: wOn ? "test" : (wKey0 ? (WANT_SRC||"pick") : null),
       gap_axis: g0.axis,
+      // 캐릭터 시트의 출발선. 여기서 한 번 굳혀 두면 홈이 성장분을 얹어 "6 → 7"을 말할 수 있다.
+      // 홈에서 다시 계산하려면 문항 천장(ceilOf)까지 들고 가야 하는데, 그건 설문 화면의 것이다.
+      // base는 최초 진단 고정이다(이론 §4-4) — 재측정이 이 값을 갱신하지 않는다.
+      base_stats: (()=>{ try{
+        const prev = JSON.parse(localStorage.getItem("chugu_diag")||"null");
+        return prev?.base_stats || CZMStats.initialStats(normed(scoreHave));
+      }catch(e){ return null; } })(),
       scores:{want:{...scoreWant}, have:{...scoreHave}}, answers:{...answers}
     }));
   }catch(e){}
@@ -1568,7 +1656,7 @@ function renderPhotoGate(){
      <div>
        <h1 style="font-size:var(--fs-h)">이어서 얼굴을 측정합니다</h1>
        <p style="color:var(--sub);font-size:var(--fs-body);line-height:1.8;margin-top:var(--sp-3)">
-         설문은 되고 싶은 모습을 물었어요. 이번엔 타고난 피부·눈·머리 색을 잽니다.
+         설문은 요즘 하고 있는 스타일을 물었어요. 이번엔 타고난 피부·눈·머리 색을 잽니다.
          둘이 다 있어야 퍼스널컬러와 부위별 결과가 나와요.<br>
          <b style="color:var(--accent)">사진 한 장, 1분쯤</b> 걸려요.</p>
      </div>
@@ -1595,9 +1683,16 @@ function renderResult(){
   // 저장이 끝난 뒤에 보내야 한다(위 호출). 순서가 바뀌면 답변이 사라진다.
   // 저장이 나갈 틈을 준 뒤 이동한다. keepalive가 있어도 한 박자 늦추는 편이 확실하다.
   if(FLOW_LECTURE){ setTimeout(()=>location.replace("modules/lecture.html"), 400); return ""; }
-  const W=TYPES[wr[0][0]], Hv=TYPES[hr[0][0]];
+  /* 결과지 두 모드 (대표 확정 2026-08-24)
+     · 추구미 없음 = 최초 진단 : 8축 방사형이 주인공. 좌표 지도·격차·첫걸음은 내지 않는다.
+       갈 곳을 안 정한 사람에게 "여기서 저기로"를 그릴 수 없다 — 저기가 없다.
+     · 추구미 있음 : 지금 구조 그대로. 좌표 지도가 여기서 비로소 의미를 갖는다. */
+  const wKey = wantKey(), WANT_ON = !!wKey;
+  const hKey = hr[0][0];
+  const Hv = TYPES[hKey];
+  const W = WANT_ON ? TYPES[wKey] : Hv;   // 카드 배경 프리즘 색의 기준
   const wTotal=wr.reduce((s,x)=>s+x[1],0)||1;
-  const same=wr[0][0]===hr[0][0];
+  const same=wKey===hKey;
   const c5=Q.find(q=>q.id==="C5"), d1=Q.find(q=>q.id==="D1");
   const othersTag=answers["C5"]!==undefined?c5.opts[answers["C5"]].tag:null;
   const selfTag=answers["D1"]!==undefined?d1.opts[answers["D1"]].tag:null;
@@ -1611,7 +1706,6 @@ function renderResult(){
   wr.slice(0,4).forEach(([k,v])=>{
     bars+=`<div class="bar-row"><span class="nm">${TYPES[k].name}</span><div class="bar-bg"><div class="bar-fg" style="width:${Math.round(v/wTotal*100*2.2)}%;background:${TYPES[k].color}"></div></div><span>${Math.round(v/wTotal*100)}%</span></div>`;
   });
-  const wKey=wr[0][0], hKey=hr[0][0];
   const charBg=(key,col)=>`background-color:${col};background-image:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.42)),url(bg/r1_${key}.jpg)`;
   const prismBg=(col)=>`background:radial-gradient(115% 75% at 18% 8%,${col}5C,transparent 58%),radial-gradient(115% 75% at 85% 18%,${col}33,transparent 55%),linear-gradient(160deg,#F5F1FA,#ECEFF6)`;  // 추구미 타입 컬러 계열 프리즘
   // 강의 코호트 한정 안내문단 (마케팅 확정 A-2, 2026-07-27) — 진단 갭 이해 개선
@@ -1621,8 +1715,8 @@ function renderResult(){
   app.innerHTML=`
    <div class="result-stage">
    <div class="carousel" id="rcar" onscroll="carDot()">
-     ${heroPage(W,Hv,wKey,hKey)}
-     ${statSheetPage(prismBg(W.color), hKey)}
+     ${WANT_ON ? heroPage(W,Hv,wKey,hKey) : ``}
+     ${statSheetPage(prismBg(W.color), hKey, !WANT_ON)}
      ${photoBornPage(PHOTO, W)}
      <!-- 3절 「파트별 나」 — 사진 측정이 있어야 성립한다. 설문만으로는 부위 좌표가 없다.
           측정이 없으면 이 장을 아예 내지 않는다(2026-08-24). 전에는 제목만 뜬 빈 카드에
@@ -1647,16 +1741,20 @@ function renderResult(){
      <!-- 4절 「추구미와의 거리」 — 정본 §3-4. 결핍 화법 금지.
           화면 제목은 대표 결정(2026-08-09)으로 "추구미에 가까워지고 싶다면".
           추구미 막대 4개가 여기로 왔다 — WANT 순위인데 '지금의 나'와 한 장에 있어서
-          어느 쪽 숫자인지 구분이 안 됐다(대표 실기기 지적 2026-08-24). -->
+          어느 쪽 숫자인지 구분이 안 됐다(대표 실기기 지적 2026-08-24).
+          추구미를 안 정한 유저에게는 이 장 자체가 없다(2026-08-24 분리). -->
+     ${WANT_ON ? `
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
        <div class="cp-title">추구미에 가까워지고 싶다면</div>
-       <div class="sec" style="width:100%">
+       ${wantScored() ? `<div class="sec" style="width:100%">
          <h3>내 추구미 순위</h3>
          <p class="small" style="margin-bottom:10px">되고 싶은 모습으로 고른 답이 어느 타입에 모였는지 보여줍니다. 지금의 나가 아니라 <b>추구미</b> 쪽 숫자예요.</p>
          ${bars}
-       </div>
+       </div>` : `<div class="sec" style="width:100%">
+         <p>직접 고른 추구미가 <b>${W.name}</b>${jong(W.name)?"이에요":"예요"}. 언제든 바꿀 수 있고, 문항으로 찾아볼 수도 있습니다.</p>
+       </div>`}
        ${photoGapLine(PHOTO, W, Hv)}
-       ${gapSection(scoreWant, scoreHave, W, Hv)}
+       ${gapSection(wKey, hKey, W, Hv)}
      </div></div>
      <!-- 5절 「첫 시도」 — 정본 §3-5 -->
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
@@ -1671,28 +1769,46 @@ function renderResult(){
          <a class="btn" href="photo.html?flow=full" style="display:block;text-align:center;text-decoration:none;background:#fff;color:var(--accent);border:1.5px solid var(--accent)">사진으로 이어서 재기</a>
        </div>` : ``}
        <p class="small" style="width:100%;margin-top:14px">다음 장에서 결과를 저장하고, 홈으로 가면 이번 주 미션이 기다립니다.</p>
-     </div></div>
+     </div></div>` : ``}
+     <!-- 「나의 4주」 — 예고편이 아니라 **지금 기준의 발행 대기열**이다(이론 초안 §5).
+          issueOffer를 한 번 굴린 결과 상위 4개라, 여기 적힌 것이 실제로 홈에 설 미션이다.
+          큐를 저장하지 않는다 — 저장하면 그 순간 화면과 엔진이 갈린다.
+          모자라면 모자란 대로 세운다: 자리를 채우려고 미션을 복제하면 이 장이 거짓말이 된다. -->
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
-       <div class="cp-title">저장하고 공유하기</div>
+       <div class="cp-title">나의 4주</div>
+       <div id="myWeeks" style="width:100%"><p class="small">불러오는 중이에요.</p></div>
+     </div></div>
+     <!-- 마지막 장. 추구미가 없으면 여기가 「어디로 갈지 정하는」 입구가 된다.
+          저장·공유 카드는 추구미가 주인공이라(캐릭터 2장+분포) 아직 못 만든다 —
+          없는 추구미를 그려 넣느니 정하러 가는 문을 연다. -->
+     <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
+       <div class="cp-title">${WANT_ON ? "저장하고 공유하기" : "이제 어디로 갈지 정할 차례"}</div>
+       ${WANT_ON ? `
        <button class="btn" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent);margin-top:0" onclick="saveSheet()">내 진단결과 저장하기 (3장)</button>
-       <button class="btn" style="background:linear-gradient(90deg,#B76BA3,#4A2B5C)" onclick="shareCard()">내 매력+추구미 카드 공유하기</button>
+       <button class="btn" style="background:linear-gradient(90deg,#B76BA3,#4A2B5C)" onclick="shareCard()">내 매력+추구미 카드 공유하기</button>` : `
+       <p style="width:100%;margin:0 0 14px;line-height:1.75">지금 어디에 서 있는지는 나왔어요. 추구미를 정하면 여기서 거기까지 가는 지도와, 이번 주에 뭘 바꿀지가 함께 나옵니다.</p>
+       <a class="btn" href="modules/career.html" style="display:block;text-align:center;text-decoration:none;background:linear-gradient(90deg,#B76BA3,#4A2B5C);margin-top:0">추구미 정하러 가기</a>
+       <button class="btn" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent)" onclick="saveSheet()">지금의 나 저장하기 (1장)</button>`}
        <div class="sec" style="width:100%"><h3>이 결과, 어땠나요?</h3>
          <div class="fb"><button id="fbY" onclick="fb(1)">👍 나 같아요</button><button id="fbN" onclick="fb(0)">🤔 갸우뚱해요</button></div>
          <div id="selfPickBox" style="display:none;margin-top:10px">
-           <p style="font-size:13px;color:var(--sub);margin-bottom:8px">그렇다면, 스스로 생각하는 내 추구미는 뭐에 가까워요? <span style="font-weight:400">(선택)</span></p>
+           <p style="font-size:13px;color:var(--sub);margin-bottom:8px">그렇다면, ${WANT_ON?"스스로 생각하는 내 추구미는":"스스로 보기에 지금의 나는"} 뭐에 가까워요? <span style="font-weight:400">(선택)</span></p>
            <div class="chipgrid">${TKEYS.map(k=>`<div class="chip-item sp-chip" data-k="${k}" onclick="pickSelf('${k}')">${TYPES[k].name}</div>`).join("")}</div>
          </div>
          <textarea id="fbTxt" placeholder="추가하고 싶은 질문이나, 이상했던 문항이 있다면 알려주세요! (선택)"></textarea>
          <button class="btn" onclick="saveLog()">다음 — 피드백 남기기</button>
          ${FLOW_LECTURE
            ? `<a class="btn" href="modules/lecture.html" style="display:block;text-align:center;text-decoration:none">강의 리포트로 돌아가기 →</a>`
-           : `<!-- 웹(강의) → 앱으로 넘어가는 유일한 다리. 문구는 마케팅 검수본(2026-08-17) 적용 -->
-              <a class="btn ghost" href="modules/home.html" style="display:block;text-align:center;text-decoration:none">첫 미션 받고 홈으로 가기</a>`}
+           : WANT_ON
+           ? `<!-- 웹(강의) → 앱으로 넘어가는 유일한 다리. 문구는 마케팅 검수본(2026-08-17) 적용 -->
+              <a class="btn ghost" href="modules/home.html" style="display:block;text-align:center;text-decoration:none">첫 미션 받고 홈으로 가기</a>`
+           : `<a class="btn ghost" href="modules/home.html" style="display:block;text-align:center;text-decoration:none">홈으로 가기</a>`}
          <button class="btn ghost" onclick="restart()">처음부터 다시</button></div>
+       ${WANT_ON ? `
        <details class="sec coach-fold" id="waitSec" style="width:100%"><summary>내 추구미로 가는 4주 코칭 <span class="coach-cue">알림 신청 ▾</span></summary>
          <p class="small" style="margin:4px 0 10px;text-align:left">구미가 매주 딱 하나씩, 나에게 맞는 변화 미션을 처방해드려요. 곧 열려요 — 가장 먼저 알림 받기:</p>
          <input id="wlContact" placeholder="이메일 또는 인스타 아이디" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--line);font-size:16px;box-sizing:border-box"/>
-         <button class="btn" style="margin-top:8px" onclick="joinWaitlist()">코칭 열리면 알려주세요</button></details>
+         <button class="btn" style="margin-top:8px" onclick="joinWaitlist()">코칭 열리면 알려주세요</button></details>` : ``}
      </div></div>
    </div>
    <!-- 도트는 페이지 수를 따라간다. 하드코딩하면 절 추가 때마다 어긋난다(정본 5절 + 저장/공유 = 6) -->
@@ -1705,16 +1821,51 @@ function renderResult(){
     if (el) el.innerHTML = partSection(PHOTO, hKey);
   };
   if (window.__PART) window.__onPartEngineReady();
+  if (window.__QUEST) window.__onQuestReady(window.__QUEST.QE, window.__QUEST.DICT);
   // 사진 측정: 타고난 색은 독립 페이지(photoBornPage), 격차 문장은 4절(photoGapLine).
   // 측정이 없을 때의 촬영 입구는 「첫걸음」 장 안으로 들어갔다(2026-08-24) —
   // 캐러셀 **밖**에 붙이던 옛 블록은 카드 스타일이 안 먹어 파란 기본 링크로 떴고,
   // 그만큼 페이지가 길어져 진입할 때 스크롤이 중간에서 시작했다(대표 실기기 지적).
-  window._result={gender:GENDER,want:wr[0][0],wantRank:wr.slice(0,3),have:hr[0][0],extraUsed:extraQ.length};
+  window._result={gender:GENDER,want:wKey,wantRank:wantScored()?wr.slice(0,3):null,have:hKey,extraUsed:extraQ.length};
 }
 function isLectureCohort(){ // 강의 링크(?src=lec…)로 들어온 경우만 강의 안내 노출 — 일반/공유(card)·인스타 유입 제외
   const s=(new URLSearchParams(location.search).get("src")||"");
   return /^lec/i.test(s);
 }
+/* 「나의 4주」 채우기 — 미션 엔진이 모듈이라 늦게 온다. 도착하면 그 칸만 바꾼다.
+   issueOffer를 **한 번** 굴린다(이론 §5-1): 4번 굴려도 gap_axis가 안 변해 같은 배열이 나오므로
+   4회 호출은 첫 4개를 자르는 것과 정확히 같다. 새 함수를 만들지 않는다. */
+window.__onQuestReady = (QE, D) => {
+  const box=$("myWeeks"); if(!box) return;
+  const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
+  const d=CZM.store.get(CZM.KEYS.diag, null)||{};
+  const nm=k=>(D.type_names&&D.type_names[k])||k;
+  let q=[];
+  try{
+    // 이미 해낸 것·지나친 것은 뺀다 — 홈과 같은 제외 규칙이라야 여기 적힌 순서가 실제 발행과 맞는다
+    const doneRefs=CZM.store.get(CZM.KEYS.stats, []).map(s=>s.ref);
+    const r=QE.issueOffer(D, d.gap_axis, {
+      excluded:[...new Set([...CZM.store.get(CZM.KEYS.skipped, []), ...doneRefs])],
+      sameType:d.want===d.have});
+    q=r.cells.slice(0,4);
+  }catch(e){ console.warn("나의 4주 계산 실패", e); }
+  if(!q.length){ box.innerHTML=`<p class="small">추구미를 정하면 여기에 이번 달 미션이 섭니다.</p>`; return; }
+  const user={want_type:d.want||null, have_type:d.have||null};
+  const rows=q.map((c,i)=>{
+    const gain=CZMStats.previewGain(c);
+    return `<div class="wk"><b>${i+1}주</b><span>${esc(c.copy)}</span>${
+      gain?`<em>${esc(nm(CZMStats.targetType(user,c)))} +${gain}</em>`:``}</div>`;
+  }).join("");
+  // 모자란 것은 모자라다고 적는다. 추구미가 없으면 방향 있는 칸이 아예 안 나온다(엔진 no_axis).
+  const short=q.length<4
+    ? (d.want ? `<p class="small">지금 사전에 있는 건 여기까지예요. 자리를 채우려고 없는 미션을 만들지 않습니다.</p>`
+              : `<p class="small">추구미를 정하면 그쪽으로 가는 미션이 더 나옵니다. 지금은 방향 없이 할 수 있는 ${q.length}개만 세웠어요.</p>`)
+    : ``;
+  box.innerHTML=`<p class="small" style="margin:-4px 0 10px">지금 기준으로 다음에 나올 미션이에요. 하나 마칠 때마다 뒤가 한 칸씩 당겨집니다.</p>
+    ${rows}${short}
+    <div class="wk wk-last"><b>그다음</b><span>같은 사진을 다시 찍어요. 지도 위 점이 어디로 갔는지 보여드립니다.</span></div>`;
+  track("my_weeks_shown",{n:q.length, ids:q.map(c=>c.id), has_want:!!d.want});
+};
 function carDot(){ // 결과 캐러셀 현재 페이지 → 도트 표시 동기화
   const c=$("rcar"); if(!c) return;
   const box=$("rdots");
@@ -1730,8 +1881,10 @@ function carDot(){ // 결과 캐러셀 현재 페이지 → 도트 표시 동기
   // 캐릭터 시트 도달을 1회만 남긴다 — 캐러셀은 스크롤마다 이 함수를 부른다
   if(!carDot._seen && c.children[i] && c.children[i].querySelector("#statSheet")){
     carDot._seen=1;
-    const st=CZMStats.initialStats(normed(scoreHave));
-    track("character_sheet_view",{top_type:topTwo(scoreHave)[0][0], total:CZMStats.sum(st)});
+    const base=CZMStats.initialStats(normed(scoreHave));
+    const gains=CZMStats.gainsOf(CZM.store.get(CZM.KEYS.stats, []));
+    track("character_sheet_view",{top_type:topTwo(scoreHave)[0][0],
+      total:CZMStats.sum(base)+CZMStats.sum(gains), grown:CZMStats.sum(gains)});
   }
 }
 function fitCarousel(){ // 모바일 원페이지: 캐러셀을 뷰포트 남는 높이에 맞춤 (각 페이지=한 화면)
@@ -1756,7 +1909,7 @@ function pickSelf(k){
 function joinWaitlist(){
   const c=($("wlContact").value||"").trim();
   if(!c){ $("wlContact").focus(); $("wlContact").style.borderColor="#B76BA3"; return; }
-  track("coaching_waitlist",{contact:c, want:topTwo(scoreWant)[0][0]});
+  track("coaching_waitlist",{contact:c, want:wantKey()});
   const w=$("waitSec");
   w.innerHTML=`<summary>신청 완료!</summary><p class="small">코칭이 열리면 가장 먼저 알려드릴게요. 그때까지 구미가 준비하고 있을게요</p>`;
   if("open" in w) w.open=true;
@@ -1776,7 +1929,7 @@ function saveLog(){
   track("survey_submit",{fb:fbVal,selfPick,hasText:!!fbText,text:fbText});
   // 구글폼 사전작성 링크 (결과 자동 입력)
   const formUrl = FORM_BASE
-    + "&entry."+FORM_ENTRY.want+"="+encodeURIComponent(TYPES[wr[0][0]].name)
+    + "&entry."+FORM_ENTRY.want+"="+encodeURIComponent(wantKey()?TYPES[wantKey()].name:"")
     + "&entry."+FORM_ENTRY.have+"="+encodeURIComponent(TYPES[hr[0][0]].name)
     + "&entry."+FORM_ENTRY.dur+"="+durS
     + "&entry."+FORM_ENTRY.gender+"="+(GENDER==="m"?"남":"여")
@@ -2012,11 +2165,28 @@ function sheetSec(x,title,body,y){ // 결과화면 섹션과 동일: 이모지 �
 }
 function canvasToFile(c,name){ return new Promise(res=>c.toBlob(b=>res(new File([b],name,{type:"image/png"})),"image/png")); }
 async function saveSheet(){
-  track("save_sheet_click",{});
+  // 추구미가 없으면 2·3장은 만들 수 없다 — 둘 다 추구미가 주인공인 장이다.
+  // 없는 추구미를 채워 그리느니 '지금의 나' 한 장만 낸다(2026-08-24 진단 분리).
+  const HAVE_ONLY = !wantKey();
+  track("save_sheet_click",{n:HAVE_ONLY?1:3});
   const M=resultModel();
   // 화면 캐러셀 4페이지와 동일한 4장
   // 시트1 — 현재 내 매력 (캐릭터)
   const c1=await drawCharSheet("지금 내가 하고 있는 스타일", M.Hv, M.hKey, "옷·머리·메이크업으로 본 요즘 모습이에요");
+  if(HAVE_ONLY){
+    const f1=await canvasToFile(c1,"추구미즘_지금의나.png");
+    if(window.native && native.platform()!=="web"){
+      try{ await native.saveImage(c1.toDataURL("image/png"), "추구미즘_지금의나.png");
+           track("sheet_saved",{via:"native",n:1}); return; }
+      catch(e){ track("sheet_saved",{via:"native_fail",err:String(e&&e.message||e)}); }
+    }
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[f1]})){
+      try{ await navigator.share({files:[f1], title:"추구미즘 진단결과"}); track("sheet_saved",{via:"native",n:1}); return; }
+      catch(e){ if(e&&e.name==="AbortError"){ track("sheet_saved",{via:"abort"}); return; } }
+    }
+    const a=document.createElement("a"); a.href=URL.createObjectURL(f1); a.download=f1.name; a.click();
+    track("sheet_saved",{via:"download",n:1}); return;
+  }
   // 시트2 — 추구미 (캐릭터)
   const c2=await drawCharSheet("내가 되고 싶은 모습은", M.W, M.wKey, "이 매력이 자주 쓰는 색 · "+M.W.pc);
   // 시트3 — 분포 + 지금의 나 + 방향 제안 + (재미있는 발견) + 첫걸음 (화면 3페이지와 동일, 3·4 통합)
@@ -2096,11 +2266,43 @@ function showSavedReport(){
   Object.assign(scoreHave, d.scores.have);
   Object.assign(answers, d.answers||{});
   GENDER = d.gender||"";
+  // 문항 없이 직접 고른 추구미는 점수가 아니라 타입만 남는다 — 그걸 되살린다.
+  if(d.want && !TKEYS.some(k=>(d.scores.want||{})[k]>0)){ WANT_PICK=d.want; WANT_SRC=d.want_src||"pick"; }
   window.__diagSaved = true;   // 재열람이 새 진단으로 또 저장되면 안 된다
   phase="result";
   return true;
 }
-if(VIEW==="report") showSavedReport();
+
+/* 추구미 직접 선택(modules/career.html → ?view=report&want=키).
+   문항 점수는 없으므로 좌표는 그 타입의 이론 좌표를 쓴다. 저장 형식은 진단과 같은 자리
+   (chugu_diag)라 홈·미션 엔진이 따로 알 필요가 없다 — want와 gap_axis만 채워주면 된다. */
+function pickWant(k){
+  if(!TYPES[k]) return;
+  WANT_PICK = k; WANT_SRC = "pick";
+  try{
+    const d=JSON.parse(localStorage.getItem("chugu_diag")||"null")||{};
+    d.want=k; d.want_src="pick";
+    // {k:1} 한 점짜리 분포의 가중평균 = COORD[k] 그 자체. 격차 산식을 새로 쓰지 않는다.
+    d.gap_axis = CZM.gapOf({[k]:1}, normed(scoreHave)).axis;
+    localStorage.setItem("chugu_diag", JSON.stringify(d));
+  }catch(e){}
+  track("want_set",{type:k, src:"pick"});
+}
+
+if(VIEW==="report"){ showSavedReport(); if(WANT_PARAM) pickWant(WANT_PARAM); }
+/* 추구미 테스트 — 저장된 '지금의 나'를 물려받아 part A만 묻는다.
+   진단이 없으면 물려받을 좌표가 없다. 그때는 처음(지금의 나 진단)으로 돌려보낸다. */
+if(FLOW_WANT){
+  const d0=loadDiag();
+  if(d0 && d0.scores){
+    Object.assign(scoreHave, d0.scores.have||{});
+    Object.assign(answers, d0.answers||{});
+    GENDER = d0.gender || "f";
+    USER_ROW_SENT = true;        // 같은 기기의 같은 사람 — app_users를 다시 넣지 않는다
+    window.__diagSaved = false;  // 추구미가 붙은 새 진단으로 저장돼야 한다
+    start();
+  } else location.replace("index.html");
+}
 render();
 
 // 강의 흐름은 성별을 앞단(lecture.html)에서 이미 받는다 — 같은 걸 두 번 묻지 않는다.
@@ -2118,13 +2320,29 @@ if(FLOW_LECTURE){
 <script type="module">
   try{
     const [AS, PR, SE, snapRes] = await Promise.all([
-      import("./modules/asset-score.js?v=a2f7afa"),
-      import("./modules/part-report.js?v=a2f7afa"),
-      import("./modules/step-engine.js?v=a2f7afa"),
+      import("./modules/asset-score.js?v=1d28e40"),
+      import("./modules/part-report.js?v=1d28e40"),
+      import("./modules/step-engine.js?v=1d28e40"),
       fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
     ]);
     window.__PART = { AS, PR, SNAP: snapRes };
     if (typeof window.__onPartEngineReady === "function") window.__onPartEngineReady();
+    // 「나의 4주」 — 홈과 같은 엔진·같은 사전을 쓴다. 여기서 목록을 따로 만들면
+    // 결과지가 약속한 것과 홈이 내는 것이 갈린다(이론 §5-2 "미리보기가 곧 대기열").
+    try{
+      const [QE, dict, quiz] = await Promise.all([
+        import("./modules/quest-engine.js?v=1d28e40"),
+        fetch("./modules/quest-dict.json").then(r=>r.json()),
+        fetch("./modules/quest-quiz.json").then(r=>r.ok?r.json():null).catch(()=>null),
+      ]);
+      window.__QUEST = { QE, DICT: quiz ? QE.withKnowledge(dict, quiz) : dict };
+      if (typeof window.__onQuestReady === "function")
+        window.__onQuestReady(window.__QUEST.QE, window.__QUEST.DICT);
+    }catch(e){
+      console.warn("미션 엔진 로드 실패 — 「나의 4주」 생략", e);
+      const b = document.getElementById("myWeeks");   // 불러오는 중 문구로 굳지 않게
+      if (b) b.innerHTML = `<p class="small">이번 주 미션은 홈에서 바로 받으실 수 있어요.</p>`;
+    }
     // 오늘의 한 걸음 — 엔진이 늦게 와도 첫 화면이 비지 않게, 도착하면 그때 바꾼다
     window.__onStepEngineReady(SE);
   }catch(e){ console.warn("엔진 로드 실패 — 3절·한 걸음 생략", e); }

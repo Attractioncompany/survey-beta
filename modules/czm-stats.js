@@ -92,6 +92,51 @@
     return { pick: pick, empty: empty, shown: shown };
   }
 
+  /* ── 미션 가산 매핑 — theory/초안_미션가산매핑_v1_2026-08-24.md ──────
+     성장 엔진의 정본이 여기라 매핑 규칙도 여기 둔다. 화면마다 복사하면 갈린다.
+     새 상수는 없다 — 크기는 위 RUNG 그대로다. */
+
+  // §1-2 대상 타입 = WANT ?? HAVE 1위. **발행 시점에 확정해 offer에 심고**
+  // 완료 시점에 다시 판정하지 않는다(§1-3 과거 가산은 안 움직인다).
+  // user는 {want_type, have_type} — have_type은 진단이 이미 정한 1위라 여기서 다시 세지 않는다.
+  function targetType(user, cell) {
+    return (cell && cell.quiz_topic_type) || (user && user.want_type) ||
+           (user && user.have_type) || TKEYS[0];
+  }
+
+  // §2-2 근거 강도. 자기 보고는 여기 들어오지 않는다 — 들어올 자리가 없는 것이 곧 0점 규칙이다.
+  function evidenceOf(cell, event) {
+    var e = event || {};
+    if (!cell) return null;
+    if (cell.kind === "milestone")  return "arrival";                        // +3
+    if (cell.kind === "item")       return e.registered ? "observed" : null; // +1
+    if (cell.kind === "knowledge")  return e.correct    ? "observed" : null; // +1
+    if (cell.kind === "skill") {
+      if (!cell.countable || !cell.field) return null;   // 세지 않는 칸 — 기록만 남는다
+      if (e.verdict === "done")  return "verified";      // +2 부호 일치
+      if (e.photo_submitted)     return "observed";      // +1 부호가 틀려도 시도는 일어났다
+    }
+    return null;
+  }
+
+  // §3-1 표시값 ≤ 확정값. 전부 최소 등급으로만 약속하고, 승급(+2)은 재촬영 결과에서 처음 등장한다.
+  // 도착·보스(+3)는 예고하지 않는다 — 측정 결과라 행동으로 보장되지 않는다(§3-3).
+  function previewGain(cell) {
+    if (!cell || cell.kind === "milestone") return null;
+    if (cell.kind === "skill" && (!cell.countable || !cell.field)) return null;
+    return RUNG.observed;
+  }
+
+  // stat_entries 사본 → {타입: 합}. gain_type이 없는 옛 행은 세지 않는다 — 타입을 지어내지 않는다.
+  function gainsOf(entries) {
+    var g = {};
+    (entries || []).forEach(function (e) {
+      if (!e || !e.gain || !e.gain_type) return;
+      g[e.gain_type] = (g[e.gain_type] || 0) + e.gain;
+    });
+    return g;
+  }
+
   /* ── §7-6 자체검사 — 산식이 깨지면 여기서 터진다 ────────────────── */
   function selfCheck(n) {
     var errs = [], Z = {}, F = {}, S = {};
@@ -111,6 +156,27 @@
       if (sum(b) !== TOTAL) { errs.push("무작위에서 합 깨짐: " + JSON.stringify(r)); break; }
       if (Math.min.apply(null, TKEYS.map(function (k) { return b[k]; })) < FLOOR) { errs.push("무작위에서 0점 발생"); break; }
     }
+    // 가산 매핑 (초안_미션가산매핑 §6-3)
+    var SKILL = { kind: "skill", countable: true, field: "chroma" };
+    var DEAD  = { kind: "skill", countable: false, field: null };
+    if (targetType({ want_type: null, have_type: "chic" }, {}) !== "chic")
+      errs.push("추구미가 없을 때 HAVE 1위로 안 떨어진다");
+    if (targetType({ want_type: "elegant", have_type: "chic" }, {}) !== "elegant")
+      errs.push("추구미가 있는데 HAVE가 이겼다");
+    if (evidenceOf(DEAD, { photo_submitted: true }) !== null || previewGain(DEAD) !== null)
+      errs.push("0점 칸에 가산이 붙었다");
+    if (previewGain({ kind: "milestone" }) !== null) errs.push("도착·보스를 예고하고 있다");
+    if (evidenceOf(SKILL, { photo_submitted: true }) !== "observed" ||
+        evidenceOf(SKILL, { verdict: "done" })      !== "verified")
+      errs.push("스킬 칸의 근거 강도가 어긋난다");
+    ["item", "knowledge", "skill"].forEach(function (k) {          // §3-1 표시값 ≤ 확정값
+      if ((previewGain({ kind: k, countable: true, field: "x" }) || 0) > RUNG.observed)
+        errs.push("표시값이 최소 등급을 넘는다: " + k);
+    });
+    if (gainsOf([{ gain: 1, gain_type: "chic" }, { gain: 2, gain_type: "chic" },
+                 { gain: 1 }]).chic !== 3)
+      errs.push("가산 합산이 틀렸다(타입 없는 행은 세지 않는다)");
+
     if (errs.length) console.error("[czm-stats] 자체 점검 실패:", errs);
     return errs;
   }
@@ -121,6 +187,8 @@
     initialStats: initialStats, applyGains: applyGains,
     equipEffect: equipEffect, finalStats: finalStats,
     recommendOutfit: recommendOutfit, selfCheck: selfCheck, sum: sum,
+    targetType: targetType, evidenceOf: evidenceOf,
+    previewGain: previewGain, gainsOf: gainsOf,
     version: "stats_v1"
   };
 })(typeof window !== "undefined" ? window : globalThis);

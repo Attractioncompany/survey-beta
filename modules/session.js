@@ -147,7 +147,12 @@ export async function attachEmail(email){
  *  id·attrs가 같이 온다 — 옷장(인벤토리)이 아이템을 지목하려면 id가, 착용 태그를 표시 시점에
  *  만들려면 attrs.color가 필요하다(스키마 §2-1: 태그는 저장하지 않는다). */
 export async function fetchStats(){
-  return await sbFetch("stat_entries?select=id,kind,ref,slot,attrs,acquired_at&removed_at=is.null&order=acquired_at");
+  // gain·gain_type을 같이 가져온다 — 이게 빠지면 로그인해서 동기화한 순간 캐릭터 시트의
+  // 성장분이 통째로 사라진다(화면이 서버 사본을 원천으로 삼기 때문).
+  // removed_at 필터도 뺐다: 옷을 버려도 그 옷을 갖게 된 **사건**은 일어났고, 영구 가산은
+  // 내려가지 않는다(산식 §4-1 · 초안_미션가산매핑 §6-1). 버린 옷을 옷장에서 감추는 것은
+  // 화면 쪽 일이라 옷장 목록에서 걸러낸다.
+  return await sbFetch("stat_entries?select=id,kind,ref,slot,attrs,acquired_at,removed_at,gain,gain_type,evidence&order=acquired_at");
 }
 
 /** 옷장에서 버리기 — removed_at을 채우는 유일한 경로(스키마 §2-5).

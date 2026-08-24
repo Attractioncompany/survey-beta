@@ -109,8 +109,18 @@ button{font:inherit;cursor:pointer}
 .ph-prism .t{font-size:13.5px;font-weight:700;color:var(--deep);}
 .ph-prism .d{font-size:12px;color:var(--sub);}
 .ph-bar{position:relative;height:14px;border-radius:7px;}
-.ph-dot{position:absolute;top:-5px;width:24px;height:24px;border-radius:12px;background:rgba(255,255,255,.9);border:2px solid var(--accent);box-shadow:0 2px 8px rgba(74,43,92,.25);transform:translateX(-12px);}
 .ph-ends{display:flex;justify-content:space-between;font-size:12px;font-weight:600;}
+/* 쌓은 것 한 줄 — 프리즘 바 아래. 진행점을 대신하는 자리라 실제 숫자만 온다 */
+.ph-grown{font-size:12.5px;color:var(--sub);margin:-2px 0 0;}
+.ph-grown b{color:var(--accent);font-weight:800;}
+/* 해낸 직후 "무엇이 얼마나" — 이 화면의 주인공이라 숫자를 크게 세운다 */
+.grew{display:flex;align-items:baseline;justify-content:center;gap:9px;margin:16px 0 4px;}
+.grew span{font-size:14px;font-weight:700;color:var(--deep);}
+.grew b{font-size:30px;font-weight:800;color:var(--accent);line-height:1;}
+.grew i{font-style:normal;font-size:17px;color:var(--sub);}
+/* 미션 카드의 "해내면 얼마나" — 제목 아래 한 줄, 약속이라 조용하게 */
+.gain-hint{display:inline-block;font-size:12.5px;font-weight:700;color:var(--accent);
+  background:rgba(255,255,255,.62);border-radius:999px;padding:4px 11px;align-self:flex-start;}
 /* 카드 사이 간격은 .screen-body의 gap(--gap-block)이 준다 — margin-top으로 또 벌리지 않는다 */
 .ph-hero{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:var(--sp-4);border-radius:20px;padding:26px var(--gutter);box-shadow:0 12px 32px rgba(74,43,92,.10);min-height:196px;}
 /* 진단 전 화면은 이 카드가 화면의 전부다 — 제목·설명·구미가 한 덩어리로 서야
@@ -246,6 +256,37 @@ const photo = LS.get(K.photo, null);
 const cell  = id => DICT.cells.find(c => c.id === id);
 const count = kind => STATS.filter(s => s.kind === kind).length;
 
+/* ── 미션 가산 (theory/초안_미션가산매핑_v1_2026-08-24.md) ──────────────
+   규칙은 czm-stats.js가 갖고 있다 — 여기서 판정을 다시 짜지 않는다.
+   대상 타입은 발행 시점에 확정해 active quest에 심는다(§1-2). 완료 때 재판정하지 않는다. */
+const USER  = () => ({want_type: diag?.want ?? null, have_type: diag?.have ?? null});
+const tName = k => DICT?.type_names?.[k] ?? k;
+// 표시 스탯 = 출발선 + 쌓은 것. 출발선은 진단이 정해 chugu_diag에 남긴다(index.html).
+// 그 값이 없는 옛 진단에서는 숫자 대신 오른 양만 말한다 — 없는 기준선을 지어내지 않는다.
+const statNow = () => diag?.base_stats
+  ? CZMStats.finalStats(diag.base_stats, CZMStats.gainsOf(STATS), null) : null;
+
+/* §6-1 grant — 지급할 것이 있으면 stat_entries 행에 얹을 칸을 돌려준다.
+   이미 준 등급 이하면 아무것도 주지 않는다: 중복도 강등도 여기서 막힌다. */
+function gainFor(c, event, stamped){
+  const ev = CZMStats.evidenceOf(c, event);
+  if (!ev) return null;
+  const want  = CZMStats.RUNG[ev];
+  const given = STATS.filter(s => s.ref === c.id).reduce((n, s) => n + (s.gain || 0), 0);
+  if (want <= given) return null;
+  return {gain: want - given, evidence: ev, gain_version: "v1",
+          gain_type: stamped || CZMStats.targetType(USER(), c)};
+}
+
+// 해낸 직후 — 무엇이 얼마나 올랐는지 이 자리에서 말한다. st.add 뒤에 부른다.
+function grewBlock(g){
+  if (!g) return ``;
+  const s = statNow(), nm = esc(tName(g.gain_type));
+  return s
+    ? `<div class="grew"><span>${nm}</span><b>${s[g.gain_type] - g.gain}</b><i>→</i><b>${s[g.gain_type]}</b></div>`
+    : `<div class="grew"><span>${nm}</span><b>+${g.gain}</b></div>`;
+}
+
 // 로그인한 뒤에만 서버와 이야기한다. 순서가 곧 의존관계다 —
 // 행이 있어야 계정에 묶을 수 있고, 묶여야 own_read가 내 행을 알아본다.
 async function bootSession(){
@@ -254,7 +295,11 @@ async function bootSession(){
   await linkUid(UID);
   const remote = await fetchStats();
   if (remote) { STATS = remote.map(r => ({id:r.id, kind:r.kind, ref:r.ref, slot:r.slot,
-                                          attrs:r.attrs ?? {}, at:r.acquired_at}));
+                                          attrs:r.attrs ?? {}, at:r.acquired_at,
+                                          removed_at:r.removed_at ?? null,
+                                          // 가산 3칸을 안 옮기면 동기화가 성장분을 지운다
+                                          gain:r.gain ?? 0, gain_type:r.gain_type ?? null,
+                                          evidence:r.evidence ?? null}));
                 LS.set(K.stats, STATS); }
   // 진단을 마치면 지식 한 칸이 자동으로 열린다 — 전 화면이 0인 첫날을 만들지 않는다(설계서 §3-4)
   if (diag && !STATS.some(s => s.ref === "diagnosis")) {
@@ -408,18 +453,45 @@ function renderNoDiag(){
   });
 }
 
+// 진단은 끝났는데 갈 곳이 없는 상태. 미션은 방향이 있어야 나오므로 여기서 한 가지만 시킨다.
+function renderNoWant(){
+  const N = DICT?.type_names ?? {};
+  const hName = esc(N[diag.have] ?? diag.have);
+  track("hub_shown", {diagnosed:true, has_want:false});
+  app.innerHTML = shell({
+    body: `<div class="ph-glass ph-hero snap intro-hero">
+        <div class="ph-gumi"><div class="pad"></div><img src="../character/기본형.png" alt="" onerror="this.parentNode.style.display='none'"></div>
+        <div class="ph-title">어디로 갈지<br>정할 차례예요</div>
+        <div class="ph-whytxt">지금 서 있는 자리는 <b>${hName}</b> 쪽으로 나왔어요.
+          되고 싶은 모습을 정하면 거기까지 가는 지도가 그려지고, 매주 미션이 그 방향으로 나옵니다.</div>
+      </div>
+      <div class="ph-glass snap" style="padding:16px">
+        <div class="ph-whytxt" style="margin:0">먼저 결과부터 다시 보고 정해도 좋아요.</div>
+        <a class="btn ghost" href="../index.html?view=report" style="display:block;text-align:center;text-decoration:none;margin-top:10px">내 진단 결과 보기</a>
+      </div>`,
+    btm: `<a class="btn" href="career.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none">추구미 정하기</a>`,
+  });
+}
+
 function renderHome(){
   if (!diag) return renderNoDiag();
+  // 진단은 했지만 추구미를 아직 안 정한 상태가 생겼다(2026-08-24 진단 분리).
+  // 홈은 전부 "추구미로 가는 중"을 전제로 그려져 있어서, 그대로 두면 갈 곳 없이
+  // 프리즘·미션·진행도가 뜬다. 이 화면의 할 일은 하나뿐이다 — 갈 곳 정하기.
+  if (!diag.want) return renderNoWant();
   track("hub_shown", {diagnosed:true});
+  autoIssue();                 // 홈은 오늘의 미션을 **정해준다** — 고르라고 되묻지 않는다
   const a = st.active;
   // ── 프리즘 홈 상단 (시안 Home.dc.html = 스펙) ──────────────────────
   const N = DICT?.type_names ?? {};
   const wName = esc(N[diag.want] ?? diag.want), hName = esc(N[diag.have] ?? diag.have);
   const wCol = TCOLOR[diag.want] || "#B76BA3", hCol = TCOLOR[diag.have] || "#9CC8E8";
   const days = diag.ts ? Math.max(1, Math.floor((Date.now()-diag.ts)/864e5)+1) : 1;
-  // 진행점 위치 — 표시 전용 잠정 규칙: 완료 걸음 1개 = 6%p, 시작점 6%.
-  // 이론값이 아니다. 이론팀 일치율 산식(요청서 §4-1)이 확정되면 그걸로 교체한다.
-  const prog = Math.min(6 + STATS.length*6, 84);
+  // 진행점(잠정 6%p/걸음)은 **뺐다.** 바 위의 점은 "추구미까지 몇 %"를 주장하는데,
+  // 도착 지점의 값이 우리에게 없어서 무엇으로 나눠도 지어낸 수가 된다. 성장분으로
+  // 바꿔 봐도 분모가 없기는 마찬가지다 — 실제로 아는 수 하나만 아래에 적는다.
+  // 좌표가 어디까지 갔는지는 재측정이 답하고, 그건 「나의 4주」 끝에서 다시 찍는다.
+  const grown = CZMStats.gainsOf(STATS)[diag.want] || 0;
   const weeks = Math.max(1, Math.ceil(days/7));
   const greet = `
     <div class="ph-head">
@@ -435,10 +507,11 @@ function renderHome(){
         <div class="t">나의 프리즘</div>
         <div class="d">지금에서 추구미까지 · ${weeks}주째</div>
       </div>
-      <div class="ph-bar" style="background:linear-gradient(90deg,${hCol} 0%,#C9BCD8 55%,${wCol} 100%)">
-        <div class="ph-dot" style="left:${prog}%"></div>
-      </div>
+      <div class="ph-bar" style="background:linear-gradient(90deg,${hCol} 0%,#C9BCD8 55%,${wCol} 100%)"></div>
       <div class="ph-ends"><div style="color:#3F5C8A">지금 · ${hName}</div><div style="color:#9C4680">추구미 · ${wName}</div></div>
+      <p class="ph-grown">${grown
+        ? `여기까지 ${wName} <b>+${grown}</b> 쌓았어요`
+        : `첫 미션을 마치면 ${wName}부터 오릅니다`}</p>
       ${statsRow(true)}
     </div>`;
   // ② 오늘 할 것 — 미션 카드. **설명과 그 설명의 실행 버튼이 한 카드 안에 있다**(대표 2026-08-24).
@@ -462,20 +535,31 @@ function renderHome(){
                     : `<button class="btn" id="toShot">지금 얼굴 찍어두기</button>`)
         : `<button class="btn" id="tryDone">해봤어요</button>`;
     // 기준 사진이 없으면 왜 먼저 찍는지가 이유 자리에 온다 — 이유는 한 줄만 둔다
-    const why = (c.countable && c.field && !a.before)
+    // 지식 칸은 좌표를 움직이지 않는다 — "가장 크게 움직입니다"를 그대로 얹으면 거짓말이 된다.
+    // 홈이 미션을 정해주기 시작하면서 이 칸이 카드 자리에 직접 서게 됐다.
+    const why = c.kind === "knowledge"
+      ? "방향은 이미 잡혀 있어요. 왜 그런지 알아두면 다음 미션이 빨라집니다."
+      : (c.countable && c.field && !a.before)
       ? "지금 얼굴부터 한 장 찍어둬요. 나중에 지금 모습이랑 비교해봐요." : whyTxt;
+    // 방향만 있고 크기가 없던 카드에 "얼마나"를 적는다(§3-2). 최소 등급만 약속하고
+    // 승급(+2)은 재촬영 결과 화면에서 처음 등장한다 — 조건부 약속은 미달을 박탈로 만든다.
+    const pv = CZMStats.previewGain(c);
+    const hint = pv ? `<span class="gain-hint">해내면 ${esc(tName(a.target_type
+                        || CZMStats.targetType(USER(), c)))} +${pv}</span>` : ``;
     today = `<div class="ph-glass ph-hero snap home-hero">${gumiEl}
       <div class="ph-title">${esc(c.copy)}</div>
       <div class="ph-whytxt">${why}</div>
+      ${hint}
       ${primary}
       <div class="btm-quiet">
         <button class="btn quiet" id="laterBtn">내일 할게요</button><i>·</i>
         <button class="btn quiet" id="drop">다른 미션으로</button></div></div>`;
   } else {
+    // autoIssue가 낼 것을 못 찾았을 때만 여기 온다 — 스킵으로 후보를 다 비웠거나 사전이 비었다.
     today = `<div class="ph-glass ph-hero snap home-hero">${gumiEl}
-      <div class="ph-title">오늘의 미션을<br>고를 차례예요</div>
-      <div class="ph-whytxt">${wName} 쪽으로 움직이는 것들 중에서 하나만 고르시면 됩니다.</div>
-      <button class="btn" id="toList">미션 고르기</button></div>`;
+      <div class="ph-title">지금 드릴 미션이<br>남아 있지 않아요</div>
+      <div class="ph-whytxt">${wName} 쪽 미션을 다 보셨네요. 목록에서 지나친 것을 다시 볼 수 있어요.</div>
+      <button class="btn" id="toList">미션 목록 열기</button></div>`;
   }
 
   // §3-5 복귀 — 경과 일수를 적지 않고, 밀린 처방을 쌓아두지 않고, 구미는 실망하지 않는다
@@ -504,7 +588,12 @@ function renderHome(){
   // onestep_done — 완료 의도를 탭 시점에 센다(요청서 §3). 검증 성공 여부는 quest_completed가 따로 잰다.
   for (const id of ["toQuiz","toReg","toShot","tryDone"])
     $(id)?.addEventListener("click", () => track("onestep_done", {quest_id: a?.id, via:id}), {once:true});
-  $("drop")?.addEventListener("click", () => { st.active = null; renderList(); });
+  // 지나친 것은 excluded로 보낸다 — 안 그러면 autoIssue가 같은 걸 다시 세운다.
+  // 큐가 한 칸씩 밀리는 것도 이 한 줄이 만든다(§5-2, 추가 로직 없음).
+  $("drop")?.addEventListener("click", () => {
+    if (a) st.skipped = [...new Set([...st.skipped, a.id])];
+    st.active = null; renderList();
+  });
   $("toReg")?.addEventListener("click", renderRegister);
   $("toQuiz")?.addEventListener("click", renderQuiz);
   $("toShot")?.addEventListener("click", () => location.href = "../photo.html?flow=verify");
@@ -514,6 +603,20 @@ function renderHome(){
                              field:null, sign_match:null, countable:false});
     st.active = null; renderHome();
   });
+}
+
+/* ③ 해낸 직후 — 무엇이 얼마나 올랐는지 여기서 보여준다(베타 필수 통과 항목).
+   카운터 0→1로 끝나던 자리다. 숫자가 실제로 움직이는 것을 보지 못하면
+   "해냈다"가 화면 어디에도 남지 않는다. */
+function renderDone(title, lead, g, note){
+  st.active = null;
+  app.innerHTML = shell({
+    top: head(title),
+    body: `<div class="card"><p class="lead">${lead}</p>${grewBlock(g)}
+      ${note ? `<p class="note">${note}</p>` : ``}</div>`,
+    btm: `<button class="btn" id="back">홈으로</button>`,
+  });
+  $("back").onclick = renderHome;
 }
 
 // 도구 화면 — 홈에서 덜어낸 것들이 여기 모인다. 자주 안 쓰는 것을 매일 보는 화면에 두지 않는다.
@@ -543,10 +646,42 @@ function renderTools(){
   $("out").onclick = () => { signOut(); route(); };
 }
 
+// sameType: 축이 가까워도 타입이 다르면 도착이 아니다 — 엔진이 그때 방향 없는 걸음을 낸다.
+// 이미 해낸 칸도 excluded로 보낸다 — 안 그러면 방금 마친 미션이 홈에 그대로 다시 선다.
+// (후보 풀은 pack()이 통째로 남기므로 거부율 분모는 그대로다)
+const offerNow = () => issueOffer(DICT, diag.gap_axis, {
+  excluded: [...new Set([...st.skipped, ...STATS.map(s => s.ref)])],
+  sameType: diag.want === diag.have,
+});
+
+function postOffer(r, via){
+  const offerId = crypto.randomUUID();
+  sbPost("quest_offers", {offer_id:offerId, user_id:UID, primary_axis:r.primary_axis,
+    gap_value:r.gap_value, candidate_pool:r.candidate_pool, offered_quests:r.offered_quests,
+    randomization_unit:"none", arm:"none"});
+  track("quest_offer_shown", {offer_id:offerId, n:r.offered_quests.length, axis:r.primary_axis, via});
+  return offerId;
+}
+
+/* ① 홈이 오늘의 미션을 정해준다.
+   전에는 "마음 가는 걸 하나만 골라보세요"로 결정을 유저에게 되돌렸다 — 사내 원칙
+   "고객에게 판단을 되묻지 말 것"에 어긋나고, 고르는 화면을 한 번 더 거치게 만들었다.
+   엔진은 이미 1순위를 알고 있다(서열 = 격차 × 조정가능성). 그 1순위를 그대로 세운다.
+   고를 자유는 카드 안 "다른 미션으로"가 그대로 갖고 있다. */
+function autoIssue(){
+  if (!QE || st.active) return;
+  const r = offerNow();
+  const c = r.cells[0];
+  if (!c) return;                        // 낼 것이 없으면 지어내지 않는다 — 빈 상태 카드가 받는다
+  const offerId = postOffer(r, "auto");
+  track("quest_selected", {offer_id:offerId, quest_id:c.id, position:0, via:"auto"});
+  // ★ 대상 타입은 지금 굳힌다(§1-2). 나중에 추구미가 바뀌어도 이 걸음의 가산은 안 움직인다.
+  st.active = {id:c.id, offer_id:offerId, started:new Date().toISOString(),
+               before: photo || null, target_type: CZMStats.targetType(USER(), c)};
+}
+
 function renderList(){
-  // sameType: 축이 가까워도 타입이 다르면 도착이 아니다 — 엔진이 그때 방향 없는 걸음을 낸다
-  const r = issueOffer(DICT, diag.gap_axis,
-                       {excluded: st.skipped, sameType: diag.want === diag.have});
+  const r = offerNow();
   if (r.status === "arrived") {
     // 막다른 길 → 갈림길 (대표 피드백 2026-08-23 실기기: 청순청량→우아한 유저가 여기서 갇혔다).
     // "지금 매력 강화" 선택지는 넣지 않았다 — quest-dict에 같은 타입 유지·심화 미션이 없다
@@ -573,15 +708,12 @@ function renderList(){
     $("fkRetest").onclick = () => go("retest");
     $("back").onclick = renderHome; return;
   }
-  const offerId = crypto.randomUUID();
-  sbPost("quest_offers", {offer_id:offerId, user_id:UID, primary_axis:r.primary_axis,
-    gap_value:r.gap_value, candidate_pool:r.candidate_pool, offered_quests:r.offered_quests,
-    randomization_unit:"none", arm:"none"});
-  track("quest_offer_shown", {offer_id:offerId, n:r.offered_quests.length, axis:r.primary_axis});
+  const offerId = postOffer(r, "list");
 
   const cards = r.cells.map((c,i) => `<button class="q" data-id="${c.id}" data-i="${i}">
       <div class="t">${esc(c.copy)}</div>
       <div class="m">
+        ${CZMStats.previewGain(c) ? `<span class="tag">${esc(tName(CZMStats.targetType(USER(), c)))} +${CZMStats.previewGain(c)}</span>` : ``}
         <span class="tag ${c.cost === "free" ? "free" : ""}">${c.cost === "free" ? "돈 안 들어요" : "살 게 있어요"}</span>
         ${c.grade === "scale" ? `<span class="tag">확인이 아직 정밀하지 않아요</span>` : ``}
         ${c.countable === false ? `<span class="tag">사진 확인은 준비 중이에요</span>` : ``}
@@ -600,7 +732,8 @@ function renderList(){
     const id = b.dataset.id;
     track("quest_selected", {offer_id:offerId, quest_id:id, position:+b.dataset.i});
     st.active = {id, offer_id:offerId, started:new Date().toISOString(),
-                 before: photo || null};   // 판정용 기준선을 걸음 시작 시점에 고정한다
+                 before: photo || null,    // 판정용 기준선을 걸음 시작 시점에 고정한다
+                 target_type: CZMStats.targetType(USER(), cell(id))};   // 대상 타입도 여기서 굳는다(§1-2)
     renderHome();
   });
   $("reroll").onclick = () => {
@@ -650,7 +783,7 @@ const typeOfHex = (pal, hex) => (hex && pal.find(r => r.hex === hex)?.type) || n
 const safeHex = h => /^#[0-9A-Fa-f]{6}$/.test(h || "") ? h : null;
 
 // 오늘 입을 후보. 태그는 저장돼 있지 않다(스키마 §2-1) — attrs.color로 표시 시점에 만든다.
-const closet = pal => STATS.filter(s => s.kind === "item").map(s => {
+const closet = pal => STATS.filter(s => s.kind === "item" && !s.removed_at).map(s => {
   const type = typeOfHex(pal, safeHex(s.attrs?.color));
   return {...s, tag_type:type, tag_power: type ? 1 : 0};
 });
@@ -660,7 +793,7 @@ const dot = hex => hex ? `<span style="display:inline-block;width:14px;height:14
   border:1px solid rgba(0,0,0,.12);background:${hex};vertical-align:-2px;margin-right:7px"></span>` : ``;
 const GUMI = `<div class="ph-gumi"><div class="pad"></div>
   <img src="../bg/gumi_base.png" alt="" onerror="this.parentNode.style.display='none'"></div>`;
-const nItems = () => STATS.filter(s => s.kind === "item").length;
+const nItems = () => STATS.filter(s => s.kind === "item" && !s.removed_at).length;
 // 하루의 경계는 사는 사람의 하루다 — UTC로 자르면 아침 9시 전에 어제가 된다
 const kstDate = () => new Date(Date.now() + 9*36e5).toISOString().slice(0, 10);
 
@@ -776,7 +909,7 @@ async function renderOutfit(first = true){
 // R4 옷장(인벤토리). 담아둔 것을 볼 데가 없으면 담을 이유도 없어진다.
 async function renderCloset(){
   const pal = await palette();
-  const items = STATS.filter(s => s.kind === "item");
+  const items = STATS.filter(s => s.kind === "item" && !s.removed_at);   // 버린 옷은 오늘 후보에서만 빠진다(가산은 남는다)
   // 슬롯 순서는 산식 9종 순서를 따르고, 그 밖의 값(옛 한글 슬롯 행)은 뒤에 그대로 붙인다
   const order = [...new Set(items.map(i => i.slot))]
     .sort((a, b) => (SLOTS.indexOf(a) + 1 || 99) - (SLOTS.indexOf(b) + 1 || 99));
@@ -849,17 +982,18 @@ function renderAddItem(opts = {}){
       const id = crypto.randomUUID();
       const attrs = {name, ...(color ? {color} : {})};
       const ref = `${slot}:${name}`;
-      st.add({id, kind:"item", ref, slot, attrs, at:new Date().toISOString()});
-      // gain(등록 자체의 영구 +1 · 산식 §4-1)은 **아직 쓰지 않는다.** 영구 가산은 되돌릴 수 없어
-      // 태그 근거가 굳기 전에 박제하면 안 된다 — 이론팀 판정 후 붙인다(보고서 미구현 항목).
+      // 영구 가산은 **미션으로 담았을 때만** 붙는다(§4-1 등록 = 사건). 옷장에서 그냥 담는 것은
+      // 사건이 아니라 자산 정리라, 여기에 +1을 주면 50벌 담아 50점을 만드는 길이 열린다.
+      const g = q ? gainFor(cell(q.id), {registered:true}, q.target_type) : null;
+      st.add({id, kind:"item", ref, slot, attrs, at:new Date().toISOString(), ...(g ?? {})});
       await sbPost("stat_entries", {id, user_id:UID, kind:"item", slot, ref,
-                                    source_kind:"self_report", attrs, evidence:"observed"});
+                                    source_kind:"self_report", attrs, evidence:"observed", ...(g ?? {})});
       track("item_added", {slot, has_color: !!color, from: q ? "quest" : "closet"});
       if (!q) return (opts.back ?? renderCloset)();
-      track("stat_added", {kind:"item", ref, source_kind:"self_report"});
+      track("stat_added", {kind:"item", ref, source_kind:"self_report", ...(g ?? {})});
       track("quest_completed", {offer_id:q.offer_id, quest_id:q.id, kind:"item",
                                 field:null, sign_match:null, countable:true});
-      st.active = null; renderHome();
+      renderDone("담았어요", "옷장에 담겼어요.", g, "담아둔 건 그대로 남습니다.");
     };
   })();
 }
@@ -871,7 +1005,8 @@ function renderAddItem(opts = {}){
 const QSLOT = {"립":"lip", "액세서리":"accessory"};   // '실루엣·소재'는 슬롯이 아니라 속성(§4-3) — 유저가 고른다
 function renderRegister(){
   const a = st.active, c = cell(a.id);
-  renderAddItem({quest:{copy:c.copy, slot:QSLOT[c.slot] ?? null, id:a.id, offer_id:a.offer_id}});
+  renderAddItem({quest:{copy:c.copy, slot:QSLOT[c.slot] ?? null, id:a.id,
+                        offer_id:a.offer_id, target_type:a.target_type}});
 }
 
 // 볼 만한 영상 — 사전 §3-8-1 규칙 1·3.
@@ -935,13 +1070,14 @@ function renderQuiz(){
     $("again") && ($("again").onclick = () => draw(null));
     if (picked == null) app.querySelectorAll(".q").forEach(b => b.onclick = () => draw(+b.dataset.i));
     $("done") && ($("done").onclick = async () => {
-      st.add({kind:"knowledge", ref:c.id, slot:null, at:new Date().toISOString()});
+      const g = gainFor(c, {correct:true}, a.target_type);
+      st.add({kind:"knowledge", ref:c.id, slot:null, at:new Date().toISOString(), ...(g ?? {})});
       await sbPost("stat_entries", {user_id:UID, kind:"knowledge", ref:c.id,
-                                    source_kind:"auto_detect", attrs:{qid:q.qid}});
-      track("stat_added", {kind:"knowledge", ref:c.id, source_kind:"auto_detect"});
+                                    source_kind:"auto_detect", attrs:{qid:q.qid}, ...(g ?? {})});
+      track("stat_added", {kind:"knowledge", ref:c.id, source_kind:"auto_detect", ...(g ?? {})});
       track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"knowledge",
                                 field:null, sign_match:null, countable:true});
-      st.active = null; renderHome();
+      renderDone("알아보기", "맞았어요.", g, "알아본 건 기록에 남습니다.");
     });
   };
   draw(null);
@@ -980,23 +1116,21 @@ function tryJudge(){
       delta: v.delta, quest_id: c.id, offer_id: a.offer_id
     });
   }
-  if (v.verdict === "done" && c.countable) {
-    st.add({kind:"skill", ref:c.id, slot:null, at:new Date().toISOString()});
+  // §2-2 사다리 — 재촬영 제출이 관측(+1), 부호 일치가 검증(+2)이다. 두 사건이 같은 순간에
+  // 판정되므로 한 행으로 준다. 부호가 틀려도 +1은 남는다: 시도는 실제로 일어났고 강등은 없다.
+  const g = gainFor(c, {photo_submitted:true, verdict:v.verdict}, a.target_type);
+  if (g) {
+    st.add({kind:"skill", ref:c.id, slot:null, at:new Date().toISOString(), ...g});
     sbPost("stat_entries", {user_id:UID, kind:"skill", ref:c.id,
-                            source_kind:"auto_detect", attrs:{field:v.field, delta:v.delta}});
-    track("stat_added", {kind:"skill", ref:c.id, source_kind:"auto_detect"});
+                            source_kind:"auto_detect", attrs:{field:v.field, delta:v.delta}, ...g});
+    track("stat_added", {kind:"skill", ref:c.id, source_kind:"auto_detect", ...g});
   }
-  st.active = null;
-  app.innerHTML = shell({
-    top: head("확인"),
-    body: `<div class="card">
-      <p class="lead">${v.verdict === "done"
-        ? "방향이 맞게 움직였어요. 한 칸 쌓였어요."
-        : "이번엔 사진에서 방향이 잡히지 않았어요. 다시 해봐도 괜찮아요."}</p>
-      <p class="note">${v.verdict === "done" ? "" : "실패로 세지 않아요."}</p></div>`,
-    btm: `<button class="btn" id="back">홈으로</button>`,
-  });
-  $("back").onclick = renderHome;
+  renderDone("확인",
+    v.verdict === "done" ? "방향이 맞게 움직였어요."
+                         : "이번엔 사진에서 방향이 잡히지 않았어요.",
+    g,
+    v.verdict === "done" ? "다음 미션은 홈에 준비돼 있어요."
+                         : "해본 건 그대로 남습니다. 실패로 세지 않아요.");
   return true;
 }
 

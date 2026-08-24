@@ -90,8 +90,12 @@ export function issueOffer(dict, gapAxis, opts = {}) {
     if (opts.sameType === false && dirless.length) {
       return pack(opts.hasActive ? "busy" : "ok", axis, gap, dirless.sort(byRank), excluded);
     }
+    // 도착했어도 성장은 끝나지 않는다 — 대표 확정(§1) "성장 제한치는 없고 본인이
+    // 만족스러울 때까지". 축으로 좁힐 것이 없을 뿐이므로 방향 없는 걸음은 계속 낸다.
+    // (이론 초안_미션가산매핑 차단항목 ②: 여기서 빈 배열을 주면 도착 유저의 성장이 멈춘다)
     return { status: "arrived", primary_axis: axis, gap_value: gap,
-             candidate_pool: [], offered_quests: [], cells: [] };
+             ...pack("arrived", axis, gap, dirless.sort(byRank), excluded),
+             status: "arrived" };
   }
 
   const dir = gap > 0 ? "+" : "-";
@@ -137,8 +141,12 @@ export function selfCheck(dict) {
   const t = (name, cond, detail = "") => out.push({ name, pass: !!cond, detail });
   const ids = r => r.offered_quests;
 
+  // 도착해도 성장은 끝나지 않는다 — 축으로 좁힐 것이 없을 뿐이라 방향 없는 걸음은 계속 낸다
+  // (이론 초안_미션가산매핑 §5-4). 여기서 빈 배열을 기대하던 옛 단언이 그 수정과 어긋나 있었다.
   const arrived = issueOffer(dict, { T: 0.1, D: -0.05 });
-  t("도착 밴드 안이면 걸음을 내지 않는다", arrived.status === "arrived" && ids(arrived).length === 0, arrived.status);
+  t("도착 밴드 안이면 축을 좁히는 걸음은 내지 않는다",
+    arrived.status === "arrived" && arrived.cells.every(c => c.axis === null), arrived.status);
+  t("도착해도 방향 없는 걸음은 남는다 — 성장이 멈추지 않는다", ids(arrived).length > 0);
 
   const d = issueOffer(dict, { T: 0.5, D: -0.7 });
   t("주축은 절대값 최대 축", d.primary_axis === "D", `주축=${d.primary_axis}`);
