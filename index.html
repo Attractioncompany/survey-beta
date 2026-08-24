@@ -245,9 +245,9 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=e025f8a"></script>
+<script src="modules/czm-core.js?v=9e22072"></script>
 <!-- 스탯 산식 정본(theory/산식_RPG스탯성장_v1_2026-08-24.md). 표시 층 전용 — 좌표·판정은 손대지 않는다. -->
-<script src="modules/czm-stats.js?v=e025f8a"></script>
+<script src="modules/czm-stats.js?v=9e22072"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -308,7 +308,7 @@ const VIEW = new URLSearchParams(location.search).get("view");
 // ?flow=lecture — 강의용 흐름(modules/lecture.html)에서 온 경우. 결과 뒤 그리로 돌려보낸다.
 const FLOW_LECTURE = new URLSearchParams(location.search).get("flow")==="lecture";
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.35+e025f8a"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.35+9e22072"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -1299,9 +1299,15 @@ function partSection(d, surveyHaveType){
    그림 코드는 modules/stat-preview.html A안에서 가져왔다(새로 그리지 않았다).
    눈금은 최댓값에 맞춰 늘리되 하한 12를 둔다 — 봉우리 하나가 화면을 다 먹지 않게. */
 const STAT_RING=["pure","elegant","chic","charisma","gorgeous","classic","romantic","energetic"];
-function statSheetPage(bg){   // bg = 다른 절과 같은 prismBg(추구미 색) — renderResult가 넘긴다
+function statSheetPage(bg, hKey){   // bg = 다른 절과 같은 prismBg(추구미 색) · hKey = 결과가 정한 '지금' 타입
   const st=window.CZMStats && CZMStats.initialStats(normed(scoreHave));
   if(!st) return "";
+  // 30을 8칸에 나누면 해상도가 낮아 1·2위가 같은 정수로 떨어지는 일이 흔하다(원점수 순위는
+  // 보존되지만 그림에서는 봉우리가 둘로 보인다 — 대표 실기기 지적 2026-08-24).
+  // 그래서 '가장 강한 것'은 차트 최댓값이 아니라 **결과가 정한 타입(hKey)**을 정본으로 삼고,
+  // 그 꼭짓점만 크게 찍어 어느 쪽이 1위인지 그림에서 바로 읽히게 한다.
+  const topK = (hKey && st[hKey]!==undefined) ? hKey
+             : TKEYS.slice().sort((a,b)=>st[b]-st[a])[0];
   // 차트가 카드 안에서 작아 보이지 않게 — 세로 viewBox를 라벨에 딱 맞춰 조인다.
   // (SVG는 폭 100%로 스케일되므로 세로가 남으면 그만큼 그림이 줄어든다)
   const CX=190, CY=158, R=120;
@@ -1314,11 +1320,11 @@ function statSheetPage(bg){   // bg = 다른 절과 같은 prismBg(추구미 색
   STAT_RING.forEach((k,i)=>{
     const p=pt(i,MAX);
     grid+=`<line class="spoke" x1="${CX}" y1="${CY}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}"/>`;
-    const v=pt(i,st[k]);
-    vtx+=`<circle r="4.5" fill="${TYPES[k].color}" stroke="#fff" stroke-width="1.6" cx="${v[0].toFixed(1)}" cy="${v[1].toFixed(1)}"/>`;
+    const v=pt(i,st[k]), isTop=(k===topK);
+    vtx+=`<circle r="${isTop?8:4.5}" fill="${TYPES[k].color}" stroke="#fff" stroke-width="${isTop?2.4:1.6}" cx="${v[0].toFixed(1)}" cy="${v[1].toFixed(1)}"${isTop?` filter="url(#csTop)"`:``}/>`;
     const a=(-90+i*45)*Math.PI/180, lx=CX+Math.cos(a)*(R+20), ly=CY+Math.sin(a)*(R+20);
     const anc=Math.abs(Math.cos(a))<.3?"middle":(Math.cos(a)>0?"start":"end");
-    lab+=`<text class="tlab" x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" text-anchor="${anc}">${TYPES[k].name}</text>`
+    lab+=`<text class="tlab${k===topK?" top":""}" x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" text-anchor="${anc}"${k===topK?` fill="${TYPES[k].color==='#3E3A45'?'#2B2233':TYPES[k].color}"`:``}>${TYPES[k].name}</text>`
        + `<text class="tnum" x="${lx.toFixed(1)}" y="${(ly+17).toFixed(1)}" text-anchor="${anc}" fill="${TYPES[k].color}">${st[k]}</text>`;
   });
   return `<div class="cpage info-page" style="${bg}"><div class="cp-inner info glass">
@@ -1327,14 +1333,20 @@ function statSheetPage(bg){   // bg = 다른 절과 같은 prismBg(추구미 색
       <svg viewBox="0 0 380 330" role="img" aria-label="8타입 스탯 방사형 차트">
         <defs><radialGradient id="csFill" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stop-color="#B76BA3" stop-opacity=".38"/>
-          <stop offset="100%" stop-color="#9CC8E8" stop-opacity=".26"/></radialGradient></defs>
+          <stop offset="100%" stop-color="#9CC8E8" stop-opacity=".26"/></radialGradient>
+          <filter id="csTop" x="-60%" y="-60%" width="220%" height="220%">
+            <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="${TYPES[topK].color}" flood-opacity=".55"/>
+          </filter></defs>
         ${grid}
         <polygon class="poly" points="${STAT_RING.map((k,i)=>pt(i,st[k]).map(n=>n.toFixed(1)).join(",")).join(" ")}"/>
         ${vtx}${lab}
       </svg>
       <p class="hint">그림을 누르면 숫자가 보여요</p>
     </div>
-    <div class="sec" style="width:100%"><p>누구나 30점을 나눠 가져요. 총량은 같고, 어디에 몰렸는지가 사람마다 다릅니다.</p></div>
+    <div class="sec" style="width:100%">
+      <p>지금 가장 크게 자리 잡은 건 <b style="color:${TYPES[topK].color==='#3E3A45'?'#2B2233':TYPES[topK].color}">${TYPES[topK].name}</b>이에요.</p>
+      <p class="note">누구나 30을 나눠 가집니다. 총량은 같고, 어디에 몰렸는지가 사람마다 달라요.</p>
+    </div>
   </div></div>`;
 }
 function toggleStatNums(){
@@ -1409,8 +1421,12 @@ function heroPage(W,Hv,wKey,hKey){
          <path d="M${a1.x.toFixed(1)} ${a1.y.toFixed(1)} L ${W0.x} ${W0.y} L ${a2v.x.toFixed(1)} ${a2v.y.toFixed(1)}" fill="none" stroke="#B76BA3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`}
          <circle cx="${H0.x}" cy="${H0.y}" r="26" fill="url(#hG)"/>
          <circle cx="${W0.x}" cy="${W0.y}" r="30" fill="url(#wG)"/>
-         <text x="${H0.x}" y="${Math.min(H0.y+44,204)}" text-anchor="middle" font-size="11" font-weight="700" fill="#3F5C8A">지금 · ${Hv.name}</text>
-         <text x="${W0.x}" y="${Math.min(W0.y+48,204)}" text-anchor="middle" font-size="11" font-weight="700" fill="#9C4680">추구미 · ${W.name}</text>
+         ${same
+           // 타입이 같으면 점도 하나다 — 라벨을 둘 다 찍으면 글자가 포개져 읽히지 않는다
+           // (대표 실기기 지적 2026-08-24). 한 줄로 합친다.
+           ? `<text x="${W0.x}" y="${Math.min(W0.y+48,204)}" text-anchor="middle" font-size="11" font-weight="700" fill="#9C4680">지금도 추구미도 · ${W.name}</text>`
+           : `<text x="${H0.x}" y="${Math.min(H0.y+44,204)}" text-anchor="middle" font-size="11" font-weight="700" fill="#3F5C8A">지금 · ${Hv.name}</text>
+              <text x="${W0.x}" y="${Math.min(W0.y+48,204)}" text-anchor="middle" font-size="11" font-weight="700" fill="#9C4680">추구미 · ${W.name}</text>`}
        </svg>
        ${same?chip(W0,wKey,W.color,52,3,2):chip(H0,hKey,Hv.color,44,2,1)+chip(W0,wKey,W.color,52,3,2)}
        </div>
@@ -1498,7 +1514,7 @@ function renderResult(){
    <div class="result-stage">
    <div class="carousel" id="rcar" onscroll="carDot()">
      ${heroPage(W,Hv,wKey,hKey)}
-     ${statSheetPage(prismBg(W.color))}
+     ${statSheetPage(prismBg(W.color), hKey)}
      ${photoBornPage(PHOTO, W)}
      <!-- 3절 「파트별 나」 — 사진 측정이 있어야 성립한다. 설문만으로는 부위 좌표가 없다.
           정본 §3-3 강등 ③("포토 전체 미수행 → 3절 축소")에 해당. 부위 8행은 판정 A·B 대기(회신 0808). -->
@@ -1975,9 +1991,9 @@ if(FLOW_LECTURE){
 <script type="module">
   try{
     const [AS, PR, SE, snapRes] = await Promise.all([
-      import("./modules/asset-score.js?v=e025f8a"),
-      import("./modules/part-report.js?v=e025f8a"),
-      import("./modules/step-engine.js?v=e025f8a"),
+      import("./modules/asset-score.js?v=9e22072"),
+      import("./modules/part-report.js?v=9e22072"),
+      import("./modules/step-engine.js?v=9e22072"),
       fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
     ]);
     window.__PART = { AS, PR, SNAP: snapRes };
