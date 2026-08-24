@@ -30,6 +30,16 @@
   var inApp = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.chugumism)
               || location.protocol === "app:" || window.__CHUGU_APP === true;
   if (!inApp) return;
+
+  // 진단 전에는 탭바를 그리지 않는다 (대표 지적 2026-08-24).
+  // 근거: 네 탭 중 셋이 진단 결과 위에서만 성립한다 — 기록은 전부 0이고, '내 결과'는 리포트가
+  // 없어 빈 화면이며, 도구의 옷 색 판정·타입별 추천·영상은 전부 내 타입을 입력으로 받는다.
+  // 이 단계의 유일한 할 일이 측정인데 갈 데 없는 문 네 개를 화면 아래에 깔면 그게 이탈구가 된다.
+  // 진단을 마치면 다음 페이지 로드부터 저절로 뜬다(chugu_diag가 그때 쓰인다).
+  var diagnosed = false;
+  try { diagnosed = !!localStorage.getItem("chugu_diag"); } catch (e) {}
+  if (!diagnosed) return;
+
   window.__czmTabbar = true;
 
   var p = location.pathname;

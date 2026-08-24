@@ -29,7 +29,8 @@
     · 3종 합산 금지 — 스탯 3개를 더한 수를 절대 그리지 않는다
     · 레벨·등급·진행률 %·평균·백분위·랭킹 금지 — 비교 대상은 지난 나뿐
     · 숫자는 줄지 않는다 · 구미는 실망하지 않는다 · 쌓인 것만 표시한다
-    · 0을 보여주지 않는다 — 빈 칸은 "첫 칸을 채워볼까요"로 말한다
+    · 0은 숫자로 쓰되 조용히 — 아이템·스킬이 다 "첫 칸"으로 뜨니 셋 중 둘이 같은 말이 되어
+      현황이 안 읽혔다(대표 2026-08-24). "0을 감춘다" → "0을 부끄럽지 않게 보인다"로 개정.
 
   ※ 유저향 문구는 전부 [마케팅 검수 통과 2026-08-21] 초안. 커밋 전 brand/문체가이드 3단 통과 필요.
 -->
@@ -80,7 +81,11 @@ button{font:inherit;cursor:pointer}
 .st{background:var(--soft);border-radius:13px;padding:13px 11px;text-align:center}
 .st b{display:block;font-size:24px;font-weight:700;letter-spacing:-.02em}
 .st span{font-size:11.5px;color:var(--sub)}
-.st.empty b{font-size:14px;font-weight:600;color:var(--sub);padding:5px 0}
+/* 0도 숫자로 적는다. 대신 잉크를 낮춰 조용하게 — 감추면 현황이 안 읽힌다(대표 2026-08-24) */
+.st.zero b{color:var(--sub)}
+.stats.mini{gap:7px}
+.stats.mini .st{padding:9px 6px;border-radius:11px}
+.stats.mini .st b{font-size:19px}
 .field{width:100%;padding:13px;border:2px solid var(--line);border-radius:12px;font:inherit;margin-top:10px;background:#fff}
 .field:focus{outline:none;border-color:var(--accent)}
 /* 접힘 상자(details.fold)는 czm-ui.css 정본을 쓴다 */
@@ -108,11 +113,22 @@ button{font:inherit;cursor:pointer}
 .ph-ends{display:flex;justify-content:space-between;font-size:12px;font-weight:600;}
 /* 카드 사이 간격은 .screen-body의 gap(--gap-block)이 준다 — margin-top으로 또 벌리지 않는다 */
 .ph-hero{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:var(--sp-4);border-radius:20px;padding:26px var(--gutter);box-shadow:0 12px 32px rgba(74,43,92,.10);min-height:196px;}
+/* 진단 전 화면은 이 카드가 화면의 전부다 — 제목·설명·구미가 한 덩어리로 서야
+   흰 박스 밖에 빈 여백이 안 생긴다(대표 2026-08-24). 구미는 아래로 내려 글과 겹치지 않게. */
+/* 카드 하나가 화면의 주인공이다 — 높이를 콘텐츠에 맡기고 셸이 중앙에 놓는다.
+   억지로 늘리면 카드 안이 비고, 고정하면 카드 밖이 빈다. */
+.ph-hero.intro-hero{padding:30px var(--gutter) 32px;min-height:0;gap:var(--sp-3);}
+.intro-hero .ph-title{font-size:27px;padding-right:0;}
+.intro-hero .ph-whytxt{padding-right:0;}
+/* 구미 원본은 흰 사각 배경이라 그냥 얹으면 카드 위에 네모가 뜬다 — 원형으로 오려낸다 */
+.intro-hero .ph-gumi{position:relative;top:auto;right:auto;margin:0 auto;width:156px;height:156px;
+  border-radius:50%;overflow:hidden;}
+.intro-hero .ph-gumi img{position:absolute;inset:0;width:156px;height:156px;transform:scale(1.18);filter:none;}
+.intro-hero .ph-gumi .pad{display:none;}
 .ph-gumi{position:absolute;right:10px;top:64px;width:136px;height:136px;pointer-events:none;}
 .ph-gumi .pad{position:absolute;left:50%;top:50%;width:132px;height:132px;transform:translate(-50%,-50%);border-radius:999px;background:radial-gradient(circle,rgba(255,255,255,.95) 0%,rgba(255,255,255,.7) 55%,rgba(255,255,255,0) 78%);}
 .ph-gumi img{position:absolute;inset:0;width:136px;height:136px;object-fit:contain;transform:rotate(-6deg);filter:drop-shadow(0 8px 14px rgba(183,107,163,.3));}
 .ph-title{font-size:24px;font-weight:800;line-height:1.35;letter-spacing:-.015em;margin-left:-1px;color:var(--ink);padding-right:120px;word-break:keep-all;}
-.ph-why{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:13.5px;font-weight:600;color:var(--ink);min-height:44px;background:none;border:none;padding:0;cursor:pointer;}
 .ph-whytxt{font-size:14px;color:var(--sub);line-height:1.6;padding-right:120px;}
 /* 주 CTA의 자체 그라데이션은 지웠다 — czm-ui.css의 --cta(프리즘 딥 3색)가 정본이다. */
 /* ── 오늘의 착용 · 옷장 ────────────────────────────────────────────
@@ -123,13 +139,33 @@ button{font:inherit;cursor:pointer}
 .chip{flex:none;border:1.5px solid var(--line);background:var(--card);border-radius:99px;
   padding:9px var(--sp-4);min-height:40px;font-size:13.5px;font-weight:600;color:var(--sub);}
 .chip.on{border-color:var(--accent);background:var(--soft);color:var(--deep);}
-/* 색 고르기 — 팔레트 정본(pc-palette.json)의 베스트 색을 타입 순서대로 편다 */
-.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:var(--sp-2);margin-top:var(--sp-2);}
+/* 색 고르기 — 팔레트 정본(pc-palette.json)의 베스트 색을 타입 순서대로 편다.
+   8타입 × 14색 = 112칸이라 그대로 펴면 화면이 700px 넘게 흘러 담기 버튼이 화면 밖으로 나갔다
+   (실측 2026-08-24). 색 고르기는 훑어보는 위젯이라 **그 상자 안에서만** 스크롤한다 —
+   화면이 스크롤하는 것과 다르다. 상자 밖(이름·부위·담기)은 늘 제자리에 보인다. */
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:var(--sp-2);margin-top:var(--sp-2);
+  max-height:186px;overflow-y:auto;overscroll-behavior:contain;padding:2px;}
 .swatch{aspect-ratio:1;min-height:38px;padding:0;border-radius:9px;border:1px solid rgba(0,0,0,.10);}
 .swatch.on{outline:3px solid var(--accent);outline-offset:1px;}
 /* margin-top:auto가 셸의 중앙 정렬을 이겨서 히어로 아래 330px 구멍을 만들고 있었다
    (대표 지적 2026-08-24). 간격은 .screen-body의 gap이 준다. */
-.ph-entries{display:flex;gap:var(--sp-3);}
+/* ── 홈 = 허브 (대표 2026-08-24) ────────────────────────────────
+   "난 지금 어떤 상태이고 / 뭘 해야 하고 / 뭘 시도할 수 있는지"를 한 화면에.
+   세 덩어리로만 세운다 — 상태 카드 · 오늘의 미션 카드 · 기능 그리드.
+   기능 단위로 묶는다: 설명과 그 설명의 실행 버튼은 **같은 카드 안에** 있다.
+   그래서 홈에는 하단 고정 CTA가 없다. 카드가 자기 버튼을 갖는다. */
+.ph-prism .stats{border-top:1px solid var(--line);padding-top:var(--sp-3);}
+/* 미션 카드가 버튼까지 품는다 — 구미를 제목 옆으로 줄여 버튼 자리를 비운다 */
+.home-hero{gap:var(--sp-3);padding:var(--card-pad);min-height:0;}
+.home-hero .ph-gumi{top:12px;right:10px;width:84px;height:84px;}
+.home-hero .ph-gumi img{width:84px;height:84px;}
+.home-hero .ph-gumi .pad{width:84px;height:84px;}
+.home-hero .ph-title{font-size:20px;padding-right:88px;}
+.home-hero .ph-whytxt{padding-right:0;}
+.home-hero .btn{margin-top:0;}
+.home-hero .btm-quiet{margin-top:0;}
+/* 기능 그리드 — 앱에서는 탭바가 기록·내 결과·도구를 이미 갖고 있어 그 셋이 빠지고 한 줄이 된다 */
+.ph-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);}
 .ph-entry{flex:1;display:flex;align-items:center;justify-content:center;gap:var(--sp-2);min-height:48px;border:1px solid rgba(255,255,255,.7);border-radius:var(--radius-btn);background:rgba(255,255,255,.44);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);color:var(--ink);font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;}
 </style>
 </head>
@@ -241,24 +277,14 @@ function head(title, sub = ""){
   return `<div class="hd"><h1>${title}</h1>${sub ? `<small>${sub}</small>` : ``}</div>`;
 }
 
-function statsCard(){
+// 쌓인 것 3칸. 합계는 어디에도 그리지 않는다 — 셋을 더한 수는 매력 총량으로 읽힌다.
+// 0도 숫자로 적는다(위 계약 개정): 셋 중 둘이 "첫 칸"으로 뜨면 무엇이 몇 개인지가 안 읽혔다.
+function statsRow(mini = false){
   const rows = [["item","아이템"],["skill","스킬"],["knowledge","지식"]].map(([k,label])=>{
     const n = count(k);
-    // 0을 숫자로 보여주지 않는다. 합계는 어디에도 그리지 않는다.
-    return n === 0
-      ? `<div class="st empty"><b>첫 칸</b><span>${label}</span></div>`
-      : `<div class="st"><b>${n}</b><span>${label}</span></div>`;
+    return `<div class="st${n ? "" : " zero"}"><b>${n}</b><span>${label}</span></div>`;
   }).join("");
-  return `<div class="card ph-glass"><h2>쌓인 것</h2><div class="stats">${rows}</div>
-    ${STATS.length===0 ? `<p class="note">여기 첫 칸을 채워볼까요.</p>` : ``}</div>`;
-}
-
-function effortLine(){
-  const done = STATS.filter(s => s.ref !== "diagnosis").length;
-  if (!done) return "";
-  // 최초 진단이 원점. 누적이고 줄지 않는다. 남과 비교하지 않는다.
-  return `<div class="card ph-glass"><h2>진단 이후</h2>
-    <p class="lead">지금까지 ${done}개 해내셨어요.</p></div>`;
+  return `<div class="stats${mini ? " mini" : ""}">${rows}</div>`;
 }
 
 // 고객팀 회신(전체회의 2026-08-15)에서 온 값이다 — 개발팀이 지어낸 문턱이 아니다
@@ -347,28 +373,38 @@ const HUB = [
   { href: "cloth-check.html", label: "옷 색 판정", desc: "가진 옷이 내 쪽 색인지 사진으로 확인" },
   { href: "pick.html",        label: "타입별 추천", desc: "내 타입이 자주 쓰는 아이템 모음" },
 ];
-// 다른 데로 가는 문 한 줄. 앱에는 하단 탭바가 같은 일을 하므로 주입 스크립트가 이 줄을 숨긴다
-// (body.czm-app .app-only-hide) — 같은 기능을 한 화면에 두 번 두지 않는다.
-const entryRow = (...links) => `<div class="ph-entries app-only-hide">${
-  links.map(([label, href, id]) => id
-    ? `<button class="ph-entry" id="${id}">${label}</button>`
-    : `<a class="ph-entry" href="${href}">${label}</a>`).join("")}</div>`;
+// 기능 진입로. 홈이 허브라면 여기서 갈 수 있는 데가 다 보여야 한다(대표 2026-08-24).
+// appOnly=true인 칸은 앱에서 숨긴다 — 하단 탭바가 기록·내 결과·도구를 이미 갖고 있어서다.
+// 같은 기능을 한 화면에 두 번 두지 않는다(body.czm-app .app-only-hide).
+const HOME_TILES = [
+  { label:"오늘 뭐 입지", href:"#outfit" },
+  { label:"옷장",        href:"#closet" },
+  { label:"옷 색 판정",   href:"cloth-check.html" },
+  { label:"기록",        href:"#record",                appOnly:true },
+  { label:"내 결과",      href:"../index.html?view=report", appOnly:true },
+  { label:"도구",        href:"#tools",                 appOnly:true },
+];
+const tileGrid = () => `<div class="ph-grid">${HOME_TILES
+  .filter(t => t.href !== "../index.html?view=report" || diag?.scores)
+  .map(t => `<a class="ph-entry${t.appOnly ? " app-only-hide" : ""}" href="${t.href}">${t.label}</a>`)
+  .join("")}</div>`;
 
-// 진단 전 — 대표 지시 2026-08-17: "진단을 아직 안 받으셨어요" 한 줄 + 진단으로 보낸다
-// 진단 입구는 이 버튼 하나 — 촬영→설문 통합 흐름(?flow=full)으로 보낸다.
+// 진단 전 — 이 화면의 메시지는 하나다: **모든 건 지금 내 위치를 아는 것부터 시작한다**
+// (대표 2026-08-24). 그래서 제목을 카드 밖에 따로 두지 않고 한 덩어리로 묶는다 —
+// 나눠 두면 제목과 카드 사이가 벌어져 흰 박스 밖에 쓸모없는 여백이 생긴다(대표 지적).
+// 문구는 docs/문구원칙_유저시각_v1: 유저를 주어로 쓰지 않는다("안 받으셨어요"는 앱이
+// 안 시켜놓고 유저를 탓하는 문장이었다). 앱이 무엇을 왜 하는지 먼저 말한다.
 function renderNoDiag(){
   track("hub_shown", {diagnosed:false});
   app.innerHTML = shell({
-    top: `<div class="ph-head">
-            <div class="ph-h1">아직 진단을 안 받으셨어요</div>
-            <div class="ph-sub">사진 한 장, 설문 3~4분이면 됩니다</div>
-          </div>`,
-    body: `<div class="ph-glass ph-hero snap">
-        <div class="ph-gumi"><div class="pad"></div><img src="../bg/gumi_base.png" alt="" onerror="this.parentNode.style.display='none'"></div>
-        <div class="ph-title">지금 자리부터<br>재고 시작해요</div>
-        <div class="ph-whytxt">진단을 마치면 여기에 오늘 할 미션 하나가 들어옵니다.</div>
-      </div>` + entryRow(["도구", "#tools"]),
-    btm: `<a class="btn" href="../photo.html?flow=full" style="display:flex;align-items:center;justify-content:center;text-decoration:none">진단 시작하기</a>`,
+    body: `<div class="ph-glass ph-hero snap intro-hero">
+        <div class="ph-gumi"><div class="pad"></div><img src="../character/기본형.png" alt="" onerror="this.parentNode.style.display='none'"></div>
+        <div class="ph-title">먼저 지금의 나를<br>측정합니다</div>
+        <div class="ph-whytxt">어디로 갈지는 지금 어디 있는지를 알아야 정해집니다.
+          사진과 설문으로 지금 내 매력이 어떤 배합인지 재요.
+          <br><br>이 좌표가 매주 미션의 기준이 됩니다.</div>
+      </div>`,
+    btm: `<a class="btn" href="../photo.html?flow=full" style="display:flex;align-items:center;justify-content:center;text-decoration:none">측정 시작하기</a>`,
   });
 }
 
@@ -387,29 +423,36 @@ function renderHome(){
   const weeks = Math.max(1, Math.ceil(days/7));
   const greet = `
     <div class="ph-head">
-      <div class="ph-h1">오늘의 미션</div>
+      <div class="ph-h1">오늘</div>
       <div class="ph-sub">${wName}${/[가-힣]$/.test(wName)&&(wName.charCodeAt(wName.length-1)-44032)%28>0?"으로":"로"} 가는 ${days}일째예요</div>
     </div>`;
+  // ① 지금 내 상태 — 어디에서 어디로 가는 중이고, 무엇이 몇 개 쌓였나. 한 카드에 묶는다.
+  // "물들어가는 중"은 뺐다: 무엇이 무엇으로 바뀌는지 안 말하는 문장이었다(문구원칙 §2-2).
+  // 프리즘은 자체 용어라 첫 등장 자리에서 무엇인지 한 줄로 말한다(§4-3).
   const prism = `
     <div class="ph-glass ph-prism snap">
-      <div class="row"><div class="t">나의 프리즘</div><div class="d">${weeks}주째 물들어가는 중</div></div>
+      <div class="row" style="flex-direction:column;align-items:flex-start;gap:2px">
+        <div class="t">나의 프리즘</div>
+        <div class="d">지금에서 추구미까지 · ${weeks}주째</div>
+      </div>
       <div class="ph-bar" style="background:linear-gradient(90deg,${hCol} 0%,#C9BCD8 55%,${wCol} 100%)">
         <div class="ph-dot" style="left:${prog}%"></div>
       </div>
       <div class="ph-ends"><div style="color:#3F5C8A">지금 · ${hName}</div><div style="color:#9C4680">추구미 · ${wName}</div></div>
+      ${statsRow(true)}
     </div>`;
-  // 히어로 카드 — 구미 전신 136px 받침(시트③: 머리 안 자름·밝은 받침·카드 안).
-  // 기존 3상태(모듈 실패/발행됨/미발행) 로직은 그대로, 옷만 갈아입힌다.
-  // CTA는 카드 밖 하단 고정으로 옮겼다(2026-08-24) — 카드가 길어져도 주 행동은 엄지에 닿는다.
+  // ② 오늘 할 것 — 미션 카드. **설명과 그 설명의 실행 버튼이 한 카드 안에 있다**(대표 2026-08-24).
+  // 하단 고정 CTA로 빼두니 위 설명과 한 덩어리로 안 읽혔다. 구미는 제목 옆 84px로 줄여 버튼 자리를 비운다.
+  // "구미가 이걸 고른 이유" 접힘은 없앴다 — 탭 한 번을 아끼려고 두 줄을 감추고 있었다.
   const gumiEl = `<div class="ph-gumi"><div class="pad"></div><img src="../bg/gumi_base.png" alt="" onerror="this.parentNode.style.display='none'"></div>`;
-  // "구미가 이걸 고른 이유" — 문구는 오늘 검수 통과한 기존 문장을 그대로 쓴다(신규 창작 금지).
+  // 문구는 오늘 검수 통과한 기존 문장을 그대로 쓴다(신규 창작 금지).
   const whyTxt = `오늘 당장 해볼 수 있는 것 중 ${wName} 쪽으로 가장 크게 움직입니다.`;
-  let today, cta;
+  let today;
   if (!QE) {
-    today = `<div class="ph-glass ph-hero snap">${gumiEl}
+    today = `<div class="ph-glass ph-hero snap home-hero">${gumiEl}
       <div class="ph-title">미션을 지금 불러오지 못했어요</div>
-      <div class="ph-whytxt">잠시 뒤 새로고침해 주세요. 쌓인 건 그대로 있어요.</div></div>`;
-    cta = `<button class="btn ghost" onclick="location.reload()">새로고침</button>`;
+      <div class="ph-whytxt">잠시 뒤 새로고침해 주세요. 쌓인 건 그대로 있어요.</div>
+      <button class="btn ghost" onclick="location.reload()">새로고침</button></div>`;
   } else if (a) {
     const c = cell(a.id);
     const primary = c.kind === "knowledge" ? `<button class="btn" id="toQuiz">풀어보기</button>`
@@ -418,32 +461,22 @@ function renderHome(){
         ? (a.before ? `<button class="btn" id="toShot">해봤어요</button>`
                     : `<button class="btn" id="toShot">지금 얼굴 찍어두기</button>`)
         : `<button class="btn" id="tryDone">해봤어요</button>`;
-    const preNote = (c.countable && c.field && !a.before)
-      ? `<div class="ph-whytxt">지금 얼굴부터 한 장 찍어둬요. 나중에 지금 모습이랑 비교해봐요.</div>` : ``;
-    today = `<div class="ph-glass ph-hero snap">${gumiEl}
+    // 기준 사진이 없으면 왜 먼저 찍는지가 이유 자리에 온다 — 이유는 한 줄만 둔다
+    const why = (c.countable && c.field && !a.before)
+      ? "지금 얼굴부터 한 장 찍어둬요. 나중에 지금 모습이랑 비교해봐요." : whyTxt;
+    today = `<div class="ph-glass ph-hero snap home-hero">${gumiEl}
       <div class="ph-title">${esc(c.copy)}</div>
-      ${preNote}
-      <button class="ph-why" id="whyBtn">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#B76BA3" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"></circle><path d="M8 5.2v3l2 1.4"></path></svg>
-        구미가 이걸 고른 이유</button>
-      <div class="ph-whytxt" id="whyTxt" style="display:none">${whyTxt}</div></div>`;
-    cta = primary + `<div class="btm-quiet">
-      <button class="btn quiet" id="laterBtn">내일 할게요</button><i>·</i>
-      <button class="btn quiet" id="drop">다른 미션으로</button></div>`;
+      <div class="ph-whytxt">${why}</div>
+      ${primary}
+      <div class="btm-quiet">
+        <button class="btn quiet" id="laterBtn">내일 할게요</button><i>·</i>
+        <button class="btn quiet" id="drop">다른 미션으로</button></div></div>`;
   } else {
-    today = `<div class="ph-glass ph-hero snap">${gumiEl}
-      <div class="ph-title">고를 수 있는 미션이<br>준비돼 있어요</div></div>`;
-    cta = `<button class="btn" id="toList">미션 고르기</button>`;
+    today = `<div class="ph-glass ph-hero snap home-hero">${gumiEl}
+      <div class="ph-title">오늘의 미션을<br>고를 차례예요</div>
+      <div class="ph-whytxt">${wName} 쪽으로 움직이는 것들 중에서 하나만 고르시면 됩니다.</div>
+      <button class="btn" id="toList">미션 고르기</button></div>`;
   }
-  // 오늘의 착용 진입 — 매일 열 이유. 설계도 §4-1은 히어로 자리를 이쪽에 주지만,
-  // 1차는 미션 히어로 위에 카드 한 장으로 얹는다(미션 루프를 건드리지 않고 진입로부터 연다).
-  // 미션을 착장 슬롯 안에 ✦로 품는 통합은 2차. 옷장이 비어 있어도 초라하지 않게 문구가 갈린다.
-  const nIt = nItems();
-  const outfitEntry = `<button class="q snap" id="toOutfit" style="display:flex;align-items:center;gap:12px"
-      aria-label="${nIt ? "오늘 뭐 입지 — 오늘의 착용 열기" : "오늘 입은 것 담아두기"}">
-      <span style="flex:1"><span class="t">${nIt ? "오늘 뭐 입지" : "오늘 입은 것 담아두기"}</span>
-      <span class="m">${nIt ? `옷장에 담긴 ${nIt}개로 오늘 조합을 골라드려요` : "한 벌만 담아두면 내일 아침부터 골라드려요"}</span></span>
-      <span aria-hidden="true" style="color:var(--accent);font-weight:700;font-size:20px">›</span></button>`;
 
   // §3-5 복귀 — 경과 일수를 적지 않고, 밀린 처방을 쌓아두지 않고, 구미는 실망하지 않는다
   const away = LS.get(K.lastSeen, null);
@@ -452,24 +485,18 @@ function renderHome(){
   track("home_shown", {returning: back, has_active: !!a});
   LS.set(K.lastSeen, new Date().toISOString());
 
-  // 홈에는 오늘 할 것 하나만 둔다 (대표 2026-08-24 "앱은 숏폼").
-  // 쌓인 것·해낸 기록은 기록 화면으로, 도구·영상·계정은 도구 화면으로 나갔다 —
-  // 한 화면에 기능을 여덟 개 올려두면 사람은 그냥 안 본다.
+  // 홈은 허브다 — 상태 · 오늘 할 것 · 갈 수 있는 곳, 셋뿐이다(대표 2026-08-24).
+  // 카드 수를 늘리지 않고 각 카드를 자기 완결로 만든다: 카드마다 자기 버튼을 갖는다.
+  // 그래서 홈에만 하단 고정 CTA가 없다 — 주 행동이 미션 카드 안에 있다.
   app.innerHTML = shell({
     top: greet,
     body: downBanner()
         + (back ? `<div class="banner">쌓아둔 건 그대로 있어요.</div>` : ``)
-        + prism + outfitEntry + today
-        + entryRow(...(diag.scores ? [["내 결과", "../index.html?view=report"]] : []),
-                   ["기록", "#record"], ["도구", "#tools"]),
-    btm: cta,
+        + prism + today + tileGrid(),
+    btm: ``,
   });
 
-  $("toOutfit")?.addEventListener("click", () => nav("outfit"));
   $("toList")?.addEventListener("click", renderList);
-  $("whyBtn")?.addEventListener("click", () => {
-    const t=$("whyTxt"); t.style.display = t.style.display==="none" ? "" : "none";
-  });
   $("laterBtn")?.addEventListener("click", () => {
     track("onestep_later", {quest_id: a?.id});
     const b=$("laterBtn"); b.textContent="내일 할게요 ✓"; b.disabled=true; b.style.opacity=".55";
@@ -974,25 +1001,34 @@ function tryJudge(){
 }
 
 // 설계서 §3-1 기록 탭. 담아둔 것을 볼 데가 없으면 담을 이유도 없어진다.
+// 카드를 종류별로 두 장 쌓던 것을 한 목록으로 합쳤다 — 스킬 카드와 지식 카드가 각각
+// 빈 칸 안내를 달고 있어 화면이 안내문으로 채워졌고, 3장이면 벌써 스크롤이었다(대표 2026-08-24).
+// 한 줄에 한 건 — 제목 왼쪽, 날짜 오른쪽. 두 줄짜리 행으로 그리면 4건에서 화면이 넘쳤다.
+// 종류(미션/알아본 것)는 행에서 뺐다: 위 3칸이 이미 종류별 개수를 말한다.
+// ponytail: 최근 3건만. 카피가 두 줄로 넘어가는 미션이 섞이면 4건에서 화면이 넘친다.
+//           전체 이력이 필요해지면(누적 10건 넘는 유저가 생기면) '기록 전체' 화면을 따로 낸다.
+const RECORD_MAX = 3;
 function renderRecord(){
-  const day = t => { const d = new Date(t); return `${d.getMonth()+1}월 ${d.getDate()}일`; };
-  const group = (kind, title, line) => {
-    const rows = STATS.filter(s => s.kind === kind);
-    return `<div class="card"><h2>${title}</h2>` + (rows.length
-      ? rows.slice().reverse().map(s =>
-          `<div class="q" style="margin-bottom:7px"><div class="t">${esc(line(s))}</div>
-           <div class="m">${s.at ? day(s.at) : ""}${s.slot ? ` · ${esc(s.slot)}` : ""}</div></div>`).join("")
-      : `<p class="note">여기 첫 칸을 채워볼까요.</p>`) + `</div>`;
-  };
-  // 홈에 있던 "쌓인 것"·"진단 이후"가 여기로 옮겨왔다 — 기록은 기록끼리 한 화면에.
+  const day = t => { const d = new Date(t); return `${d.getMonth()+1}.${d.getDate()}`; };
+  const line = s => s.kind === "knowledge" && s.ref === "diagnosis"
+    ? "내 추구미와 지금 매력을 확인했어요" : (cell(s.ref)?.copy ?? s.ref);
+  const done = STATS.filter(s => s.kind !== "item")
+                    .slice().sort((a,b) => (b.at ?? "").localeCompare(a.at ?? ""));
+  const rows = done.slice(0, RECORD_MAX).map(s =>
+    `<div class="q" style="display:flex;gap:10px;align-items:baseline;padding:12px var(--sp-4);margin-bottom:7px">
+       <span class="t" style="flex:1;font-size:14.5px">${esc(line(s))}</span>
+       <span class="m" style="margin:0;flex:none">${s.at ? day(s.at) : ""}</span></div>`).join("");
+  const rest = done.length - RECORD_MAX;
+
   app.innerHTML = shell({
     top: head("기록 · 옷장"),
-    body: statsCard() + effortLine()
+    body: `<div class="card ph-glass"><h2>쌓인 것</h2>${statsRow()}
+        ${STATS.length === 0 ? `<p class="note">첫 미션을 마치면 여기부터 채워집니다.</p>` : ``}</div>`
       // 옷장은 목록이 아니라 화면이 됐다(슬롯별 정렬·담기·버리기) — 같은 것을 두 군데 그리지 않는다
       + `<button class="q" id="toCloset"><div class="t">옷장 열기</div>
          <div class="m">${nItems() ? `담아둔 ${nItems()}개` : "아직 담긴 게 없어요"}</div></button>`
-      + group("skill", "해낸 미션", s => cell(s.ref)?.copy ?? s.ref)
-      + group("knowledge", "알아본 것", s => s.ref === "diagnosis" ? "내 추구미와 지금 자리를 확인했어요" : (cell(s.ref)?.copy ?? s.ref)),
+      + (done.length ? `<div><h2 style="font-size:12px;color:var(--accent);font-weight:700;margin:0 0 8px;letter-spacing:.02em">해낸 것</h2>${rows}
+          ${rest > 0 ? `<p class="note">그 밖에 ${rest}개 더 있어요.</p>` : ``}</div>` : ``),
     btm: `<button class="btn ghost app-only-hide" id="back">홈으로</button>`,
   });
   $("toCloset").onclick = () => nav("closet");
