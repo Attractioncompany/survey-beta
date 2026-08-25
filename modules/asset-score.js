@@ -287,7 +287,9 @@ export function nearestType(c){
     type:first.name,
     second:second.name,
     adjacent: ratio2<=1/0.8,                 // 2위가 1위에 가까움 → A′ 표기 대상
-    label: ratio2<=1/0.8 ? `${first.name}′(${second.name}의 결)` : first.name,
+    // label 필드를 지웠다(2026-08-24) — 문안에 유저향 전면 금지어 "결"이 박혀 있었다(2026-08-09 대표).
+    // 지금은 소비처가 0개라(part-report는 type/second/adjacent로 직접 문장을 만든다) 화면에 안 나갔지만,
+    // 해설을 확충하면서 필드를 더 꺼내 쓰게 되므로 새는 경로가 생기기 전에 없앤다. 문장은 부르는 쪽이 만든다.
     dist:+first.dist.toFixed(3),
   };
 }

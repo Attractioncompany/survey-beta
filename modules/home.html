@@ -88,6 +88,17 @@ button{font:inherit;cursor:pointer}
 .stats.mini .st b{font-size:19px}
 .field{width:100%;padding:13px;border:2px solid var(--line);border-radius:12px;font:inherit;margin-top:10px;background:#fff}
 .field:focus{outline:none;border-color:var(--accent)}
+/* ── 로그인 (대표 2026-08-25) ───────────────────────────────────
+   카드를 걷어냈다 — 배경 위에 뜬 흰 상자가 "웹으로 대충" 느낌의 절반이었다.
+   입력칸이 곧 화면이라 설명 문단 없이도 무엇을 하는 자리인지 보인다. */
+.auth{display:flex;flex-direction:column;}
+.auth .btn{margin-top:var(--sp-3);}
+.auth .rule{font-size:12px;color:var(--sub);margin:6px 2px 0;}
+.auth .rule.mid{text-align:center;margin-top:var(--sp-4);}
+.auth .note{margin-top:var(--sp-2);}
+.auth .note:empty{margin:0;}
+.or{display:flex;align-items:center;gap:var(--sp-3);color:var(--sub);font-size:12px;margin-top:var(--sp-5);}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line);}
 /* 접힘 상자(details.fold)는 czm-ui.css 정본을 쓴다 */
 .demo{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;background:var(--soft);
   border-radius:12px;padding:14px 15px;margin-top:4px;align-items:baseline}
@@ -122,7 +133,10 @@ button{font:inherit;cursor:pointer}
 .gain-hint{display:inline-block;font-size:12.5px;font-weight:700;color:var(--accent);
   background:rgba(255,255,255,.62);border-radius:999px;padding:4px 11px;align-self:flex-start;}
 /* 카드 사이 간격은 .screen-body의 gap(--gap-block)이 준다 — margin-top으로 또 벌리지 않는다 */
-.ph-hero{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:var(--sp-4);border-radius:20px;padding:26px var(--gutter);box-shadow:0 12px 32px rgba(74,43,92,.10);min-height:196px;}
+/* flex:none이 없으면 부모(.screen-body, flex column)가 이 카드를 눌러 줄이는데
+   overflow:hidden이라 넘친 부분이 소리 없이 잘린다. 빈 옷장 히어로에서 13px가 그렇게
+   사라지고 있었다(실기기 안전영역 넣고 실측, 2026-08-25). 히어로는 내용만큼 서야 한다. */
+.ph-hero{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:var(--sp-4);border-radius:20px;padding:26px var(--gutter);box-shadow:0 12px 32px rgba(74,43,92,.10);min-height:196px;flex:none;}
 /* 진단 전 화면은 이 카드가 화면의 전부다 — 제목·설명·구미가 한 덩어리로 서야
    흰 박스 밖에 빈 여백이 안 생긴다(대표 2026-08-24). 구미는 아래로 내려 글과 겹치지 않게. */
 /* 카드 하나가 화면의 주인공이다 — 높이를 콘텐츠에 맡기고 셸이 중앙에 놓는다.
@@ -174,6 +188,13 @@ button{font:inherit;cursor:pointer}
 .home-hero .ph-whytxt{padding-right:0;}
 .home-hero .btn{margin-top:0;}
 .home-hero .btm-quiet{margin-top:0;}
+/* 홈에 편 미션 목록 — 히어로의 그라데이션 위에 얹히므로 카드를 반투명으로 눕힌다.
+   간격은 ph-hero의 flex gap이 준다(margin을 더하면 이중이 된다). */
+/* flex:none이 없으면 부모(.screen-body, flex column)가 이 카드를 눌러 줄이는데
+   .ph-hero가 overflow:hidden이라 목록 아래 두 칸이 소리 없이 잘린다. */
+.home-picks{gap:var(--sp-2);flex:none;}
+.home-picks .q{background:rgba(255,255,255,.74);border-color:rgba(255,255,255,.85);}
+.home-picks .q:active{background:rgba(255,255,255,.94);border-color:var(--accent);}
 /* 기능 그리드 — 앱에서는 탭바가 기록·내 결과·도구를 이미 갖고 있어 그 셋이 빠지고 한 줄이 된다 */
 .ph-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);}
 .ph-entry{flex:1;display:flex;align-items:center;justify-content:center;gap:var(--sp-2);min-height:48px;border:1px solid rgba(255,255,255,.7);border-radius:var(--radius-btn);background:rgba(255,255,255,.44);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);color:var(--ink);font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;}
@@ -202,9 +223,14 @@ async function mod(path, label){
 }
 const QE = await mod("./quest-engine.js", "미션");   // 유저향 표기 — 내부 용어 '걸음'은 화면에 내지 않는다 [게이트 통과]
 const SS = await mod("./session.js", "계정");
+// 탭 하나에 화면 하나. 이 둘은 파일을 나눴다 — home.html이 이미 1300줄이라
+// 여기에 더 얹으면 한 파일을 여러 사람이 동시에 못 고친다(모듈구조 v1 규칙 4).
+const SHEET = await mod("./stat-sheet.js", "캐릭터 시트");
+const HIST  = await mod("./history.js", "이력");
 const { issueOffer, judgeSkill, selfCheck, withKnowledge } = QE ?? {};
 const { ensureUser, linkUid, sbFetch, fetchStats, removeStat, PUBLIC,
-        isSignedIn, oauthStart, captureRedirect, emailLink, signOut } = SS ?? {};
+        isSignedIn, oauthStart, captureRedirect, signOut,
+        signUpPassword, signInPassword, sendRecover, setPassword } = SS ?? {};
 const downBanner = () => DOWN.length
   ? `<div class="banner">${DOWN.join("·")} 기능이 잠깐 안 되고 있어요. 나머지는 그대로 쓰실 수 있어요.</div>` : ``;
 
@@ -246,6 +272,9 @@ const st = {
   drop(id){ STATS = STATS.filter(s => s.id !== id); LS.set(K.stats, STATS); },
   get skipped(){ return LS.get(K.skipped, []); },
   set skipped(v){ LS.set(K.skipped, v); },
+  // 홈에 편 목록의 발행 id. 일부러 저장하지 않는다 — 페이지 수명 동안만 유지해
+  // 같은 목록을 다시 그릴 때 offer 행이 겹쳐 쌓이는 것만 막는다(§4-5 거부율 분모 보호).
+  homeOffer: null,
 };
 const diag  = LS.get(K.diag, null);
 // 타입 색 — 프리즘 진행 바 전용. 정본은 index.html TYPES(이론 소유 아님, 표시 토큰).
@@ -380,35 +409,97 @@ function renderPreview(i = 0){
 // iOS 앱 안에서 네이티브(ASAuthorization)로 붙이면 그 회전이 없다 — 그때 붙인다.
 // ⚠ 앱을 낼 때는 붙여야 할 가능성이 크다: App Store 4.8이 서드파티 로그인(카카오)을 두면
 //    그에 준하는 프라이버시 옵션을 함께 두라고 한다. 절차는 docs/애플로그인_설정안내.md.
+// 서버가 주는 실패 사유는 영어라 그대로 내면 유저가 못 읽는다. 아는 경우만 우리 말로 바꾸고
+// 나머지는 뭉뚱그린다 — 모르는 응답 본문을 화면에 그대로 흘리지 않는다. [마케팅 게이트 필요]
+const authMsg = why => /Invalid login/i.test(why)     ? "이메일 또는 비밀번호가 맞지 않습니다."
+  : /already registered/i.test(why)                   ? "이미 가입된 이메일이에요. 로그인으로 들어오세요."
+  : /not confirmed/i.test(why)                        ? "메일함의 확인 링크를 먼저 눌러주세요."
+  : /Password should be|weak.?password/i.test(why)    ? "비밀번호가 짧습니다. 8자 이상으로 정해주세요."
+  : /email_address_invalid|is invalid|validate email/i.test(why) ? "이메일 주소를 다시 확인해 주세요."
+  : /rate limit|Too many|429/i.test(why)              ? "잠시 뒤에 다시 시도해 주세요."
+  :                                                     "지금은 잘 안 되네요. 잠깐 뒤 다시 눌러주세요.";
+
+const GBTN = `style="background:#fff;color:#1F1F1F;border:1.5px solid #DADCE0;display:flex;align-items:center;justify-content:center;gap:9px"`;
+const GICON = `<svg width="17" height="17" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M45.1 24.5c0-1.6-.1-2.7-.4-3.9H24v7.1h12.1c-.2 1.8-1.6 4.6-4.5 6.4l6.9 5.4c4.1-3.8 6.6-9.4 6.6-15z"/><path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.9-5.4c-1.8 1.3-4.3 2.2-7.6 2.2-5.8 0-10.7-3.8-12.5-9.1l-7.1 5.5C8.1 41.1 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.5 28.4c-.5-1.4-.7-2.9-.7-4.4s.3-3 .7-4.4l-7.1-5.6C2.9 17 2 20.4 2 24s.9 7 2.4 10l7.1-5.6z"/><path fill="#EA4335" d="M24 10.6c4.1 0 6.9 1.8 8.5 3.3l6.2-6C34.9 4.5 29.9 2 24 2 15.4 2 8.1 6.9 4.4 14l7.1 5.6c1.8-5.3 6.7-9 12.5-9z"/></svg>`;
+
 function renderSignup(mode = "up"){
   track(mode === "up" ? "signup_shown" : "signin_shown");
   const up = mode === "up";
-  // 카드 위계(리포트 톤): 리드/부연 → 소셜 버튼 2개(브랜드 색 유지, 크기·라운드는 .btn 토큰) →
-  // 이메일은 접힘(details, index.html waitSec와 같은 문법) → 전환·상태는 조용히 아래로.
-  app.innerHTML = shell({ top: head(up ? "시작하기" : "로그인"), body: `<div class="card">
-    <p class="lead">${up ? "기록이 남으려면 로그인이 필요해요." : "다시 오셨네요."}</p>
-    <p class="note" style="margin-bottom:8px">${up ? "다음에 열어도 지난 진단이 그대로 남습니다. 이름도 나이도 안 물어봐요."
-                         : "쓰시던 계정으로 들어오시면 그대로 이어져요."}</p>
-    <button class="btn" id="kakao" style="background:#FEE500;color:#191600">카카오로 ${up ? "시작하기" : "로그인"}</button>
-    <button class="btn" id="google" style="background:#fff;color:#1F1F1F;border:1.5px solid #DADCE0;display:flex;align-items:center;justify-content:center;gap:9px;margin-top:10px">
-      <svg width="17" height="17" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M45.1 24.5c0-1.6-.1-2.7-.4-3.9H24v7.1h12.1c-.2 1.8-1.6 4.6-4.5 6.4l6.9 5.4c4.1-3.8 6.6-9.4 6.6-15z"/><path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.9-5.4c-1.8 1.3-4.3 2.2-7.6 2.2-5.8 0-10.7-3.8-12.5-9.1l-7.1 5.5C8.1 41.1 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.5 28.4c-.5-1.4-.7-2.9-.7-4.4s.3-3 .7-4.4l-7.1-5.6C2.9 17 2 20.4 2 24s.9 7 2.4 10l7.1-5.6z"/><path fill="#EA4335" d="M24 10.6c4.1 0 6.9 1.8 8.5 3.3l6.2-6C34.9 4.5 29.9 2 24 2 15.4 2 8.1 6.9 4.4 14l7.1 5.6c1.8-5.3 6.7-9 12.5-9z"/></svg>
-      Google로 ${up ? "시작하기" : "로그인"}
-    </button>
-    <details class="fold"><summary>이메일로 할게요</summary>
-      <input class="field" id="em" type="email" inputmode="email" autocomplete="email" placeholder="이메일 주소">
-      <button class="btn ghost" id="go" style="width:100%">메일로 링크 받기</button>
-    </details>
-    <p class="note" id="msg" style="text-align:center"></p></div>`,
-    btm: `<button class="btn quiet" id="swap" style="display:block">${up ? "이미 계정이 있어요" : "처음이에요"}</button>` });
+  // 일반 로그인 구조 (대표 2026-08-25): 이메일·비밀번호 → 또는 → 소셜 → 전환 링크.
+  // 상단바도 설명 문단도 없다. 뭘 눌러야 하는지 글을 읽어야 알던 화면이 지적받은 자리다.
+  // 카드(.card)도 걷어냈다 — 배경 위에 뜬 흰 상자가 "웹 페이지" 느낌의 절반이었다.
+  // <form>을 쓰는 이유: 필수·형식·최소길이 검사와 엔터 전송을 브라우저가 공짜로 해주고,
+  // 비밀번호 관리자가 저장 제안을 띄우려면 form + autocomplete 조합이 필요하다.
+  app.innerHTML = shell({ body: `<div class="auth">
+    <form id="au">
+      <input class="field" id="em" type="email" name="email" inputmode="email" autocomplete="email"
+             placeholder="이메일" aria-label="이메일" required>
+      <input class="field" id="pw" type="password" name="password"
+             autocomplete="${up ? "new-password" : "current-password"}"
+             placeholder="비밀번호" aria-label="비밀번호"${up ? ` minlength="8"` : ``} required>
+      ${up ? `<p class="rule">8자 이상</p>` : ``}
+      <button class="btn" type="submit" id="go">${up ? "회원가입" : "로그인"}</button>
+    </form>
+    <p class="note" id="msg" role="status" style="text-align:center"></p>
+    ${up ? `` : `<button class="btn quiet" id="forgot">비밀번호 찾기</button>`}
+    <div class="or">또는</div>
+    <button class="btn" id="kakao" style="background:#FEE500;color:#191600">카카오로 계속하기</button>
+    <button class="btn" id="google" ${GBTN}>${GICON}Google로 계속하기</button>
+    ${up ? `<p class="rule mid">이름도 나이도 받지 않습니다.</p>` : ``}
+  </div>`,
+    btm: `<button class="btn quiet" id="swap">${up ? "이미 계정이 있어요" : "회원가입"}</button>` });
+
   $("kakao").onclick  = () => { track("signup_started", {method:"kakao", mode}); oauthStart("kakao"); };
   $("google").onclick = () => { track("signup_started", {method:"google", mode}); oauthStart("google"); };
-  $("swap").onclick  = () => renderSignup(up ? "in" : "up");
-  $("go").onclick = async () => {
-    const em = $("em").value.trim(); if (!em.includes("@")) return $("em").focus();
-    track("signup_started", {method:"email", mode});
-    $("msg").textContent = await emailLink(em)
-      ? "보낸 메일의 링크를 눌러주세요. 이 창은 닫으셔도 돼요."
-      : "지금은 메일이 안 나가네요. 카카오로 해보셔도 좋아요.";
+  $("swap").onclick   = () => renderSignup(up ? "in" : "up");
+
+  // ⚠ 비밀번호는 이 함수 밖으로 안 나간다 — track props·localStorage·msg 어디에도 싣지 않는다.
+  $("au").onsubmit = async e => {
+    e.preventDefault();                                  // 브라우저 기본 검사는 이미 통과한 뒤다
+    const em = $("em").value.trim(), pw = $("pw").value;
+    track("signup_started", {method:"password", mode});  // 입력값 없음. 방식만 남긴다
+    $("go").disabled = true; $("msg").textContent = "";
+    const r = up ? await signUpPassword(em, pw) : await signInPassword(em, pw);
+    $("go").disabled = false;
+    if (!r.ok) { track("signin_failed", {method:"password", mode});
+                 $("msg").textContent = authMsg(r.why); return; }
+    // 확인 메일이 필요한 설정이면 여기서 세션이 없다. 링크를 누르면 돌아와 route()가 이어받는다.
+    if (up && !r.session) { $("msg").textContent = "확인 메일을 보냈어요. 메일함의 링크를 눌러주세요."; return; }
+    track("signin_succeeded", {method:"password"});
+    route();
+  };
+
+  $("forgot") && ($("forgot").onclick = async () => {
+    const em = $("em").value.trim();
+    if (!em.includes("@")) { $("em").focus(); $("msg").textContent = "이메일을 먼저 적어주세요."; return; }
+    track("password_reset_requested");
+    $("msg").textContent = await sendRecover(em)
+      ? "재설정 메일을 보냈어요. 링크를 누르면 새 비밀번호를 정하는 화면이 열립니다."
+      : "지금은 메일이 안 나가네요. 카카오로 들어오셔도 됩니다.";
+  });
+}
+
+// 재설정 링크로 돌아온 사람. 그냥 통과시키면 로그인은 되지만 잊어버린 비밀번호가 그대로 남아
+// 다음 방문에 또 막힌다 — 여기서 반드시 새로 정하게 한다.
+function renderNewPassword(){
+  track("password_reset_shown");
+  app.innerHTML = shell({ body: `<div class="auth">
+    <p class="lead">새 비밀번호를 정해주세요</p>
+    <form id="au">
+      <input class="field" id="pw" type="password" name="password" autocomplete="new-password"
+             placeholder="새 비밀번호" aria-label="새 비밀번호" minlength="8" required>
+      <p class="rule">8자 이상</p>
+      <button class="btn" type="submit" id="go">저장</button>
+    </form>
+    <p class="note" id="msg" role="status" style="text-align:center"></p></div>` });
+  $("au").onsubmit = async e => {
+    e.preventDefault();
+    $("go").disabled = true;
+    const ok = await setPassword($("pw").value);
+    $("go").disabled = false;
+    if (!ok) { $("msg").textContent = "저장하지 못했어요. 링크가 만료됐다면 메일을 다시 받아주세요."; return; }
+    track("password_reset_done");
+    route();
   };
 }
 
@@ -421,13 +512,12 @@ const HUB = [
 // 기능 진입로. 홈이 허브라면 여기서 갈 수 있는 데가 다 보여야 한다(대표 2026-08-24).
 // appOnly=true인 칸은 앱에서 숨긴다 — 하단 탭바가 기록·내 결과·도구를 이미 갖고 있어서다.
 // 같은 기능을 한 화면에 두 번 두지 않는다(body.czm-app .app-only-hide).
+// 홈은 '오늘'이다 — 지금 할 것만 둔다. 옷장·기록·리포트·도구는 탭바가 받아갔으므로
+// 여기 같은 문을 또 두지 않는다(2026-08-25 탭 재정렬). 문이 두 벌이면 유저는 어느 쪽이
+// 진짜인지 재게 되고, 그만큼 화면에 정보가 는다.
 const HOME_TILES = [
-  { label:"오늘 뭐 입지", href:"#outfit" },
-  { label:"옷장",        href:"#closet" },
+  { label:"오늘의 차림", href:"#outfit" },
   { label:"옷 색 판정",   href:"cloth-check.html" },
-  { label:"기록",        href:"#record",                appOnly:true },
-  { label:"내 결과",      href:"../index.html?view=report", appOnly:true },
-  { label:"도구",        href:"#tools",                 appOnly:true },
 ];
 const tileGrid = () => `<div class="ph-grid">${HOME_TILES
   .filter(t => t.href !== "../index.html?view=report" || diag?.scores)
@@ -480,8 +570,8 @@ function renderHome(){
   // 프리즘·미션·진행도가 뜬다. 이 화면의 할 일은 하나뿐이다 — 갈 곳 정하기.
   if (!diag.want) return renderNoWant();
   track("hub_shown", {diagnosed:true});
-  autoIssue();                 // 홈은 오늘의 미션을 **정해준다** — 고르라고 되묻지 않는다
   const a = st.active;
+  const ho = homeOffer();      // 진행 중인 게 없으면 고를 목록을 편다 (대표 확정 2026-08-24)
   // ── 프리즘 홈 상단 (시안 Home.dc.html = 스펙) ──────────────────────
   const N = DICT?.type_names ?? {};
   const wName = esc(N[diag.want] ?? diag.want), hName = esc(N[diag.have] ?? diag.have);
@@ -554,8 +644,18 @@ function renderHome(){
       <div class="btm-quiet">
         <button class="btn quiet" id="laterBtn">내일 할게요</button><i>·</i>
         <button class="btn quiet" id="drop">다른 미션으로</button></div></div>`;
+  } else if (ho) {
+    // 고를 목록. 위 세 칸만 편다 — 나머지는 「더 보기」가 받는다.
+    // [게이트 통과 2026-08-25] 제목은 명사, 안내는 두 문장(~이에요 / ~주세요).
+    // 카드 제목이 전부 명사라 이 줄만 어미를 갖는다 — 목록 위에 문장을 겹쳐 쌓지 않는다.
+    const more = ho.r.cells.length - ho.picks.length;
+    today = `<div class="ph-glass ph-hero snap home-hero home-picks">${gumiEl}
+      <div class="ph-title">오늘 해볼 것</div>
+      <div class="ph-whytxt">${wName} 쪽으로 움직이는 미션이에요. 하나만 골라주세요.</div>
+      ${ho.picks.map(questBtn).join("")}
+      ${more > 0 ? `<div class="btm-quiet"><button class="btn quiet" id="toList">${more}개 더 보기</button></div>` : ``}</div>`;
   } else {
-    // autoIssue가 낼 것을 못 찾았을 때만 여기 온다 — 스킵으로 후보를 다 비웠거나 사전이 비었다.
+    // 낼 것을 못 찾았을 때만 여기 온다 — 스킵으로 후보를 다 비웠거나 사전이 비었다.
     today = `<div class="ph-glass ph-hero snap home-hero">${gumiEl}
       <div class="ph-title">지금 드릴 미션이<br>남아 있지 않아요</div>
       <div class="ph-whytxt">${wName} 쪽 미션을 다 보셨네요. 목록에서 지나친 것을 다시 볼 수 있어요.</div>
@@ -581,6 +681,9 @@ function renderHome(){
   });
 
   $("toList")?.addEventListener("click", renderList);
+  // 홈에 편 목록에서 바로 고른다 — 고르는 화면을 한 번 더 거치지 않는다
+  if (ho) app.querySelectorAll(".home-picks .q").forEach(b =>
+    b.onclick = () => pickQuest(b.dataset.id, ho.offerId, +b.dataset.i, "home"));
   $("laterBtn")?.addEventListener("click", () => {
     track("onestep_later", {quest_id: a?.id});
     const b=$("laterBtn"); b.textContent="내일 할게요 ✓"; b.disabled=true; b.style.opacity=".55";
@@ -652,32 +755,117 @@ function renderTools(){
 const offerNow = () => issueOffer(DICT, diag.gap_axis, {
   excluded: [...new Set([...st.skipped, ...STATS.map(s => s.ref)])],
   sameType: diag.want === diag.have,
+  // 사전이 82칸 늘면서 목표 타입 필터가 필수가 됐다(미션사전 v2 §5).
+  // 이게 없으면 우아한을 목표로 한 유저에게 카리스마 칸이 통째로 보인다.
+  wantType: diag.want,
+  // 이미 채운 자리의 미션은 내지 않는다 — 가진 걸 또 사라고 하지 않기 위해서다(v2.1 §5-4).
+  // 자리 = 슬롯 × 그때의 대상 타입. 그래서 추구미가 바뀌면 그 타입 칸이 다시 열린다.
+  // 미션 밖에서 그냥 담은 것은 대상 타입이 없어 지금 추구미로 본다 — 담은 시점의 목표가
+  // 대개 그것이고, 틀려도 미션이 한 번 더 뜨는 정도로 끝난다.
+  filledSlots: [...new Set(STATS.filter(s => s.kind === "item" && !s.removed_at && s.slot)
+                                .map(s => `${s.slot}:${s.gain_type ?? diag.want ?? ""}`))],
 });
 
 function postOffer(r, via){
   const offerId = crypto.randomUUID();
+  // career = 이 발행이 어느 추구미 기준이었나. 타입 필터의 입력값이라 이걸 안 남기면
+  // "타입 칸과 축 칸 중 뭐가 더 완료되는가"를 나중에 못 가른다(미션사전 v2 §6).
   sbPost("quest_offers", {offer_id:offerId, user_id:UID, primary_axis:r.primary_axis,
     gap_value:r.gap_value, candidate_pool:r.candidate_pool, offered_quests:r.offered_quests,
-    randomization_unit:"none", arm:"none"});
-  track("quest_offer_shown", {offer_id:offerId, n:r.offered_quests.length, axis:r.primary_axis, via});
+    career: diag?.want ?? null, randomization_unit:"none", arm:"none"});
+  track("quest_offer_shown", {offer_id:offerId, n:r.offered_quests.length,
+    axis:r.primary_axis, career:diag?.want ?? null, n_pool:r.candidate_pool.length, via});
   return offerId;
 }
 
-/* ① 홈이 오늘의 미션을 정해준다.
-   전에는 "마음 가는 걸 하나만 골라보세요"로 결정을 유저에게 되돌렸다 — 사내 원칙
-   "고객에게 판단을 되묻지 말 것"에 어긋나고, 고르는 화면을 한 번 더 거치게 만들었다.
-   엔진은 이미 1순위를 알고 있다(서열 = 격차 × 조정가능성). 그 1순위를 그대로 세운다.
-   고를 자유는 카드 안 "다른 미션으로"가 그대로 갖고 있다. */
-function autoIssue(){
-  if (!QE || st.active) return;
+/* ① 홈이 미션 목록을 편다 — 하나로 정해주지 않는다.
+   대표 확정 2026-08-24: "미션은 1가지만 제공하는 게 아니라 리스트를 주고 본인이 선택해서
+   진행하는 방식으로 할 것." 직전까지는 엔진 1순위를 자동으로 세웠다(고르는 화면을 한 번 더
+   거치지 않게 하려던 것). 사전이 33칸에서 123칸으로 늘면서 선택지가 생겼고, 대표가 고를
+   권한을 유저에게 두기로 정했다.
+   홈에는 위 HOME_PICKS칸만 편다 — 한 화면에 많이 넣지 않는다(앱은 숏폼). 나머지는 목록에서.
+   발행 행은 후보 집합이 그대로면 다시 심지 않는다. 홈은 자주 다시 그려지는데 그때마다
+   심으면 offer가 부풀어 거부율의 분모가 망가진다(§4-5). */
+const HOME_PICKS = 3;
+
+// 서열 순 그대로 자르면 위 세 칸이 전부 같은 종류가 된다 — 실제로 "옷장에 담아보세요"
+// 세 개가 나란히 섰다(2026-08-24 실기기 확인). 고를 게 있다는 느낌이 안 든다.
+// 종류를 한 바퀴 돌며 뽑아 섞는다. 각 종류 안의 서열은 그대로다.
+function spread(cells, n){
+  const byKind = {};
+  for (const c of cells) (byKind[c.kind] ??= []).push(c);
+  const queues = Object.values(byKind), out = [];
+  for (let i = 0; out.length < n && queues.some(q => q.length); i++)
+    for (const q of queues) { if (out.length >= n) break; if (q.length) out.push(q.shift()); }
+  return out;
+}
+
+// 보이는 칸 안에 지출 0이 과반은 되게 한다(이론 v2.1 §7-7 ②). 큐 전체의 62%가 무료여도
+// 눈앞의 세 칸이 전부 유료면 그 유저에게는 선택지가 없다.
+// 순서는 건드리지 않는다 — 무료를 위로 올리면 "싼 것부터"라는 서열을 우리가 새로 만드는 것이고,
+// 유료를 위로 올리면 그건 다크패턴이다. 구성비만 보장하고 순서는 서열이 정한다.
+function ensureFree(picks, all, n){
+  const free = c => FREE_COST.has(c.cost);
+  let need = Math.ceil(n / 2) - picks.filter(free).length;
+  if (need <= 0) return picks;
+  const spare = all.filter(c => free(c) && !picks.includes(c));
+  const out = [...picks];
+  for (let i = out.length - 1; i >= 0 && need > 0 && spare.length; i--)
+    if (!free(out[i])) { out[i] = spare.shift(); need--; }
+  return out.sort((a, b) => all.indexOf(a) - all.indexOf(b));
+}
+
+function homeOffer(){
+  if (!QE || st.active) return null;
   const r = offerNow();
-  const c = r.cells[0];
-  if (!c) return;                        // 낼 것이 없으면 지어내지 않는다 — 빈 상태 카드가 받는다
-  const offerId = postOffer(r, "auto");
-  track("quest_selected", {offer_id:offerId, quest_id:c.id, position:0, via:"auto"});
-  // ★ 대상 타입은 지금 굳힌다(§1-2). 나중에 추구미가 바뀌어도 이 걸음의 가산은 안 움직인다.
-  st.active = {id:c.id, offer_id:offerId, started:new Date().toISOString(),
-               before: photo || null, target_type: CZMStats.targetType(USER(), c)};
+  if (!r.cells.length) return null;       // 낼 것이 없으면 지어내지 않는다 — 빈 상태 카드가 받는다
+  const key = r.offered_quests.join(",");
+  if (st.homeOffer?.key !== key) st.homeOffer = {key, id: postOffer(r, "home")};
+  return {r, offerId: st.homeOffer.id,
+          picks: ensureFree(spread(r.cells, HOME_PICKS), r.cells, HOME_PICKS)};
+}
+
+// 비용 표시는 한 곳에서만 만든다 — 목록과 홈 두 군데에 흩어져 있으면 등급이 늘 때 한쪽만 고쳐진다.
+// 등급이 넷이 된 이유(이론 v2.1 §1): "살 게 있어요" 하나로 립과 코트를 묶으면 탭하기 전에
+// 각오할 규모를 모른다. 사전 고지가 안 되는 것 자체가 다크패턴이다.
+// 유료 쪽에 권유·설득어("투자", "가치 있는")를 붙이지 않는다 — 대표가 허용한 것은
+// 목록에 올리는 것이지 유료를 더 좋아 보이게 꾸미는 것이 아니다(이론 금지선).
+// [게이트 통과 2026-08-25] 넷 다 "무엇을 치르나"만 말한다. 좋다·아깝지 않다 류는 없다.
+// mid의 옛 문안("새로 갖추는 미션이에요")은 규모를 안 알려줘서 low와 구별이 안 됐다 —
+// 사전 고지가 안 되는 것 자체가 다크패턴이라는 게 이 등급이 넷인 이유다.
+const COST_TAG = {
+  free: ["free", "돈 안 들어요"],
+  time: ["free", "연습만 하면 돼요"],
+  low:  ["", "소모품 하나 사요"],
+  mid:  ["", "옷이나 시술 한 번이에요"],
+};
+const FREE_COST = new Set(["free", "time"]);
+const costTag = c => {
+  // 모르는 등급은 유료 쪽으로 떨어뜨린다. 돈이 들 수도 있는 걸 "돈 안 들어요"라고
+  // 적는 것이 그 반대보다 훨씬 나쁘다.
+  const [cls, txt] = COST_TAG[c.cost] ?? COST_TAG.mid;
+  return `<span class="tag ${cls}">${txt}</span>`;
+};
+
+// 미션 한 칸을 목록용 버튼으로. 홈과 목록이 같은 모양을 쓴다.
+const questBtn = (c, i) => `<button class="q" data-id="${c.id}" data-i="${i}">
+    <div class="t">${esc(c.copy)}</div>
+    <div class="m">
+      ${CZMStats.previewGain(c) ? `<span class="tag">${esc(tName(CZMStats.targetType(USER(), c)))} +${CZMStats.previewGain(c)}</span>` : ``}
+      ${costTag(c)}
+      ${c.grade === "scale" ? `<span class="tag">확인은 대략까지만</span>` : ``}
+      ${c.countable === false ? `<span class="tag">사진 확인은 준비 중</span>` : ``}
+    </div></button>`;
+
+// 고른 순간 걸음이 시작된다. 대상 타입은 여기서 굳는다(§1-2) —
+// 나중에 추구미가 바뀌어도 이 걸음의 가산은 안 움직인다.
+function pickQuest(id, offerId, position, via){
+  track("quest_selected", {offer_id:offerId, quest_id:id, position, via});
+  st.active = {id, offer_id:offerId, started:new Date().toISOString(),
+               before: photo || null,
+               target_type: CZMStats.targetType(USER(), cell(id))};
+  st.homeOffer = null;                    // 다음에 다시 펼 때는 새 집합이다
+  renderHome();
 }
 
 function renderList(){
@@ -710,14 +898,7 @@ function renderList(){
   }
   const offerId = postOffer(r, "list");
 
-  const cards = r.cells.map((c,i) => `<button class="q" data-id="${c.id}" data-i="${i}">
-      <div class="t">${esc(c.copy)}</div>
-      <div class="m">
-        ${CZMStats.previewGain(c) ? `<span class="tag">${esc(tName(CZMStats.targetType(USER(), c)))} +${CZMStats.previewGain(c)}</span>` : ``}
-        <span class="tag ${c.cost === "free" ? "free" : ""}">${c.cost === "free" ? "돈 안 들어요" : "살 게 있어요"}</span>
-        ${c.grade === "scale" ? `<span class="tag">확인이 아직 정밀하지 않아요</span>` : ``}
-        ${c.countable === false ? `<span class="tag">사진 확인은 준비 중이에요</span>` : ``}
-      </div></button>`).join("");
+  const cards = r.cells.map(questBtn).join("");
 
   // 목록이 짧은 것은 사전 공백의 정직한 표시다 — 채우려고 없는 걸음을 지어내지 않는다(§4-4)
   app.innerHTML = shell({
@@ -728,14 +909,8 @@ function renderList(){
           <i>·</i><button class="btn quiet" id="back">홈으로</button></div>`,
   });
 
-  app.querySelectorAll(".q").forEach(b => b.onclick = () => {
-    const id = b.dataset.id;
-    track("quest_selected", {offer_id:offerId, quest_id:id, position:+b.dataset.i});
-    st.active = {id, offer_id:offerId, started:new Date().toISOString(),
-                 before: photo || null,    // 판정용 기준선을 걸음 시작 시점에 고정한다
-                 target_type: CZMStats.targetType(USER(), cell(id))};   // 대상 타입도 여기서 굳는다(§1-2)
-    renderHome();
-  });
+  app.querySelectorAll(".q").forEach(b =>
+    b.onclick = () => pickQuest(b.dataset.id, offerId, +b.dataset.i, "list"));
   $("reroll").onclick = () => {
     // 사유를 묻지 않는다 — 사유 선택지는 우리가 만든 범주라 그 자체가 창작이다(§4-3)
     track("quest_rerolled", {offer_id:offerId});
@@ -804,8 +979,21 @@ async function renderOutfit(first = true){
   const pal = await palette();
   const items = closet(pal);
   const N = {...CZM.TYPE_NAMES, ...(DICT?.type_names ?? {})};
-  const goal = OUT?.goal ?? diag?.want ?? CZM.TYPE_KEYS[0];
-  if (first) { OUT = {goal, swap:{}}; track("outfit_open", {owned_n: items.length, has_goal: !!diag?.want}); }
+  // 오늘 이미 정해둔 조합이 있으면 그걸 되불러온다. 아침에 고른 차림이 새로고침 한 번에
+  // 사라지면 저녁 재촬영 때 "그날 뭘 입었는지"가 없어 검증 근거가 끊긴다.
+  const saved = LS.get(K.outfitToday, null);
+  const today = saved?.date === kstDate() ? saved : null;
+  const goal = OUT?.goal ?? today?.goal ?? diag?.want ?? CZM.TYPE_KEYS[0];
+  if (first) {
+    // 되불러온 조합은 '교체'와 같은 자리에 앉힌다 — 추천을 덮어쓰는 방식이 이미 그것이다.
+    // 지금 옷장에 없는 것(버린 옷)은 되살리지 않는다: 없는 옷을 입으라고 할 수는 없다.
+    const swap = {};
+    for (const [slot, id] of Object.entries(today?.items ?? {}))
+      if (items.some(x => x.id === id && x.slot === slot)) swap[slot] = id;
+    OUT = {goal, swap};
+    track("outfit_open", {owned_n: items.length, has_goal: !!diag?.want,
+                          restored: Object.keys(swap).length});
+  }
 
   // 좌측 첫 칸은 늘 내 추구미(설계도 T-H). 상황 칩(면접·소개팅)은 별칭→타입 매핑이
   // 아직 이론 확정 전이라 넣지 않는다 — 없는 매핑의 버튼을 만들지 않는다.
@@ -837,7 +1025,7 @@ async function renderOutfit(first = true){
     track("outfit_empty", {owned_n:items.length, missing_slots:r.empty});
     body = `<div class="card ph-glass">
       <p class="lead">${esc(N[goal] ?? goal)} 쪽으로 담긴 게 아직 없어요.</p>
-      <p class="note">위에서 다른 무드를 눌러보셔도 되고, 지금 입은 것을 담아두시면 내일 아침이 편해집니다.</p></div>`;
+      <p class="note">위에서 다른 타입을 눌러보셔도 돼요. 지금 입은 걸 담아두면 내일 아침이 편해집니다.</p></div>`;
     btm = `<button class="btn" id="add">옷장에 담기</button>`;
   } else {
     // 슬롯 교체로 다시 그릴 때마다 세면 퍼널 분모가 부푼다 — 목표당 한 번만 센다
@@ -869,14 +1057,16 @@ async function renderOutfit(first = true){
            <button class="btn quiet" id="add">옷장에 담기</button>`;
   }
 
-  // 무드 칩은 제목 자리에 붙인다 — 본문(.screen-body)은 내용을 세로 중앙에 모으므로
+  // 타입 칩은 제목 자리에 붙인다 — 본문(.screen-body)은 내용을 세로 중앙에 모으므로
   // 거기 두면 칩 줄이 화면 한가운데로 내려간다. 상단 고정이 설계도 T-H의 자리이기도 하다.
-  app.innerHTML = shell({ top: head("오늘 뭐 입지") + chips, body, btm });
+  // 제목은 「오늘 뭐 입지」에서 바꿨다(헌법 §6-6): 반말 혼잣말이라 본문 존댓말과 화자가 갈렸다.
+  // '차림'(후보) → '착용'(확정)으로 다음 화면과 단계가 갈린다.
+  app.innerHTML = shell({ top: head("오늘의 차림") + chips, body, btm });
 
   app.querySelectorAll("[data-t]").forEach(b => b.onclick = () => {
     if (b.dataset.t === OUT.goal) return;
     track("outfit_goal_selected", {type:b.dataset.t, prev_type:OUT.goal});
-    OUT = {goal:b.dataset.t, swap:{}};   // 무드가 바뀌면 교체 이력도 같이 지운다
+    OUT = {goal:b.dataset.t, swap:{}};   // 타입이 바뀌면 교체 이력도 같이 지운다
     renderOutfit(false);                 // 같은 화면에서 갱신 — 화면 전환 없음
   });
   app.querySelectorAll("[data-swap]").forEach(b => b.onclick = () => {
@@ -894,22 +1084,55 @@ async function renderOutfit(first = true){
                       .filter(s => chosen[s] !== rec[s]);
     await sbPost("daily_outfits", {user_id:UID, wear_date:kstDate(), goal_type:goal,
       items:chosen, recommended:rec, rec_version:CZMStats.version, source:"app"});
+    // 기기에도 남긴다 — 서버 행은 읽는 코드가 없어서 새로고침 한 번에 조합이 사라졌다.
+    LS.set(K.outfitToday, {date:kstDate(), goal, items:chosen});
     track("outfit_confirmed", {changed_slots:changed, n:filled.length, rec_version:CZMStats.version});
     app.innerHTML = shell({
       top: head("오늘의 착용"),
       body: `<div class="ph-glass ph-hero snap">${GUMI}
         <div class="ph-title">오늘은 이걸로</div>
         <div class="ph-whytxt">저녁에 거울 볼 때 어, 좀 다른데? 싶으면 성공입니다.</div></div>`,
-      btm: `<button class="btn" id="back">홈으로</button>`,
+      // 착장이 측정에 들어오려면 그 차림으로 찍어야 한다(이론 §5-4). 그 동선이 화면에 없어서
+      // 시뮬레이션이 실측으로 올라갈 길이 끊겨 있었다. 여기 한 줄이면 이어진다.
+      btm: `<a class="btn" href="../photo.html?flow=verify" style="display:flex;align-items:center;justify-content:center;text-decoration:none">이 차림으로 찍어두기</a>
+            <button class="btn quiet" id="back">나중에</button>`,
     });
     $("back").onclick = () => nav("home");
   });
 }
 
-// R4 옷장(인벤토리). 담아둔 것을 볼 데가 없으면 담을 이유도 없어진다.
+/* 「가진 것」 탭 — 옷장과 파우치.
+   창고는 하나다(stat_entries). 화면만 둘로 나눈다 — 슬롯이 이미 축이라 필터 한 줄이면 된다.
+   파우치용 테이블을 따로 만들면 "옷장엔 있는데 파우치엔 없는 아이템"이 바로 생기고,
+   오늘의 착용이 9슬롯을 한 번에 조합하는데 창고가 둘이면 조합할 때마다 합치는 일부터 해야 한다. */
+/* 사진에서 뽑은 색을 팔레트의 가장 가까운 칸으로 붙인다.
+   이론이 아는 색은 그 104칸이라, 여기서 새 색을 만들면 태그 매핑이 닿지 않는다.
+   거리는 Lab이 정확하지만 여기 변환을 새로 짜지 않는다 — 스와치를 고르는 데는 RGB로 충분하고,
+   틀려도 유저가 바로 옆 칸을 눌러 고친다. 정밀한 색 판정은 cloth-check(ΔE)의 일이다. */
+function nearestSwatch(hex, pal){
+  const p = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
+  const c = safeHex(hex) && p(hex);
+  if (!c) return null;
+  let best = null, min = Infinity;
+  for (const r of pal){
+    if (!safeHex(r.hex)) continue;
+    const q = p(r.hex);
+    const d = (c[0]-q[0])**2 + (c[1]-q[1])**2 + (c[2]-q[2])**2;
+    if (d < min) { min = d; best = r.hex; }
+  }
+  return best;
+}
+
+const POUCH_SLOTS = ["hair", "makeup_base", "lip"];
+const isPouch = sl => POUCH_SLOTS.includes(sl);
+let closetTab = "closet";      // closet | pouch — 페이지 수명 동안만 기억한다
+
 async function renderCloset(){
   const pal = await palette();
-  const items = STATS.filter(s => s.kind === "item" && !s.removed_at);   // 버린 옷은 오늘 후보에서만 빠진다(가산은 남는다)
+  const all = STATS.filter(s => s.kind === "item" && !s.removed_at);   // 버린 옷은 오늘 후보에서만 빠진다(가산은 남는다)
+  const mine = closetTab === "pouch";
+  const items = all.filter(i => isPouch(i.slot) === mine);
+  const slotsHere = SLOTS.filter(s => isPouch(s) === mine);
   // 슬롯 순서는 산식 9종 순서를 따르고, 그 밖의 값(옛 한글 슬롯 행)은 뒤에 그대로 붙인다
   const order = [...new Set(items.map(i => i.slot))]
     .sort((a, b) => (SLOTS.indexOf(a) + 1 || 99) - (SLOTS.indexOf(b) + 1 || 99));
@@ -921,19 +1144,49 @@ async function renderCloset(){
       <button class="btn quiet" style="margin:0;flex:none" data-del="${esc(i.id ?? "")}">버리기</button></div>`).join("")
   ).join("") + `</div>`;
 
+  // 빈 자리를 보여준다. 이론 §6-2가 empty를 이미 산출하는데 화면이 안 쓰고 있었다.
+  // 이게 있어야 커머스 자리가 광고가 아니라 **기능의 결과**로 생긴다.
+  // 빈 자리는 조합의 재료다 — "사라"가 아니라 "이만큼 더 조합된다"로만 말한다.
+  const empty = slotsHere.filter(s => !items.some(i => i.slot === s));
+  const emptyCard = empty.length ? `<div class="card" style="margin-top:16px">
+      <p class="note" style="margin:0 0 8px">아직 비어 있는 자리</p>
+      <div class="chips">${empty.map(s =>
+        `<button class="chip" data-empty="${s}">${SLOT_LABEL[s]}</button>`).join("")}</div>
+      <p class="note" style="margin-top:10px;opacity:.75">${
+        empty.length === slotsHere.length
+          ? "자리를 누르면 바로 담을 수 있어요."
+          : `${empty.length}자리가 채워지면 만들 수 있는 조합이 늘어납니다.`}</p>
+    </div>` : ``;
+
+  const tabs = `<div class="chips" style="margin-bottom:4px">
+      <button class="chip${mine ? "" : " on"}" data-ct="closet">옷장 ${all.filter(i => !isPouch(i.slot)).length}</button>
+      <button class="chip${mine ? " on" : ""}" data-ct="pouch">파우치 ${all.filter(i => isPouch(i.slot)).length}</button>
+    </div>`;
+
   app.innerHTML = shell({
-    top: head("옷장", items.length ? `${items.length}개` : ""),
-    body: items.length ? groups : `<div class="card ph-glass">
-      <p class="lead">아직 담긴 게 없어요.</p>
-      <p class="note">오늘 입은 것 한 벌부터 담아두면, 내일 아침에 골라드릴 수 있어요.</p></div>`,
-    btm: `<button class="btn" id="add">옷장에 담기</button>
-          <button class="btn quiet" id="back">기록으로</button>`,
+    top: head("가진 것", all.length ? `${all.length}개` : ""),
+    body: tabs + (items.length ? groups : `<div class="card ph-glass">
+      <p class="lead">${mine ? "파우치에 담긴 게 아직 없어요." : "옷장에 담긴 게 아직 없어요."}</p>
+      <p class="note">${mine
+        ? "자주 쓰는 립이나 쿠션 하나만 있어도 그날 차림에 맞춰 같이 골라드려요."
+        : "오늘 입은 것 한 벌만 담아도 내일 아침 추천이 나옵니다."}</p></div>`) + emptyCard,
+    btm: `<button class="btn" id="add">담기</button>
+          <button class="btn quiet" id="back">오늘로</button>`,
+  });
+  app.querySelectorAll("[data-ct]").forEach(b => b.onclick = () => {
+    closetTab = b.dataset.ct; track("closet_tab", {tab:closetTab}); renderCloset();
+  });
+  // 빈 자리를 누르면 그 슬롯이 이미 골라진 채로 등록으로 간다 — 고르는 수고를 한 번 던다
+  app.querySelectorAll("[data-empty]").forEach(b => b.onclick = () => {
+    track("empty_slot_tapped", {slot:b.dataset.empty});
+    renderAddItem({back:renderCloset, slot:b.dataset.empty});
   });
   $("add").onclick = () => renderAddItem({back:renderCloset});
-  $("back").onclick = () => nav("record");
+  $("back").onclick = () => nav("home");
   app.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
     const id = b.dataset.del;
-    if (!id || !confirm("옷장에서 뺄까요? 지금까지 쌓인 건 그대로 남아요.")) return;
+    // 파우치 탭에서도 뜨는 문구라 '옷장'으로 못 박지 않는다
+    if (!id || !confirm("여기서 뺄까요? 지금까지 쌓인 건 그대로 남아요.")) return;
     if (!LOCAL && removeStat) await removeStat(id);
     st.drop(id);
     track("item_removed", {id});
@@ -947,7 +1200,7 @@ async function renderCloset(){
    opts.quest가 있으면 미션의 '담기' 흐름이다(완료 처리까지 이어진다). */
 function renderAddItem(opts = {}){
   const q = opts.quest ?? null;
-  let slot = q?.slot ?? null, color = null;
+  let slot = q?.slot ?? opts.slot ?? null, color = null;
   (async () => {
     const pal = await palette();
     app.innerHTML = shell({
@@ -958,13 +1211,49 @@ function renderAddItem(opts = {}){
         <p class="note" style="margin-top:14px">어느 부위예요?</p>
         <div class="chips">${SLOTS.map(s =>
           `<button class="chip${s === slot ? " on" : ""}" data-s="${s}">${SLOT_LABEL[s]}</button>`).join("")}</div>
-        <p class="note" style="margin-top:14px">색은 어느 쪽에 가까워요? <span style="opacity:.7">(건너뛰어도 담겨요)</span></p>
+        <!-- 앞줄이 "어느 부위예요?"라 여기도 물으면 질문이 두 줄 이어진다(헌법 §6-1).
+             색이 없으면 tag_power가 0이라 추천에 영영 안 나오는데, 그 이유를 아무 데서도 안 말하고 있었다. -->
+        <p class="note" style="margin-top:14px">색까지 잡으면 아침 추천에 올라와요. <span style="opacity:.7">(건너뛰어도 담겨요)</span></p>
+        <label class="btn quiet" for="shot" style="margin:0 0 10px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer">
+          사진으로 색 잡기</label>
+        <input type="file" id="shot" accept="image/*" capture="environment" style="display:none">
+        <p class="note" id="shotMsg" style="display:none;margin:-4px 0 10px"></p>
         <div class="sw">${pal.map(r =>
           `<button class="swatch" data-c="${r.hex}" style="background:${r.hex}" aria-label="${r.hex}"></button>`).join("")}</div>
         </div>`,
       btm: `<button class="btn" id="save"${slot ? "" : " disabled"}>담기</button>
             <button class="btn quiet" id="back">나중에</button>`,
     });
+
+    /* 사진 한 장으로 색을 잡는다.
+       104색 스와치에서 손으로 고르게 두면 대개 건너뛰고, 색이 없는 아이템은 tag_power가 0이라
+       추천에 영원히 안 나온다 — 옷장에는 보이는데 추천에는 없는 상태가 조용히 쌓인다.
+       판정 코드는 이미 있었다(cloth-check의 최빈색 추출). 그걸 파일로 빼서 여기 붙였다.
+       ⚠ 사진은 저장하지 않는다. 브라우저 안에서 색만 뽑고 버린다 — 파일도, 데이터URL도 안 남긴다. */
+    const msg = t => { const el = $("shotMsg"); el.style.display = "block"; el.textContent = t; };
+    $("shot").onchange = async e => {
+      const f = e.target.files?.[0];
+      e.target.value = "";                       // 같은 파일을 다시 골라도 이벤트가 오게 비운다
+      if (!f) return;
+      msg("색을 보는 중…");
+      try {
+        const DC = await mod("./dominant-color.js", "색 추출");
+        const got = DC && await DC.colorOfFile(f);
+        if (!got) return msg("이 사진에서는 색이 잘 안 잡혀요. 아래에서 골라주세요.");
+        // 팔레트에 있는 가장 가까운 칸으로 붙인다 — 이론이 아는 색은 그 104칸이고,
+        // 여기서 새 색을 만들면 태그 매핑이 닿지 않는다.
+        const near = nearestSwatch(got.hex, pal);
+        color = near ?? got.hex;
+        app.querySelectorAll("[data-c]").forEach(x => x.classList.toggle("on", x.dataset.c === color));
+        const sw = app.querySelector(`[data-c="${color}"]`);
+        sw?.scrollIntoView({block:"nearest", behavior:"smooth"});
+        msg("이 색으로 잡았어요. 다르면 아래에서 바꿔주세요.");
+        track("item_color_from_photo", {slot, share: Math.round((got.share ?? 0) * 100) / 100});
+      } catch (err) {
+        console.warn("사진 색 추출 실패", err);
+        msg("사진을 읽지 못했어요. 아래에서 골라주세요.");
+      }
+    };
     // 다시 그리지 않는다 — 색을 고르려고 한참 내려온 화면이 맨 위로 튀어오르면 그게 이탈이다
     app.querySelectorAll("[data-s]").forEach(b => b.onclick = () => {
       slot = b.dataset.s;
@@ -993,7 +1282,8 @@ function renderAddItem(opts = {}){
       track("stat_added", {kind:"item", ref, source_kind:"self_report", ...(g ?? {})});
       track("quest_completed", {offer_id:q.offer_id, quest_id:q.id, kind:"item",
                                 field:null, sign_match:null, countable:true});
-      renderDone("담았어요", "옷장에 담겼어요.", g, "담아둔 건 그대로 남습니다.");
+      // 제목과 같은 말을 본문에 다시 쓰지 않는다. 파우치 아이템도 지나는 자리라 '옷장'은 뺐다.
+      renderDone("담았어요", "이제 아침에 고를 때 같이 나와요.", g, "담아둔 건 그대로 남습니다.");
     };
   })();
 }
@@ -1120,7 +1410,10 @@ function tryJudge(){
   // 판정되므로 한 행으로 준다. 부호가 틀려도 +1은 남는다: 시도는 실제로 일어났고 강등은 없다.
   const g = gainFor(c, {photo_submitted:true, verdict:v.verdict}, a.target_type);
   if (g) {
-    st.add({kind:"skill", ref:c.id, slot:null, at:new Date().toISOString(), ...g});
+    // attrs를 기기 사본에도 넣는다. 서버 행에만 실으면 로그인 안 한 유저에게는
+    // 실측 변화량이 아예 존재하지 않아 이력 화면이 "얼마나 움직였나"를 말할 수 없다.
+    st.add({kind:"skill", ref:c.id, slot:null, at:new Date().toISOString(),
+            attrs:{field:v.field, delta:v.delta}, ...g});
     sbPost("stat_entries", {user_id:UID, kind:"skill", ref:c.id,
                             source_kind:"auto_detect", attrs:{field:v.field, delta:v.delta}, ...g});
     track("stat_added", {kind:"skill", ref:c.id, source_kind:"auto_detect", ...g});
@@ -1141,33 +1434,9 @@ function tryJudge(){
 // 종류(미션/알아본 것)는 행에서 뺐다: 위 3칸이 이미 종류별 개수를 말한다.
 // ponytail: 최근 3건만. 카피가 두 줄로 넘어가는 미션이 섞이면 4건에서 화면이 넘친다.
 //           전체 이력이 필요해지면(누적 10건 넘는 유저가 생기면) '기록 전체' 화면을 따로 낸다.
-const RECORD_MAX = 3;
-function renderRecord(){
-  const day = t => { const d = new Date(t); return `${d.getMonth()+1}.${d.getDate()}`; };
-  const line = s => s.kind === "knowledge" && s.ref === "diagnosis"
-    ? "내 추구미와 지금 매력을 확인했어요" : (cell(s.ref)?.copy ?? s.ref);
-  const done = STATS.filter(s => s.kind !== "item")
-                    .slice().sort((a,b) => (b.at ?? "").localeCompare(a.at ?? ""));
-  const rows = done.slice(0, RECORD_MAX).map(s =>
-    `<div class="q" style="display:flex;gap:10px;align-items:baseline;padding:12px var(--sp-4);margin-bottom:7px">
-       <span class="t" style="flex:1;font-size:14.5px">${esc(line(s))}</span>
-       <span class="m" style="margin:0;flex:none">${s.at ? day(s.at) : ""}</span></div>`).join("");
-  const rest = done.length - RECORD_MAX;
-
-  app.innerHTML = shell({
-    top: head("기록 · 옷장"),
-    body: `<div class="card ph-glass"><h2>쌓인 것</h2>${statsRow()}
-        ${STATS.length === 0 ? `<p class="note">첫 미션을 마치면 여기부터 채워집니다.</p>` : ``}</div>`
-      // 옷장은 목록이 아니라 화면이 됐다(슬롯별 정렬·담기·버리기) — 같은 것을 두 군데 그리지 않는다
-      + `<button class="q" id="toCloset"><div class="t">옷장 열기</div>
-         <div class="m">${nItems() ? `담아둔 ${nItems()}개` : "아직 담긴 게 없어요"}</div></button>`
-      + (done.length ? `<div><h2 style="font-size:12px;color:var(--accent);font-weight:700;margin:0 0 8px;letter-spacing:.02em">해낸 것</h2>${rows}
-          ${rest > 0 ? `<p class="note">그 밖에 ${rest}개 더 있어요.</p>` : ``}</div>` : ``),
-    btm: `<button class="btn ghost app-only-hide" id="back">홈으로</button>`,
-  });
-  $("toCloset").onclick = () => nav("closet");
-  $("back").onclick = () => nav("home");
-}
+// 「한 것」 탭은 modules/history.js가 그린다. 여기 있던 renderRecord()는
+// 최근 3건만 보여주는 허브였는데, 옷장이 별도 탭이 되고 이력 전체 화면이 생기면서
+// 두 역할이 다 옮겨갔다. 같은 것을 두 군데 그리지 않는다(2026-08-25 탭 재정렬).
 
 // 고객팀 TestFlight 게이트 ⑧. 자유입력만 받는다 —
 // 선택지를 주면 우리가 만든 범주 안에서만 말하게 되고, 그건 유저의 말이 아니다.
@@ -1234,8 +1503,24 @@ const GATED = !LOCAL || new URLSearchParams(location.search).has("login");
 
 // 해시 라우트 — 앱 하단 탭바와 웹의 칩 줄이 같은 주소를 쓴다.
 // 탭바는 app-tabbar.js(앱 전용)가 그리고, 여기서는 주소만 받아준다.
-const VIEWS = {home:renderHome, record:renderRecord, tools:renderTools,
-               outfit:() => renderOutfit(true), closet:renderCloset};
+/* 화면 모듈에 넘기는 꾸러미. 모듈이 home.html의 전역을 직접 뒤지지 않게 여기서 한 번에 준다.
+   STATS는 미션을 해낼 때마다 갈리므로 getter로 넘긴다 — 값으로 넘기면 모듈이 옛 배열을 붙든다. */
+const CTX = {
+  // nav는 아래 VIEWS를 참조해서 이 줄보다 뒤에 선다 — 값으로 담으면 초기화 전 접근이 된다.
+  // 감싸서 넘긴다: 모듈이 실제로 부르는 시점엔 이미 정의돼 있다.
+  nav: (...a) => nav(...a),
+  app, shell, head, esc, track, LS, K, DICT, CZMStats, TCOLOR,
+  diag, photo, tName, cell, statNow, USER, statsRow, downBanner,
+  get STATS(){ return STATS; },
+  loadScan: () => LS.get(K.scan, null),
+};
+
+const VIEWS = {home:renderHome, tools:renderTools,
+               outfit:() => renderOutfit(true), closet:renderCloset,
+               // 모듈이 못 뜨면 홈으로 돌린다 — 빈 화면을 보여주느니 갈 데가 있는 편이 낫다
+               me:      () => SHEET?.renderSheet   ? SHEET.renderSheet(CTX)   : renderHome(),
+               record:  () => HIST?.renderHistory  ? HIST.renderHistory(CTX)  : renderHome(),
+               history: () => HIST?.renderHistory  ? HIST.renderHistory(CTX)  : renderHome()};
 // 같은 해시로는 hashchange가 오지 않는다 — 주소만 조용히 맞추고 화면은 직접 그린다
 const nav = name => { history.replaceState(null, "", `#${name}`); (VIEWS[name] ?? renderHome)(); };
 addEventListener("hashchange", () => {
@@ -1260,6 +1545,8 @@ if (returned?.error) {
     <p class="lead">로그인이 끝까지 가지 못했어요.</p>
     <p class="note">${esc(returned.error)}</p></div>`,
     btm: `<button class="btn" onclick="location.href=location.pathname">다시 해보기</button>` });
+} else if (returned?.type === "recovery") {
+  renderNewPassword();          // 재설정 링크로 돌아왔다. 홈으로 흘려보내지 않는다
 } else {
   if (returned) track("signin_succeeded", {});
   route();

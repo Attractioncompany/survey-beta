@@ -187,6 +187,9 @@ body.czm-app .app-only-hide{display:none!important;}
 .btn.quiet{display:block;background:none;border:0;color:var(--sub);font-size:13px;font-weight:500;
   padding:10px 0;width:auto;margin:6px auto 0;min-height:0;box-shadow:none;}
 .btn.quiet:active{color:var(--ink);filter:none;}
+/* 링크로 만든 버튼 — 밑줄이 그어지고 글자가 왼쪽에 붙는 것을 여기서 한 번만 막는다.
+   지금까지는 화면마다 같은 인라인 style을 손으로 붙여 왔다(home·career·lecture·index 5곳). */
+a.btn{display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;}
 /* 위험한 행동(삭제·해지)에만. 지금 쓰는 화면은 없다 — 생길 때 이 색을 쓴다. */
 .btn.danger{background:var(--danger);box-shadow:none;}
 
@@ -204,6 +207,53 @@ details.fold[open] summary::after{content:"▴";}
    사용: <svg class="ic" viewBox="0 0 24 24"><path d="…"/></svg> */
 .ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;
   stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;flex-shrink:0;}
+
+/* ── 캐릭터 시트 (modules/stat-sheet.js) ────────────────────────
+   index.html에도 같은 이름의 .statsheet 규칙이 인라인으로 있다(결과지 안의 한 절).
+   그쪽은 페이지 로컬이라 이 파일보다 나중에 로드돼 그 화면에서는 그대로 이긴다 —
+   충돌하지 않는다. 결과지가 이 정본을 쓰게 되는 날 인라인 사본을 지운다.
+   숫자 토글(.tnum/.nums)은 여기 없다: 시트는 아래 .tgrid가 숫자를 상시로 보여준다. */
+.statsheet{width:100%;}
+.statsheet svg{display:block;width:100%;height:auto;}
+.statsheet .ring{fill:none;stroke:var(--line);stroke-width:1;}
+.statsheet .ring.base{stroke:#D8CDE0;}
+.statsheet .spoke{stroke:var(--line);stroke-width:1;}
+.statsheet .poly{fill:url(#csFill2);stroke:var(--accent);stroke-width:2;stroke-linejoin:round;}
+/* 성장 전 윤곽 — 어디가 자랐는지는 겹쳐 봐야 보인다 */
+.statsheet .poly-ghost{fill:none;stroke:#C6B6D2;stroke-width:1.4;stroke-dasharray:4 4;stroke-linejoin:round;}
+.statsheet .tlab{font-size:12.5px;font-weight:700;fill:var(--ink);}
+
+/* 타입별 점수 — 두 칸씩 넷. 여덟 줄로 세우면 그것만으로 한 화면을 넘긴다. */
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-2) var(--sp-4);}
+.trow{display:flex;align-items:center;gap:var(--sp-2);font-size:13.5px;min-width:0;}
+.trow i{width:8px;height:8px;border-radius:50%;flex:none;}
+.trow span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--sub);}
+.trow b{font-weight:800;font-variant-numeric:tabular-nums;}
+.trow em{font-style:normal;font-size:11px;font-weight:800;color:var(--ok);}
+
+/* ── 「한 것」 탭 이력 (modules/history.js) ──────────────────────────
+   목록은 화면과 함께 스크롤한다. 대신 **한 줄이 절대 잘리지 않는다** —
+   제목이 두 줄로 늘면 줄이 같이 자라고, 오른쪽 칸(날짜·가산)은 폭이 고정이다.
+   30건에서 시험한 자리다: 줄 높이를 고정하면 긴 미션 카피가 소리 없이 잘렸다. */
+.hist-wk{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.02em;
+  margin:0 0 var(--sp-2);}
+.hist-row{display:flex;gap:var(--sp-3);align-items:baseline;background:var(--card);
+  border:1.5px solid var(--line);border-radius:12px;padding:var(--sp-3) var(--sp-4);}
+.hist-row + .hist-row{margin-top:7px;}
+.hist-row .t{flex:1;min-width:0;font-size:14.5px;line-height:1.45;font-weight:600;}
+.hist-row .r{flex:none;text-align:right;font-size:12px;color:var(--sub);line-height:1.5;}
+.hist-row .r b{display:block;color:var(--accent);font-weight:800;font-size:12.5px;}
+/* 재촬영이 실제로 잰 변화 — 제목 아래 한 줄. 부호가 맞은 건만 .ok로 물든다 */
+.hist-row .t em{display:block;font-style:normal;font-size:12px;font-weight:600;
+  color:var(--sub);margin-top:3px;}
+.hist-row .t em.ok{color:var(--ok);}
+/* 전/후 한 줄 — 카드 안에서 최대 3줄이라 높이가 예측된다 */
+.hist-ba{display:flex;justify-content:space-between;align-items:baseline;padding:var(--sp-2) 0;}
+.hist-ba + .hist-ba{border-top:1px solid var(--line);}
+.hist-ba span{font-size:14px;font-weight:600;color:var(--deep);}
+.hist-ba em{font-style:normal;font-size:13px;color:var(--sub);}
+.hist-ba b{font-size:17px;font-weight:800;color:var(--accent);}
+.card .hist-ba + .stats{margin-top:var(--sp-4);}
 
 /* 움직임을 줄여달라고 설정한 사람에게는 줄인다 */
 @media (prefers-reduced-motion:reduce){

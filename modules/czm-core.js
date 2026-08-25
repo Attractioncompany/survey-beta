@@ -30,6 +30,9 @@
     lastSeen:   "czm_last_seen",
     previewDone:"czm_preview_done",
     introSeen:  "czm_intro_seen",      // 앱 소개 5장(intro.html)을 봤는가 — 완주·건너뛰기 모두 남는다
+    // 오늘 확정한 착용. daily_outfits에도 남지만 그건 읽는 코드가 없어서, 아침에 정한 조합이
+    // 새로고침 한 번에 사라졌다. 기기 사본이 있으면 저녁 재촬영 때 "그날 뭘 입었는지"가 남는다.
+    outfitToday:"czm_outfit_today",
     aimLogs:    "aim_logs"
   };
 

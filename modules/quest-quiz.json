@@ -1,5 +1,5 @@
 {
-  "version": "v1",
+  "version": "v2",
   "status": "hypothesis",
   "issued": "2026-08-17",
   "owner": "theory-keeper",
@@ -9,11 +9,14 @@
     "penalty": "없음. 오답 시 다시 풀 수 있고 실패 횟수를 세지 않는다. 실패 카운터·연속 정답 배지·정답률 노출 전부 금지(죄책감 넛지 금지 · 헌법 §4)",
     "scope": "정답이 이론 문서에 있는 것만 출제(§3-8-1). 이 파일 밖에서 문항을 만들지 않는다",
     "copy_status": "question·choices 전부 [마케팅 검수 전] 초안. 커밋 전 brand/문체가이드 완료 게이트 통과 필요",
-    "psychometrics": "문항은 가설이다(§2-5). qid는 quest_id와 별개로 고정 — 문항을 교체해도 칸의 시계열이 끊기지 않게 하기 위한 것이다. 응답 분포에서 정답률 100% 또는 0%인 문항은 판별력 0으로 교체한다"
+    "psychometrics": "문항은 가설이다(§2-5). qid는 quest_id와 별개로 고정 — 문항을 교체해도 칸의 시계열이 끊기지 않게 하기 위한 것이다. 응답 분포에서 정답률 100% 또는 0%인 문항은 판별력 0으로 교체한다",
+    "topic_type": "타입 주제 문항의 대상 타입. 산식 정본 §3-1 예외 1(지식 퀘스트가 특정 타입 주제면 그 타입) 그대로. ⚠ quest-engine.withKnowledge()가 아직 이 값을 셀로 옮기지 않는다 — 미션사전 v2 §6 차단 diff 참조."
   },
   "items": [
     {
-      "qid": "Q001", "quest_id": "brow.T-", "axis": "T",
+      "qid": "Q001",
+      "quest_id": "brow.T-",
+      "axis": "T",
       "question": "눈썹 산을 둥글게 그리면 인상이 어느 쪽으로 움직일까요?",
       "choices": [
         "따뜻하고 곡선적인 쪽",
@@ -26,7 +29,9 @@
       "source": "이론체계_에셋스코어링_v1 §3-2 (brow_arch_deg 아치 → T −0.4) · 마스터 1-1 웜쿨 축 포괄 범위"
     },
     {
-      "qid": "Q002", "quest_id": "brow.T+", "axis": "T",
+      "qid": "Q002",
+      "quest_id": "brow.T+",
+      "axis": "T",
       "question": "우리가 쓰는 '웜↔쿨' 축은 색만 가리키는 걸까요?",
       "choices": [
         "색상·톤만 가리킨다",
@@ -39,7 +44,9 @@
       "source": "마스터 1-1 「웜쿨 축 포괄 범위 — 2026-08-07 명문화」 · 작업노트 §A1"
     },
     {
-      "qid": "Q003", "quest_id": "brow.M-", "axis": "M",
+      "qid": "Q003",
+      "quest_id": "brow.M-",
+      "axis": "M",
       "question": "눈과 눈썹 사이가 넉넉하면 인상이 어느 쪽으로 읽힐까요?",
       "choices": [
         "어려 보이는 쪽",
@@ -52,7 +59,9 @@
       "source": "이론체계_에셋스코어링_v1 §3-2 (brow_eye_gap pos {T −0.2, M −0.2})"
     },
     {
-      "qid": "Q004", "quest_id": "brow.M+", "axis": "M",
+      "qid": "Q004",
+      "quest_id": "brow.M+",
+      "axis": "M",
       "question": "눈-눈썹 간격에 대해 우리 이론이 지금까지 확인해 둔 것은?",
       "choices": [
         "넓은 쪽만 확인돼 있고, 좁은 쪽은 아직 근거를 두지 않았다",
@@ -65,7 +74,9 @@
       "source": "이론체계_에셋스코어링_v1 §3-2 주석 「넉넉만. 좁음 방향은 마스터 근거 없음」"
     },
     {
-      "qid": "Q005", "quest_id": "color.T-", "axis": "T",
+      "qid": "Q005",
+      "quest_id": "color.T-",
+      "axis": "T",
       "question": "처방 DB에서 봄 라이트의 베스트 컬러로 올라 있는 건?",
       "choices": [
         "코랄핑크·아이보리·피치",
@@ -78,7 +89,9 @@
       "source": "12타입_처방DB_v1.md 표 (원전 추출 · 근거등급 원전 확정)"
     },
     {
-      "qid": "Q006", "quest_id": "color.T+", "axis": "T",
+      "qid": "Q006",
+      "quest_id": "color.T+",
+      "axis": "T",
       "question": "처방 DB에서 여름 뮤트의 베스트 컬러는?",
       "choices": [
         "인디핑크·소라색·그레이",
@@ -91,7 +104,9 @@
       "source": "12타입_처방DB_v1.md 표"
     },
     {
-      "qid": "Q007", "quest_id": "color.D-", "axis": "D",
+      "qid": "Q007",
+      "quest_id": "color.D-",
+      "axis": "D",
       "question": "우리 좌표의 '깊이(D)' 축이 실제로 가리키는 건?",
       "choices": [
         "순함 ↔ 강함 (인상의 세기)",
@@ -104,7 +119,9 @@
       "source": "작업노트 §A1 (마스터 1-7 인상 세기와 r=+0.994) · 오류대장 §049"
     },
     {
-      "qid": "Q008", "quest_id": "color.D+", "axis": "D",
+      "qid": "Q008",
+      "quest_id": "color.D+",
+      "axis": "D",
       "question": "색 신호 중 지금까지 검증으로 확인된 유일한 주축은?",
       "choices": [
         "채도 → 깊이(D)",
@@ -117,7 +134,9 @@
       "source": "이론체계_에셋스코어링_v1 §5-1-2 (chroma 1.0 → D, 유일 검증 주축 r≈0.58)"
     },
     {
-      "qid": "Q009", "quest_id": "lip.T-", "axis": "T",
+      "qid": "Q009",
+      "quest_id": "lip.T-",
+      "axis": "T",
       "question": "입술이 도톰하면 인상이 어느 쪽으로 실릴까요?",
       "choices": [
         "따뜻하고 곡선적인 쪽",
@@ -130,7 +149,9 @@
       "source": "이론체계_에셋스코어링_v1 §3-4 (lip_thickness pos {T −0.4})"
     },
     {
-      "qid": "Q010", "quest_id": "lip.T+", "axis": "T",
+      "qid": "Q010",
+      "quest_id": "lip.T+",
+      "axis": "T",
       "question": "로맨틱과 화려함은 입에서 어떻게 갈릴까요?",
       "choices": [
         "로맨틱은 작고 봉긋한 편, 화려함은 도톰하고 입이 큰 편",
@@ -143,7 +164,9 @@
       "source": "마스터 화려함 HAVE-1 「입술 ⭐ 도톰+볼륨, 입 큰 편(로맨틱의 작고 봉긋과 구분)」"
     },
     {
-      "qid": "Q011", "quest_id": "eye.T-", "axis": "T",
+      "qid": "Q011",
+      "quest_id": "eye.T-",
+      "axis": "T",
       "question": "눈꼬리가 수평이거나 살짝 내려가 있으면 어느 쪽 신호일까요?",
       "choices": [
         "로맨틱·우아한 쪽",
@@ -156,7 +179,9 @@
       "source": "마스터 PART 2 이목구비표 (로맨틱·우아한 = 수평~하향) · 에셋 §3-1 (eye_angle neg {T −0.4})"
     },
     {
-      "qid": "Q012", "quest_id": "eye.T+", "axis": "T",
+      "qid": "Q012",
+      "quest_id": "eye.T+",
+      "axis": "T",
       "question": "로맨틱과 에너제틱을 가르는 기하 구분점으로 검수에서 확정된 건?",
       "choices": [
         "눈꼬리 각도 (수평·하향 ↔ 상향)",
@@ -169,7 +194,9 @@
       "source": "마스터 에너제틱 「혼동·구분」 (봄쌍 — 눈꼬리 하향·수평↔상향, 검수확정)"
     },
     {
-      "qid": "Q013", "quest_id": "eye.M-", "axis": "M",
+      "qid": "Q013",
+      "quest_id": "eye.M-",
+      "axis": "M",
       "question": "눈이 얼굴에 비해 큰 편이면 어느 쪽으로 읽힐까요?",
       "choices": [
         "어려 보이는 쪽",
@@ -182,7 +209,9 @@
       "source": "이론체계_에셋스코어링_v1 §3-1 (eye_len pos {M −0.4} 「큼=동안」) · Zebrowitz babyface 계열 [스니펫]"
     },
     {
-      "qid": "Q014", "quest_id": "eye.M+", "axis": "M",
+      "qid": "Q014",
+      "quest_id": "eye.M+",
+      "axis": "M",
       "question": "어려 보임 ↔ 성숙해 보임 축에서 가장 성숙한 쪽 끝에 있는 타입은?",
       "choices": [
         "카리스마",
@@ -193,11 +222,147 @@
       "answer_index": 0,
       "why": "가장 성숙한 끝이 카리스마, 가장 어린 끝이 에너제틱이에요.",
       "source": "이론_작업노트_대표경험정리.md §A6 (M축 8타입 순위 확정, 2026-08-07)"
+    },
+    {
+      "qid": "Q101",
+      "quest_id": "type.romantic",
+      "axis": null,
+      "topic_type": "romantic",
+      "question": "로맨틱과 청순청량은 현장에서 가장 자주 헷갈려요. 둘을 가르는 첫 갈림길은 무엇일까요?",
+      "choices": [
+        "따뜻한 색이냐 시원한 색이냐",
+        "눈이 크냐 작냐",
+        "머리가 기냐 짧냐",
+        "키가 크냐 작냐"
+      ],
+      "answer_index": 0,
+      "why": "둘 다 부드러운(Soft) 쪽이라 부드러움으로는 안 갈려요. 갈리는 건 웜이냐 쿨이냐입니다.",
+      "source": "마스터 §2-1-4 (WANT 진단 1번 disambiguation = 로맨틱↔청순청량, 웜↔쿨 갈림) · PART 2.5 A 최고위험 5쌍"
+    },
+    {
+      "qid": "Q102",
+      "quest_id": "type.pure",
+      "axis": null,
+      "topic_type": "pure",
+      "question": "청순청량의 색은 어느 쪽에 서 있을까요?",
+      "choices": [
+        "밝고 투명한 쿨",
+        "깊고 진한 웜",
+        "어둡고 강한 쿨",
+        "노란기 도는 파스텔"
+      ],
+      "answer_index": 0,
+      "why": "여름 라이트예요. 붉은기 도는 쿨톤이면서 밝고 투명한 저대비입니다.",
+      "source": "마스터 §타입2 색·톤(여름 라이트, 붉은기 쿨톤·밝고 투명·저대비)"
+    },
+    {
+      "qid": "Q103",
+      "quest_id": "type.elegant",
+      "axis": null,
+      "topic_type": "elegant",
+      "question": "우아한의 색을 한 단어로 하면 무엇일까요?",
+      "choices": [
+        "뮤트",
+        "비비드",
+        "네온",
+        "형광"
+      ],
+      "answer_index": 0,
+      "why": "쿨 계열이되 쨍하지 않아요. 안개 낀 듯 뿌연 저채도가 우아한의 색입니다.",
+      "source": "마스터 §타입3 색·톤(여름 뮤트, 안개 낀 듯 뿌연 저채도) · 가산②뮤트 톤"
+    },
+    {
+      "qid": "Q104",
+      "quest_id": "type.energetic",
+      "axis": null,
+      "topic_type": "energetic",
+      "question": "로맨틱과 에너제틱을 사진 한 장으로 가르는 신호는 무엇일까요?",
+      "choices": [
+        "눈꼬리 각도",
+        "입 크기",
+        "코 높이",
+        "이마 넓이"
+      ],
+      "answer_index": 0,
+      "why": "같은 크고 동그란 눈이어도 눈꼬리가 올라가면 에너제틱 쪽이에요. 봄 쌍의 기하학적 구분점입니다.",
+      "source": "마스터 §2-1-1 눈꼬리 각도 축(검수 확정) · §타입4 가산②"
+    },
+    {
+      "qid": "Q105",
+      "quest_id": "type.gorgeous",
+      "axis": null,
+      "topic_type": "gorgeous",
+      "question": "화려함과 클래식은 둘 다 가을이에요. 무엇이 둘을 가를까요?",
+      "choices": [
+        "딥이냐 뮤트냐",
+        "웜이냐 쿨이냐",
+        "동안이냐 성숙이냐",
+        "크냐 작냐"
+      ],
+      "answer_index": 0,
+      "why": "둘 다 따뜻한 쪽이라 웜쿨로는 안 갈려요. 색이 깊게 내려가면 화려함, 흐리게 가라앉으면 클래식입니다.",
+      "source": "마스터 §타입5 혼동·구분(가을쌍 — 딥 vs 뮤트) · PART 2.5 A"
+    },
+    {
+      "qid": "Q106",
+      "quest_id": "type.classic",
+      "axis": null,
+      "topic_type": "classic",
+      "question": "클래식은 따뜻한 색인데도 강해 보이지 않아요. 왜 그럴까요?",
+      "choices": [
+        "채도가 낮은 뮤트라서",
+        "색이 어두워서",
+        "무채색이라서",
+        "대비가 높아서"
+      ],
+      "answer_index": 0,
+      "why": "같은 웜이어도 채도가 내려가면 존재감 대신 품격 쪽으로 읽혀요. 베이지·카멜이 그 자리입니다.",
+      "source": "마스터 §타입6 색·톤(가을 뮤트, 베이지·카멜, 중저대비)"
+    },
+    {
+      "qid": "Q107",
+      "quest_id": "type.charisma",
+      "axis": null,
+      "topic_type": "charisma",
+      "question": "카리스마와 세련된은 둘 다 겨울이에요. 무엇이 둘을 가를까요?",
+      "choices": [
+        "각과 힘이냐, 정제된 도시감이냐",
+        "웜이냐 쿨이냐",
+        "밝냐 어둡냐",
+        "크냐 작냐"
+      ],
+      "answer_index": 0,
+      "why": "둘 다 차갑고 강한 쪽이에요. 각이 서면 카리스마, 매끈하게 정리되면 세련된입니다.",
+      "source": "마스터 §타입7·8 혼동·구분(겨울쌍 — 각·힘 vs 정제·도시감)"
+    },
+    {
+      "qid": "Q108",
+      "quest_id": "type.chic",
+      "axis": null,
+      "topic_type": "chic",
+      "question": "세련된의 윤곽은 카리스마와 어떻게 다를까요?",
+      "choices": [
+        "각지지 않은 매끈한 직선",
+        "더 둥근 곡선",
+        "더 뾰족한 각",
+        "좌우가 비대칭"
+      ],
+      "answer_index": 0,
+      "why": "둘 다 직선 쪽이지만 세련된은 각을 세우지 않아요. 샤프하되 매끈하게 떨어집니다.",
+      "source": "마스터 §타입8 HAVE-1 얼굴형(갸름·세로선, 카리스마의 '각'보다 매끈한 직선)"
     }
   ],
   "not_issued": {
     "note": "아래 칸은 짝 문항을 만들지 않았다. 실행 칸이 발행되지 않아 짝이 붙을 자리가 없거나(§3-8은 짝을 실행 칸에 1:1로 붙인다), 판정 채널이 아직 서지 않았다.",
-    "cells": ["hair.M-", "hair.M+", "cloth.T", "cloth.D", "expr.D", "expr.T", "color.contrast"],
+    "cells": [
+      "hair.M-",
+      "hair.M+",
+      "cloth.T",
+      "cloth.D",
+      "expr.D",
+      "expr.T",
+      "color.contrast"
+    ],
     "unblocks": "hair.M± 는 C3 승인으로 즉시 대상. 다음 회차에서 §3-8 규칙 2(⛔ 칸에도 짝은 붙는다)대로 채운다"
   }
 }

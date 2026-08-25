@@ -285,9 +285,12 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=1d28e40"></script>
+<script src="modules/czm-core.js?v=0766eee"></script>
 <!-- 스탯 산식 정본(theory/산식_RPG스탯성장_v1_2026-08-24.md). 표시 층 전용 — 좌표·판정은 손대지 않는다. -->
-<script src="modules/czm-stats.js?v=1d28e40"></script>
+<script src="modules/czm-stats.js?v=0766eee"></script>
+<!-- 리포트 해설(theory/리포트해설_확충_v1_2026-08-24.md). czm-core의 판정기를 유저 문장으로 인출한다.
+     일반 스크립트인 이유: 캐릭터 시트 해설은 사진이 없어도 나오므로 첫 페인트에 동기로 있어야 한다. -->
+<script src="modules/report-explain.js?v=0766eee"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -355,7 +358,7 @@ const FLOW_WANT = new URLSearchParams(location.search).get("flow")==="want";
 const WANT_PARAM = new URLSearchParams(location.search).get("want");
 let WANT_PICK = null, WANT_SRC = null;   // 문항 점수 없이 물려받은 추구미(타입만)와 그 출처
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.35+1d28e40"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.35+0766eee"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -1257,12 +1260,14 @@ function pickExtra(i){
 // 유저가 이미 아는 이름(타입명)으로만 말한다. 좌표는 히어로 지도가 그림으로 보여준다.
 // 인자를 점수 뭉치에서 **타입 키**로 바꿨다(2026-08-24) — 추구미를 직접 고른 경우엔
 // 추구미 점수가 아예 없어서, 점수로 1위를 다시 뽑으면 아무도 안 고른 타입이 나온다.
-function gapSection(wKey, hKey, W, Hv){
+function gapSection(wKey, hKey, W, Hv, photo){
   if(wKey===hKey)
     return `<div class="sec" style="width:100%"><p class="verdict-line">지금 매력과 추구미가 <b>같은 타입</b>으로 나왔어요.</p>
       <p style="margin-top:8px">방향을 바꿀 게 아니라 지금 하고 있는 것을 더 선명하게 하면 됩니다.</p></div>`;
+  // 가운데 칸은 부위별 격차(R7)가 들어올 자리다. 사진이 없으면 비어 있고, 그러면 예전 2문장 그대로다.
   return `<div class="sec" style="width:100%">
     <p class="verdict-line">지금은 <b>${Hv.name}</b> 쪽, 되고 싶은 모습은 <b>${W.name}</b>.</p>
+    <div id="gapSec">${gapPartSection(photo, W.name)}</div>
     <p style="margin-top:8px">두 매력이 겹치는 부분은 이미 갖고 있습니다. 나머지가 이번에 채울 자리예요.</p></div>`;
 }
 
@@ -1326,6 +1331,9 @@ function photoBornPage(d, W){
   if(!d) return "";
   const wc = d.warm_cool && !d.warm_cool.borderline ? (d.warm_cool.v>0?"웜톤":"쿨톤") : null;
   const conf = Math.round((d.confidence||0)*100);
+  // "왜 그 계절인지" — 지금까지 한 글자도 없었다. 저장돼 있는 값으로 말할 수 있는 것만 낸다.
+  // 채도·명도·대비의 축별 갈림은 pc12.five_axis가 저장 payload에 없어 이번엔 못 낸다(문장을 뺐다).
+  const why = window.RX ? RX.whyThisSeason(d) : null;
   // 세컨드 = 2순위 퍼스널컬러가 아니라 **같은 타입의 보조 컬러**다(대표 정정 2026-08-09).
   const best   = palette(d.pc.primary);
   const second = palette2(d.pc.primary);
@@ -1336,6 +1344,8 @@ function photoBornPage(d, W){
        <div class="sec" style="width:100%">
          <p>찍은 사진으로 보면, 퍼스널컬러는 <b>${wc?wc+" · ":""}${ieyo(d.pc.primary)}</b>
          ${d.pc.borderline&&d.pc.secondary?`<span style="opacity:.75">${d.pc.secondary}도 살짝 걸쳐 있어요.</span>`:""}</p>
+         ${why&&why.wcLine?`<p style="margin-top:8px">${why.wcLine}</p>`:""}
+         ${why&&why.muteLine?`<p style="margin-top:8px">${why.muteLine}</p>`:""}
        </div>
        ${best?`<div class="sec" style="width:100%">
          <div class="pal-lab">베스트 컬러</div>
@@ -1347,7 +1357,7 @@ function photoBornPage(d, W){
        </div>`:""}
        <p class="small" style="margin-top:16px;opacity:.6;line-height:1.65">
          * 촬영 환경에 따라 결과가 다르게 나올 수 있어요. 정확하게 보려면 전문가 대면 진단을 권해요.
-         <span style="opacity:.75">(측정 신뢰도 ${conf}%)</span></p>
+         <span style="opacity:.75">(측정 신뢰도 ${conf}%${why&&why.confNote?` — ${why.confNote}`:``})</span></p>
      </div></div>`;
 }
 // 4절 「추구미와의 거리」 — 타고난 색 · 지금 스타일 · 추구미 셋을 한 문장으로 잇는다
@@ -1361,20 +1371,39 @@ function photoGapLine(d, W, Hv){
 
 // 3절 「파트별 나」 — 정본 §3-3. 사진 측정 + 엔진 모듈 + 분포 스냅샷이 모두 있을 때만 렌더한다.
 // 하나라도 없으면 빈 문자열을 돌려주고 3절 자리는 분포 화면이 대신한다(강등 ③ — 포토 미수행).
-function partSection(d, surveyHaveType){
+// 엔진 산출은 세 곳(파트별 나 · 지금의 나 근거 · 추구미 부위 격차)이 같은 것을 본다.
+// 세 번 돌리면 같은 사진에서 세 벌이 나올 이유는 없지만 비용만 세 배다 — 한 번 재고 들고 있는다.
+function photoScore(d){
+  const P = window.__PART;
+  if(!d || !d.ratio || !P || !P.SNAP) return null;
+  if(photoScore._k === d.ts && photoScore._v) return photoScore._v;
+  try{
+    // ⚠ color를 그냥 펼치면 안 된다 — photo는 hue/contrast로 저장하고 이론·에셋 사전은
+    //   hue_angle/contrast_overall로 부른다. 직접 펼치면 그 둘이 결측이 되어 **색 채널의
+    //   T축 기여가 항상 0**이 된다(2026-08-24 이론팀 발견). 다리가 czm-core의 flatten이고,
+    //   오류대장 053이 정확히 같은 사고였다 — 다리를 두고도 이 화면만 안 썼다.
+    // 스캔을 **먼저** 펼친다 = 겹치는 지표는 사진이 이긴다. 스캔이 더 정확하다는 근거가 아직 없다
+    //   (다각도 검증 2026-08-07 §2에서 "확실히 개선됐다"고 말할 수 있던 건 lip_lower 하나뿐).
+    //   그래서 스캔은 사진에 없는 자리만 채운다(지금은 nose_projection).
+    const m = {...(loadScan()||{}),
+               ...(window.CZM ? CZM.measure.flatten(d) : {...d.ratio, ...d.line, ...(d.color||{})})};
+    photoScore._k = d.ts;
+    return (photoScore._v = P.AS.scoreOne(m, P.SNAP.ref, P.SNAP.dist));
+  }catch(e){ console.warn("엔진 산출 실패", e); return null; }
+}
+// half: 1이면 앞쪽 부위 + 요약 문장, 2면 뒤쪽 부위 + 각주. 안 주면 전부 한 덩이.
+// 8부위를 한 장에 담으면 375×812에서 1032px가 되어 카드 안에 스크롤이 생긴다
+// (실측 2026-08-25). 카드 안 스크롤은 "간소화를 못 한 것"이라는 대표 지시가 있다.
+function partSection(d, surveyHaveType, half){
   const P = window.__PART;
   if(!d || !d.ratio || !P || !P.SNAP) return "";
   try{
     // index는 타입을 영문 키로, 엔진은 한글 이름으로 다룬다. 변환 없이 넘기면
     // 화면에 "romantic 매력에 가까워요"가 그대로 나가고, 채널 대조도 전부 불일치가 된다.
     const surveyName = (TYPES[surveyHaveType] && TYPES[surveyHaveType].name) || null;
-    // 스캔을 **먼저** 펼친다 = 겹치는 지표는 사진이 이긴다.
-    // 스캔이 더 정확하다는 근거가 아직 없기 때문이다 — 다각도 검증(2026-08-07 §2)에서
-    // "확실히 개선됐다"고 말할 수 있었던 지표는 lip_lower 하나뿐이었다.
-    // 그래서 스캔은 **사진에 없는 자리만 채운다**(지금은 nose_projection).
-    const m = {...(loadScan()||{}), ...d.ratio, ...d.line, ...(d.color||{})};
-    const { ref, dist } = P.SNAP;
-    const one = P.AS.scoreOne(m, ref, dist);
+    const { dist } = P.SNAP;
+    const one = photoScore(d);
+    if(!one) return "";
     // 표현은 설문에서 온다(정본). 단 아래 채널 수렴에는 넣지 않는다 —
     // 설문과 같은 출처라 둘 다 세면 한 채널을 두 번 센 게 된다.
     const rows = P.PR.buildPartRows(one, { n: dist.n, expressionType: surveyName });
@@ -1389,7 +1418,10 @@ function partSection(d, surveyHaveType){
     // overall이 없으면 요약 문장이 "지금 보이는 건 null 쪽 방향이에요"로 나간다
     // (측정이 부실해 전체 타입을 못 정한 경우 — 검증 중 재현 2026-08-24). 문장을 통째로 뺀다.
     const narr = overall ? P.PR.summaryNarrative(rows, overall, !!one.energeticSignal, conv) : "";
-    const list = rows.map(r=>`
+    const mid = Math.ceil(rows.length / 2);
+    const part = half === 1 ? rows.slice(0, mid) : half === 2 ? rows.slice(mid) : rows;
+    if (!part.length) return "";                 // 부위가 적어 뒷장이 비면 장을 만들지 않는다
+    const list = part.map(r=>`
       <div style="padding:9px 0;border-top:1px solid rgba(0,0,0,.06)">
         <b style="font-size:13.5px">${r.part}</b>
         <div style="font-size:12px;opacity:.7;margin-top:1px">${r.label}</div>
@@ -1397,11 +1429,58 @@ function partSection(d, surveyHaveType){
         <div style="font-size:11px;opacity:.5;letter-spacing:2px;margin-top:3px">${r.dots}</div>
       </div>`).join("");
     return `<div class="sec" style="width:100%;text-align:left">
-      ${narr?`<p class="verdict-line">${narr}</p>`:""}
+      ${(narr && half !== 2)?`<p class="verdict-line">${narr}</p>`:""}
       ${list}
-      <p class="small" style="opacity:.6;margin-top:10px">${P.PR.CAPTION}</p>
+      ${half === 1 ? "" : `<p class="small" style="opacity:.6;margin-top:10px">${P.PR.CAPTION}</p>`}
     </div>`;
   }catch(e){ console.warn("3절 렌더 실패", e); return ""; }
+}
+
+// ── 얼굴 비율 / 선·좌우 (신설 2장) ──────────────────────────
+// 왜 두 장인가: **재는 기준이 다르다.** 황금비·3분할은 자기 얼굴 안의 비율이고(외부 표본 불필요),
+// 밴드·대칭은 관측 분포 대비 위치다(남과 견줌). 한 장에 섞으면 유저가 "그래서 뭐랑 비교한 거지"를
+// 묻게 되고, 그 장이 두 메시지가 된다. 이론팀이 별도 블록으로 가른 근거를 장 단위까지 밀었다.
+// 합치면 10~11행이라 카드 안에서 스크롤이 생기는데, 그건 간소화 실패다(대표 2026-08-24).
+function ratioRows(rows){
+  return rows.map(r=>`
+      <div style="padding:9px 0;border-top:1px solid rgba(0,0,0,.06)">
+        <b style="font-size:13.5px">${r.k}</b>
+        <div style="font-size:12.5px;opacity:.85;margin-top:2px">${r.v}</div>
+        ${r.s?`<div style="font-size:11.5px;opacity:.55;line-height:1.55;margin-top:2px">${r.s}</div>`:""}
+      </div>`).join("");
+}
+function ratioSection(d){   // 자기 얼굴 안의 비율 — SHAPE 없이도 나온다(첫 페인트에 바로 뜬다)
+  if(!d || !d.ratio || !window.RX) return "";
+  const rows = RX.selfRatio(d.ratio, d.quality);
+  return rows.length ? ratioRows(rows) : "";
+}
+function lineSection(d){    // 관측 분포 대비 — shape-dist.json이 없으면 한 줄도 내지 않는다
+  const S = window.__PART && window.__PART.SHAPE;
+  if(!d || !window.RX || !S) return "";
+  const rows = RX.bandRows(d.ratio, d.line, S);
+  return rows.length ? ratioRows(rows) : "";
+}
+
+// ── 「지금의 나」 근거 ───────────────────────────────────────
+// 지금까지 이 장은 같은 타입이면 8명이 완전히 같은 두 문장을 받았다(타입명 + 고정 desc).
+// 대표가 지적한 "불친절"의 진앙이다. 고정 desc 뒤에 **내 측정에서 나온 근거**를 붙인다.
+function whySection(d){
+  const P = window.__PART;
+  if(!P || !window.RX) return "";
+  const one = photoScore(d);
+  if(!one) return "";
+  return RX.whyThisType(one, P.PR.OBS).map(t=>`<p style="margin-top:8px">${t}</p>`).join("");
+}
+
+// ── 4절 부위별 격차 ─────────────────────────────────────────
+// 축 방향 서술을 폐기한 뒤(2026-08-24) 이 절엔 아무 구체도 안 남았다. 축이 아니라 부위로 말한다.
+// ⚠ 측정이 없으면 한 줄도 안 나온다 — 없는 부위 격차를 지어내지 않는다.
+function gapPartSection(d, wantName){
+  const P = window.__PART;
+  if(!P || !window.RX || !wantName) return "";
+  const one = photoScore(d);
+  if(!one) return "";
+  return RX.gapByPart(P.AS.gapToWant(one, wantName)).map(t=>`<p style="margin-top:8px">${t}</p>`).join("");
 }
 
 /* 캐릭터 시트 — 산식 정본 §2(초기 스탯 합 30)를 방사형으로 그린다.
@@ -1455,9 +1534,14 @@ function statSheetPage(bg, hKey, first){   // bg = 다른 절과 같은 prismBg 
   const topLine = peers.length
     ? `<p class="verdict-line">${bold(topK)}${jong(nmOf(topK))?"과":"와"} ${peers.map(bold).join(", ")}${jong(nmOf(peers[peers.length-1]))?"이":"가"} 같은 높이로 나왔어요.</p>
        <p style="margin-top:8px">${up
-         ? `미션으로 쌓은 만큼 올라와서 나란해졌어요. 결과 타입은 진단이 정한 ${ieyo(nmOf(topK))}.`
+         ? `미션으로 쌓은 만큼 올라와 나란해졌습니다. 결과 타입은 진단이 정한 ${ieyo(nmOf(topK))}.`
          : `30점을 8칸에 정수로 나누다 보니 생긴 동점입니다. 소수점까지 본 원점수에서는 ${nmOf(topK)}${jong(nmOf(topK))?"이":"가"} 앞서서, 결과 타입은 ${ieyo(nmOf(topK))}.`}</p>`
     : `<p class="verdict-line">지금 가장 크게 자리 잡은 건 ${bold(topK)}${jong(nmOf(topK))?"이에요":"예요"}.</p>`;
+  // 배합 해설 — 지금까지 그림은 8개를 그리고 문장은 1개만 말했다. 2·3위·배합의 성격·최저 축까지 연다.
+  // 사진이 없어도 나오는 유일한 확충분이라(설문만 한 유저의 재고가 여기뿐이다) 동기 스크립트로 둔다.
+  const NM = Object.fromEntries(TKEYS.map(k=>[k, TYPES[k].name]));
+  const narr = window.RX ? RX.statNarrative(st, topK, NM, bold) : [];
+  statSheetPage._lines = narr.length;   // 계측용 — 동점·결측으로 줄이 빠졌는지가 여기 남는다
   return `<div class="cpage info-page" style="${bg}"><div class="cp-inner info glass">
     <div class="cp-title">내 캐릭터 시트</div>
     <div class="statsheet" id="statSheet" onclick="toggleStatNums()">
@@ -1477,6 +1561,7 @@ function statSheetPage(bg, hKey, first){   // bg = 다른 절과 같은 prismBg 
     </div>
     <div class="sec" style="width:100%">
       ${topLine}
+      ${narr.map(t=>`<p style="margin-top:8px">${t}</p>`).join("")}
       <p class="note" style="margin-top:10px;opacity:.72">${up
         ? `점선이 진단 직후 모양이에요. 미션으로 <b>${up}</b>만큼 밖으로 나갔습니다.`
         : `누구나 30을 나눠 가집니다. 총량은 같고, 어디에 몰렸는지가 사람마다 달라요.`}</p>
@@ -1725,15 +1810,33 @@ function renderResult(){
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
        <div class="cp-title">파트별 나</div>
        <p class="small" style="width:100%;margin:-4px 0 4px">찍은 사진에서 눈·코·입 같은 부위를 하나씩 잰 결과예요.</p>
-       <div id="partSec" style="width:100%">${partSection(PHOTO, hKey)}</div>
+       <div id="partSec" style="width:100%">${partSection(PHOTO, hKey, 1)}</div>
+     </div></div>
+     <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
+       <div class="cp-title">파트별 나 · 이어서</div>
+       <div id="partSec2" style="width:100%">${partSection(PHOTO, hKey, 2)}</div>
        ${loadScan() ? `<p class="small" style="width:100%;margin-top:2px">3D 스캔이 더해진 측정입니다 — 사진으로 못 재는 콧대 입체감까지 봤어요.</p>` : ``}
      </div></div>` : ``}
+     <!-- 「얼굴 비율」 신설 — **자기 얼굴 안의 비율**이다. 남과 견주는 게 아니라서 표본도 규준도 필요 없다.
+          비어 있으면 장 자체를 내지 않는다(빈 카드는 도트만 하나 더 늘리고 아무 말도 안 한다). -->
+     ${PHOTO && ratioSection(PHOTO) ? `
+     <div class="cpage info-page" id="ratioPage" style="${prismBg(W.color)}"><div class="cp-inner info glass">
+       <div class="cp-title">얼굴 비율</div>
+       <p class="small" style="width:100%;margin:-4px 0 4px">내 얼굴 안에서 어디가 길고 짧은지, 황금비율과 견줘 봤어요.</p>
+       <div style="width:100%;text-align:left">${ratioSection(PHOTO)}</div>
+       <p class="small" style="width:100%;margin-top:10px;opacity:.6">황금비율에 안 맞는 건 흠이 아니라 특징이에요. 어느 쪽 얼굴인지 보는 눈금입니다.</p>
+     </div></div>` : ``}
+     <!-- 「선과 좌우」는 첫 페인트에 없다 — 관측 분포(shape-dist.json)가 비동기로 오기 때문이다.
+          도착하면 #ratioPage 뒤에 끼워 넣고, 안 오면 끝까지 안 만든다. 여기에 빈 자리표를 두지 않는 이유:
+          숨긴 요소도 carousel의 children에 세어져 캐릭터 시트 도달 계측의 인덱스가 밀린다. -->
      <!-- 「지금의 나」 — 파트별(사진)과 분리했다. 재는 대상이 다르면 장도 다르다. -->
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
        <div class="cp-title">지금의 나</div>
        <div class="sec" style="width:100%">
          <p class="verdict-line">지금 하고 있는 스타일은 <b style="color:${Hv.color==='#3E3A45'?'#2B2233':Hv.color}">${Hv.name}</b>에 가까워요.</p>
          <p style="margin-top:8px">${g(Hv.desc)}</p>
+         <!-- 여기부터가 내 측정에서 나온 근거다. 없으면 예전처럼 위 두 문장만 남는다. -->
+         <div id="whySec">${whySection(PHOTO)}</div>
        </div>
        ${gapNote}
        ${lectureNote}
@@ -1754,7 +1857,7 @@ function renderResult(){
          <p>직접 고른 추구미가 <b>${W.name}</b>${jong(W.name)?"이에요":"예요"}. 언제든 바꿀 수 있고, 문항으로 찾아볼 수도 있습니다.</p>
        </div>`}
        ${photoGapLine(PHOTO, W, Hv)}
-       ${gapSection(wKey, hKey, W, Hv)}
+       ${gapSection(wKey, hKey, W, Hv, PHOTO)}
      </div></div>
      <!-- 5절 「첫 시도」 — 정본 §3-5 -->
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
@@ -1815,10 +1918,45 @@ function renderResult(){
    <div class="dots" id="rdots"></div>
    </div>`;
   carDot(); fitCarousel();
+  // 계측(헌법 §6-1) — 해설이 **실제로 몇 줄 렌더됐나**. 결측이면 문단을 빼는 설계라
+  // 이 숫자가 곧 측정 커버리지고, 반증 조건 §7("분량이 문제가 아니었다")의 분모가 된다.
+  //   남기는 것: 장별 줄 수 · 사진 유무   /   안 남기는 것: 문장 내용, 개인 측정 원값(좌표만 원칙)
+  //   어디에: 기존 이벤트 파이프(track)   /   대시보드: 장별 렌더 줄 수 분포 · 0줄 비율
+  const _n = (s,pat) => (String(s).match(pat)||[]).length;
+  const reportLines = () => track("report_lines",{ photo: PHOTO?1:0,
+    stat:  statSheetPage._lines|0,
+    why:   _n(whySection(PHOTO), /<p/g),
+    gap:   _n(gapPartSection(PHOTO, W.name), /<p/g),
+    ratio: _n(ratioSection(PHOTO), /border-top/g),
+    line:  _n(lineSection(PHOTO), /border-top/g) });
   // 엔진 모듈은 비동기 로드다 — 결과가 먼저 그려지면 3절이 빈 채로 남는다. 로드 완료 시 그 칸만 다시 채운다.
   window.__onPartEngineReady = () => {
+    photoScore._k = null;                      // 엔진이 늦게 왔다 — 빈 산출을 캐시로 물고 있지 않게 비운다
     const el = document.getElementById("partSec");
-    if (el) el.innerHTML = partSection(PHOTO, hKey);
+    if (el) el.innerHTML = partSection(PHOTO, hKey, 1);
+    const el2 = document.getElementById("partSec2");
+    if (el2) el2.innerHTML = partSection(PHOTO, hKey, 2);
+    const wy = document.getElementById("whySec");
+    if (wy) wy.innerHTML = whySection(PHOTO);
+    const gp = document.getElementById("gapSec");
+    if (gp) gp.innerHTML = gapPartSection(PHOTO, W.name);
+    // 「선과 좌우」 — 관측 분포가 도착했고 낼 말이 있을 때만 장을 만든다.
+    // 없으면 아예 안 만든다: 빈 장은 도트만 하나 늘리고 아무 말도 안 한다.
+    const anchor = document.getElementById("ratioPage");
+    if (anchor && !document.getElementById("linePage")) {
+      const rows = lineSection(PHOTO);
+      if (rows) {
+        anchor.insertAdjacentHTML("afterend", `
+     <div class="cpage info-page" id="linePage" style="${prismBg(W.color)}"><div class="cp-inner info glass">
+       <div class="cp-title">선과 좌우</div>
+       <p class="small" style="width:100%;margin:-4px 0 4px">턱선이나 눈매 같은 선은 지금까지 재 본 얼굴들 사이 어디쯤인지 짚어봤습니다.</p>
+       <div style="width:100%;text-align:left">${rows}</div>
+       <p class="small" style="width:100%;margin-top:10px;opacity:.6">표본이 아직 적어서 어느 쪽인지까지만 말해요. 순위도 등급도 아닙니다.</p>
+     </div></div>`);
+        carDot();                              // 장이 늘었으니 도트를 다시 센다
+      }
+    }
+    reportLines();      // 비동기 칸이 다 찬 뒤라야 실제 렌더된 줄 수가 잡힌다
   };
   if (window.__PART) window.__onPartEngineReady();
   if (window.__QUEST) window.__onQuestReady(window.__QUEST.QE, window.__QUEST.DICT);
@@ -1827,6 +1965,13 @@ function renderResult(){
   // 캐러셀 **밖**에 붙이던 옛 블록은 카드 스타일이 안 먹어 파란 기본 링크로 떴고,
   // 그만큼 페이지가 길어져 진입할 때 스크롤이 중간에서 시작했다(대표 실기기 지적).
   window._result={gender:GENDER,want:wKey,wantRank:wantScored()?wr.slice(0,3):null,have:hKey,extraUsed:extraQ.length};
+  // 계측(헌법 §6-1) — 해설이 **실제로 몇 줄 렌더됐나**. 결측이면 문단을 빼는 설계라
+  // 이 숫자가 곧 측정 커버리지고, 반증 조건 §7("분량이 문제가 아니었다")의 분모가 된다.
+  //   남기는 것: 장별 줄 수 · 사진 유무   /   안 남기는 것: 문장 내용, 개인 측정 원값(좌표만 원칙)
+  //   어디에: 기존 이벤트 파이프(track)   /   대시보드: 장별 렌더 줄 수 분포 · 0줄 비율
+  // 사진이 없으면 비동기로 채워질 칸이 없다 — 지금 바로 센다.
+  // 있으면 엔진 도착 뒤에 세야 실제로 렌더된 수가 잡힌다(위 훅 마지막 줄).
+  if(!PHOTO) reportLines();
 }
 function isLectureCohort(){ // 강의 링크(?src=lec…)로 들어온 경우만 강의 안내 노출 — 일반/공유(card)·인스타 유입 제외
   const s=(new URLSearchParams(location.search).get("src")||"");
@@ -2319,19 +2464,22 @@ if(FLOW_LECTURE){
      로드 실패해도 리포트 나머지는 그대로 뜬다 — 3절만 빠진다. -->
 <script type="module">
   try{
-    const [AS, PR, SE, snapRes] = await Promise.all([
-      import("./modules/asset-score.js?v=1d28e40"),
-      import("./modules/part-report.js?v=1d28e40"),
-      import("./modules/step-engine.js?v=1d28e40"),
+    const [AS, PR, SE, snapRes, shapeRes] = await Promise.all([
+      import("./modules/asset-score.js?v=0766eee"),
+      import("./modules/part-report.js?v=0766eee"),
+      import("./modules/step-engine.js?v=0766eee"),
       fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
+      // 관측 분포 — 「선과 좌우」의 밴드 라벨이 여기서 나온다. 없으면 그 장을 안 만든다.
+      // 현 밴드 상수(jaw 7/19 등)는 14명 전원을 같은 칸에 넣어 표시용으로 못 쓴다.
+      fetch("./modules/shape-dist.json").then(r=>r.ok?r.json():null).catch(()=>null),
     ]);
-    window.__PART = { AS, PR, SNAP: snapRes };
+    window.__PART = { AS, PR, SNAP: snapRes, SHAPE: shapeRes };
     if (typeof window.__onPartEngineReady === "function") window.__onPartEngineReady();
     // 「나의 4주」 — 홈과 같은 엔진·같은 사전을 쓴다. 여기서 목록을 따로 만들면
     // 결과지가 약속한 것과 홈이 내는 것이 갈린다(이론 §5-2 "미리보기가 곧 대기열").
     try{
       const [QE, dict, quiz] = await Promise.all([
-        import("./modules/quest-engine.js?v=1d28e40"),
+        import("./modules/quest-engine.js?v=0766eee"),
         fetch("./modules/quest-dict.json").then(r=>r.json()),
         fetch("./modules/quest-quiz.json").then(r=>r.ok?r.json():null).catch(()=>null),
       ]);

@@ -397,9 +397,9 @@ body.cam-open{overflow:hidden;}
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="modules/czm-core.js?v=1d28e40"></script>
-<script src="modules/measure-color.js?v=1d28e40"></script>
-<script src="modules/measure-structure.js?v=1d28e40"></script>
+<script src="modules/czm-core.js?v=0766eee"></script>
+<script src="modules/measure-color.js?v=0766eee"></script>
+<script src="modules/measure-structure.js?v=0766eee"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -436,8 +436,8 @@ window.__pm={ analyze:img=>analyze(img), get state(){ return STATE; } };
 // 개발/검수 모드: 주소 뒤에 ?dev=1 — 출력 JSON·랜드마크 오버레이·엔진 버전 표기 등 순수 개발용만.
 // 지표(수치+해설)는 기본 화면에 항상 표시한다 (대표 2회 확정 07-11·07-20, REQUEST_dev_ux_restore §1).
 // 과거의 "수치는 내부·검증·B2B 전용" 근거는 폐기됨 — 지표를 다시 숨기려면 대표 승인 필요.
-const DEV = new URLSearchParams(location.search).get("1d28e40")==="1";
-if(DEV) document.body.classList.add("1d28e40");
+const DEV = new URLSearchParams(location.search).get("0766eee")==="1";
+if(DEV) document.body.classList.add("0766eee");
 // 성별 전달 경로 (이론 이목구비앵커 §3, 2026-07-30) — index GENDER를 ?gender=f/m 로 수신. 여성한정 앵커(eye_len F1)·성별밴드(U30) 검증용.
 // ⚠ photo_measurements payload에는 넣지 않음(성별은 app_users.gender 조인, backend 결정 2026-07-30). 현재는 경로만 확보, 실사용은 통합/eye_len 카드 구현 시.
 const GENDER_PM = new URLSearchParams(location.search).get("gender")||null;
@@ -1527,7 +1527,15 @@ function render(o){
     // 설문 화면으로 넘길 측정 결과. v2에서 **형태 지표를 추가**한다 —
     // v1은 색(pc12·웜쿨)만 넘겨서 통합 리포트가 "색 결과 한 줄"에 머물렀다.
     // 부위별 판정(정본 3절)은 ratio·line 없이는 원리적으로 불가하다.
-    try{ localStorage.setItem("chugu_photo_result", JSON.stringify({v:2, ts:Date.now(), engine_ver:o.engine_ver,
+    // v3 — 한 벌만 두던 것을 **쌓는다**. 다시 찍을 때마다 앞 값을 덮어서, 전/후를 나란히 놓을
+    // 근거가 매번 사라지고 있었다(설계_검증사진_기기저장_v1 §2).
+    //  · 맨 위 필드는 v2와 똑같이 **가장 최근 한 벌**이다 — 읽는 쪽(home.html·index.html·
+    //    cloth-check.html)을 한 줄도 안 고치려고 그 자리를 그대로 뒀다. 새로 생긴 건 shots뿐이다.
+    //  · 옛 저장분(v2 객체)은 `Array.isArray(o.shots) ? o.shots : [o]` 한 줄로 1장짜리 배열이
+    //    된다. 마이그레이션 코드는 없다.
+    //  · 사진 바이트는 여기 없다. 앱에서 파일을 가리키는 칸(session·frame·photo_uri)은
+    //    scan-measure-run이 채운다. 웹에는 그 파일이 없으므로 비어 있는 게 정상이다.
+    const rec = {v:3, ts:Date.now(), engine_ver:o.engine_ver,
       pc:{primary:o.pc12.primary, secondary:o.pc12.secondary, borderline:o.pc12.borderline},
       warm_cool:{v:o.axes.warm_cool, borderline:o.pc12.wc_borderline},
       mute:o.mute_display?o.mute_display.label:null, confidence:o.axes.confidence,
@@ -1537,8 +1545,20 @@ function render(o){
       // 값 자체는 §3-5가 "필드 없음"이라 적은 뒤에 이미 생겼다 — 이론팀 C3 승인 대기(2026-08-17).
       color:{skinL:o.color.skin_L, hue:o.color.hue_angle, chroma:o.color.chroma, contrast:o.color.contrast_overall,
              hair_L:o.color.hair_L, dyed:o.color.dyed},
+      // hairline_detected가 빠져 있어 리포트가 3분할을 게이트할 수 없었다. 미검출이면 상안부가
+      // 이마 중간 기준으로 잡혀 **체계적으로 짧게** 나오는데(검출O 0.173~0.314 vs 검출X 0.141~0.161),
+      // 그 상태로 "하안부가 긴 편"을 내면 틀린 말이다. 옛 저장분은 이 값이 없어 undefined로 통과한다.
       quality:{gaze_h:o.quality.gaze_h, dev_tilt:o.quality.dev_tilt, hazy:o.quality.hazy,
-               L_corrected:o.quality.L_corrected, forehead_used:o.quality.forehead_used}})); }catch(e){}
+               L_corrected:o.quality.L_corrected, forehead_used:o.quality.forehead_used,
+               hairline_detected:o.quality.hairline_detected}};
+    try{
+      let prev=[];
+      try{ const old=JSON.parse(localStorage.getItem("chugu_photo_result")||"null");
+           if(old) prev = Array.isArray(old.shots) ? old.shots : [old]; }catch(e){}
+      // 상한 24장 — 주 1회 재측정 기준 반년. 없으면 localStorage가 조용히 꽉 찬다.
+      localStorage.setItem("chugu_photo_result",
+        JSON.stringify(Object.assign({}, rec, {shots: prev.concat([rec]).slice(-24)})));
+    }catch(e){}
     $("restartBtn").insertAdjacentHTML("beforebegin", FLOW_VERIFY
       ? `<a class="btn stepnav" id="toSurveyBtn" style="display:block;text-align:center;text-decoration:none" href="modules/home.html">확인하러 돌아가기 →</a>`
       : `<a class="btn stepnav" id="toSurveyBtn" style="display:block;text-align:center;text-decoration:none" href="index.html?flow=full">다음 — 추구미 설문으로 →</a>`);

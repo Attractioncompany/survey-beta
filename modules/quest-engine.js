@@ -41,6 +41,10 @@ export function withKnowledge(dict, quiz) {
     return {
       id: `learn.${q.quest_id}`, item: base?.item ?? "unknown", kind: "knowledge",
       axis: q.axis ?? base?.axis ?? null, dir: base?.dir ?? null,
+      // 타입 주제 문항은 자기 대상 타입을 갖는다(산식 정본 §3-1 예외 1).
+      // 없으면 짝 칸의 것을 물려받고, 그것도 없으면 타입 무관으로 남는다.
+      target_type: q.topic_type ?? base?.target_type ?? null,
+      quiz_topic_type: q.topic_type ?? null,
       grade: "ok", offer: true, countable: true, ready: true, cost: "free",
       quiz: { qid: q.qid, question: q.question, choices: q.choices,
               answer_index: q.answer_index, why: q.why },
@@ -55,21 +59,55 @@ export function withKnowledge(dict, quiz) {
 /**
  * @param dict  quest-dict.json
  * @param gapAxis  {T,D,(M)} = WANT − HAVE. 없는 축은 빠져 있어도 된다
- * @param opts  {excluded:[questId], hasActive:boolean}
+ * @param opts  {excluded:[questId], hasActive:boolean, wantType:string}
  * @returns {status, primary_axis, gap_value, candidate_pool, offered_quests, cells}
  *          status: arrived | no_axis | busy | ok
  */
 export function issueOffer(dict, gapAxis, opts = {}) {
   const excluded = new Set(opts.excluded || []);
+  const want = opts.wantType || null;
+  const filled = new Set(opts.filledSlots || []);
   const rank = Object.fromEntries(dict.items.map(i => [i.key, i.rank]));
 
   // §4-2 동시 실행 1건 — 단 **학습 짝 칸은 병행 허용**이다.
   // 지식 스탯은 좌표 귀속과 무관하므로 실행 1건과 같이 가도 효능 증거를 오염시키지 않는다.
-  const gate = c => !opts.hasActive || c.kind === "knowledge";
+  //
+  // 그리고 목표 타입이 다른 칸은 내지 않는다(미션사전 v2 §5). 사전이 82칸 늘면서
+  // 이 조건이 없으면 우아한을 목표로 한 유저에게 카리스마 칸이 통째로 보인다.
+  // target_type 없는 칸(v1 19칸)과 추구미 미정 유저는 필터가 통째로 꺼져 전과 같이 동작한다.
+  //
+  // 그리고 이미 채운 자리의 칸은 내지 않는다. 코랄 립을 등록해 둔 유저에게
+  // "코랄 립을 하나 들여 담아보세요"가 뜨면 그건 처방이 아니라 광고다(이론 v2.1 §5).
+  //
+  // 자리는 슬롯이 아니라 **(슬롯 × 대상 타입) 쌍**이다. `item.lip@romantic`은
+  // "립을 등록했다"가 아니라 "로맨틱에 맞는 립이 있다"는 미션이라, 슬롯만으로 완료를
+  // 보면 확장이 존재하는 이유인 target_type을 판정에서 버리게 된다(이론 v2.1 §5-4).
+  // 추구미가 바뀌면 그 타입의 아이템 칸이 통째로 다시 열린다.
+  //
+  // ⚠ 이론 초안은 `item.*`을 슬롯이 **차 있을 때만** 내도록 했는데, 돌려 보니 정반대가
+  //   나왔다 — 옷장이 빈 신규 유저에게 담기 3칸 대 사기 6칸. slot_empty가 재는 것은
+  //   "안 가졌다"가 아니라 "아직 등록을 안 했다"인데 초안이 그 둘을 같게 봤다.
+  //   조건을 하나로 줄였다: 채운 자리는 전부 제외. 빈 자리에는 무료 칸과 유료 칸이
+  //   나란히 서고 유저가 고른다(대표 확정 2026-08-24 리스트 선택).
+  const gate = c => (!opts.hasActive || c.kind === "knowledge")
+                 && (!c.target_type || !want || c.target_type === want)
+                 && (!c.slot_key || !filled.has(`${c.slot_key}:${c.target_type ?? want ?? ""}`));
 
   // §4-2 주축 = |gap_axis| 최대. 축이 하나도 없으면 방향 없는 걸음만 낸다.
   const entries = Object.entries(gapAxis || {}).filter(([, v]) => Number.isFinite(v));
   const top = entries.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0];
+
+  // v1 칸과 v2 타입 칸이 같은 일을 시키는 자리가 18칸 있다 — `lip.T+`와 `lip.T+@charisma`는
+  // 둘 다 "입술을 얇게"다. 목록에 나란히 서면 유저는 같은 지시를 두 번 받는다(이론 v2.1 §5-5).
+  // 타입 칸이 덮는 (부위·축·방향)의 일반 칸은 내린다 — 구체가 일반을 이긴다.
+  // 폐기가 아니라 발행 규칙이라 셀도 id도 그대로 남는다(추구미 미정 유저의 바닥이 거기 있다).
+  const dupKey = c => c.slot_key || `${c.item}|${c.axis}|${c.dir}`;
+  const dedupe = cs => {
+    if (!want) return cs;                    // 추구미 미정 유저에겐 v1 칸이 큐 전부다
+    // 학습 칸은 빼고 센다. 넣으면 `learn.color.T-` 같은 지식 칸이 딸려 내려가 큐가 무너진다.
+    const covered = new Set(cs.filter(c => c.target_type && c.kind !== "knowledge").map(dupKey));
+    return cs.filter(c => c.target_type || c.kind === "knowledge" || !covered.has(dupKey(c)));
+  };
 
   const byRank = (a, b) => (rank[a.item] ?? 99) - (rank[b.item] ?? 99);
   // 방향 없는 걸음(아이템 등록)은 주축과 무관하게 항상 공급된다 — 목록 크기의 하한을 만든다(§5-2)
@@ -77,7 +115,7 @@ export function issueOffer(dict, gapAxis, opts = {}) {
 
   if (!top) {
     const cells = dirless.sort(byRank);
-    return pack("no_axis", null, null, cells, excluded);
+    return pack("no_axis", null, null, dedupe(cells), excluded);
   }
 
   const [axis, gap] = top;
@@ -88,13 +126,13 @@ export function issueOffer(dict, gapAxis, opts = {}) {
     // (대표 실기기 지적 2026-08-24). 이론의 도착 밴드는 축 거리 개념이라 타입 동일성을
     // 다루지 않았다. 축으로 좁힐 것이 없을 뿐이므로 방향 없는 걸음(옷장·기록)은 계속 낸다.
     if (opts.sameType === false && dirless.length) {
-      return pack(opts.hasActive ? "busy" : "ok", axis, gap, dirless.sort(byRank), excluded);
+      return pack(opts.hasActive ? "busy" : "ok", axis, gap, dedupe(dirless.sort(byRank)), excluded);
     }
     // 도착했어도 성장은 끝나지 않는다 — 대표 확정(§1) "성장 제한치는 없고 본인이
     // 만족스러울 때까지". 축으로 좁힐 것이 없을 뿐이므로 방향 없는 걸음은 계속 낸다.
     // (이론 초안_미션가산매핑 차단항목 ②: 여기서 빈 배열을 주면 도착 유저의 성장이 멈춘다)
     return { status: "arrived", primary_axis: axis, gap_value: gap,
-             ...pack("arrived", axis, gap, dirless.sort(byRank), excluded),
+             ...pack("arrived", axis, gap, dedupe(dirless.sort(byRank)), excluded),
              status: "arrived" };
   }
 
@@ -102,7 +140,7 @@ export function issueOffer(dict, gapAxis, opts = {}) {
   // §4-3·4-4 주축을 움직이는 칸만, offer=false(⛔·⚠️X·🟡 미개방)는 건너뛴다
   const aimed = dict.cells.filter(c => c.offer && c.axis === axis && c.dir === dir && gate(c));
   const cells = [...aimed, ...dirless].sort(byRank);
-  return pack(opts.hasActive ? "busy" : "ok", axis, gap, cells, excluded);
+  return pack(opts.hasActive ? "busy" : "ok", axis, gap, dedupe(cells), excluded);
 }
 
 function pack(status, axis, gap, cells, excluded) {

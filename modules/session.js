@@ -76,14 +76,51 @@ export function captureRedirect(){
               exp: Math.floor(Date.now()/1000) + (+(h.get("expires_in") ?? 3600)) };
   save(s);
   history.replaceState(null, "", location.pathname + location.search);
-  return s;
+  // type은 이 진입에서만 쓰고 저장하지 않는다 — recovery로 돌아왔으면 화면이
+  // 새 비밀번호를 받아야 한다. 그냥 통과시키면 잊어버린 비밀번호가 그대로 남는다.
+  return { ...s, type: h.get("type") };
 }
 
-/** 이메일로 로그인·가입 (같은 입구다 — 링크를 눌러야 들어온다) */
-export async function emailLink(email, redirectTo = location.href.split("#")[0]){
-  try { await authPost(`otp?redirect_to=${encodeURIComponent(redirectTo)}`,
-                       { email, create_user: true }); return true; }
-  catch(e){ console.warn("emailLink", e); return false; }
+/* ── 이메일 + 비밀번호 ────────────────────────────────────────────
+   매직링크(otp)를 걷어낸 자리다. 링크 방식은 **재방문 로그인마다** 메일 왕복을 시킨다 —
+   화면 배치를 아무리 고쳐도 그 왕복은 없어지지 않는다(대표 지적 2026-08-25 판단 근거).
+
+   ⚠ 비밀번호는 이 파일 밖으로 나가지 않는다. 저장하지 않고, 로그에 찍지 않고,
+     실패해도 입력값을 메시지에 싣지 않는다. 아래 catch가 e.message를 넘기는데
+     그 문자열은 authPost가 만든 "경로+상태코드+**응답** 본문"이라 요청 본문이 없다.
+
+   ⚠ 가입은 Supabase의 이메일 확인 설정에 따라 두 갈래다.
+     확인 ON(기본) → 세션 없이 확인 메일이 나간다 · 확인 OFF → 즉시 세션.
+     화면은 둘 다 감당해야 한다(session 플래그로 구분해 돌려준다). */
+
+export async function signUpPassword(email, password, redirectTo = location.href.split("#")[0]){
+  try {
+    const j = await authPost(`signup?redirect_to=${encodeURIComponent(redirectTo)}`, {email, password});
+    if (j.access_token) { save(shape(j)); return {ok:true, session:true}; }
+    return {ok:true, session:false};             // 확인 메일이 나갔다
+  } catch(e){ return {ok:false, why:e.message}; }
+}
+
+export async function signInPassword(email, password){
+  try { save(shape(await authPost("token?grant_type=password", {email, password}))); return {ok:true}; }
+  catch(e){ return {ok:false, why:e.message}; }
+}
+
+/** 재설정 메일. 링크를 누르면 #type=recovery로 돌아오고, 그때 setPassword를 부른다. */
+export async function sendRecover(email, redirectTo = location.href.split("#")[0]){
+  try { await authPost(`recover?redirect_to=${encodeURIComponent(redirectTo)}`, {email}); return true; }
+  catch(e){ return false; }
+}
+
+/** 새 비밀번호로 갈아끼운다. 재설정 링크로 받은 세션이 있어야 한다. */
+export async function setPassword(password){
+  let s; try { s = await getSession(); } catch(e){ return false; }
+  if (!s) return false;
+  const r = await fetch(`${URL_}/auth/v1/user`, {method:"PUT",
+    headers:{"Content-Type":"application/json", apikey:KEY, Authorization:`Bearer ${s.token}`},
+    body:JSON.stringify({password})});
+  if (!r.ok) { console.warn("setPassword", r.status); return false; }   // 응답 본문도 안 찍는다
+  return true;
 }
 
 /** 인증된 요청. 실패해도 던지지 않고 null을 준다 — 화면이 조회 실패로 무너지지 않게. */

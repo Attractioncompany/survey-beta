@@ -265,7 +265,16 @@ async function runPhotoPipe(scan) {
       if (saved && saved.ts >= t0) {
         // 출처 표기 — index.html loadPhoto()는 객체를 통째로 돌려주고 아는 필드만 읽으므로
         // 모르는 필드는 무해하다(1184행 확인). 분석에서 촬영분과 구분하는 용도.
-        saved.src = "scan"; saved.frame = tag;
+        //
+        // photo_uri는 **이미 디스크에 있는 파일을 가리키는 줄**이다(ScanWriter가 쓴 _rgb.jpg).
+        // 이미지 바이트는 한 줄도 복사하지 않는다. 이 값은 기기 밖으로 나가지 않는다 —
+        // 헌법 §4. sbPost·track props에 절대 싣지 않는다(설계서 §5).
+        const mark = { src: "scan", frame: tag, session: scan.session,
+                       photo_uri: new URL(`${scan.base}/${tag}_rgb.jpg`, location.href).href };
+        Object.assign(saved, mark);
+        // 방금 photo.html이 쌓은 마지막 shot이 이 측정이다. 같은 표식을 거기에도 심는다.
+        const shots = Array.isArray(saved.shots) ? saved.shots : null;
+        if (shots && shots.length) Object.assign(shots[shots.length - 1], mark);
         try { localStorage.setItem("chugu_photo_result", JSON.stringify(saved)); } catch (e) {}
         return { ok: true, frame: tag, draping };
       }
