@@ -532,12 +532,20 @@ const tileGrid = () => `<div class="ph-grid">${HOME_TILES
 function renderNoDiag(){
   track("hub_shown", {diagnosed:false});
   app.innerHTML = shell({
+    // [마케팅 게이트 필요] 대표 지시 문구 2026-08-25.
+    // 원문의 "각 스텟은 레벨로 표기됩니다"는 이론 판정과 어긋나 한 줄만 고쳤다 —
+    // 레벨은 8칸 전부가 아니라 **성장분에만** 붙는다(이론설계_해설개편4건 §1).
+    // 총합 30이 고정이라 8칸에 레벨을 매기면 배분의 재표기일 뿐이고, 9와 6이 같은
+    // 레벨로 뭉개져 정보가 오히려 줄어든다. 게임 같은 느낌은 "자란다"가 대신 받는다.
+    // 줄바꿈은 의미 단위로 직접 끊는다(폭에 맡기면 한가운데가 갈린다).
     body: `<div class="ph-glass ph-hero snap intro-hero">
-        <div class="ph-gumi"><div class="pad"></div><img src="../character/기본형.png" alt="" onerror="this.parentNode.style.display='none'"></div>
-        <div class="ph-title">먼저 지금의 나를<br>측정합니다</div>
-        <div class="ph-whytxt">어디로 갈지는 지금 어디 있는지를 알아야 정해집니다.
-          사진과 설문으로 지금 내 매력이 어떤 배합인지 재요.
-          <br><br>이 좌표가 매주 미션의 기준이 됩니다.</div>
+        <div class="ph-gumi"><div class="pad"></div><img src="../character/분석중.png" alt="" onerror="this.parentNode.style.display='none'"></div>
+        <div class="ph-title">지금부터 매력 분석을<br>시작합니다</div>
+        <div class="ph-whytxt">추구미즘에 오신 것을 환영해요.<br>
+          지금부터 여러분의 매력을 분석합니다.
+          <br><br>결과는 여덟 가지 스탯으로 나뉘고,<br>
+          미션을 해낼 때마다 그 스탯이 자랍니다.
+          <br><br>그럼 시작해볼까요?</div>
       </div>`,
     btm: `<a class="btn" href="../photo.html?flow=full" style="display:flex;align-items:center;justify-content:center;text-decoration:none">측정 시작하기</a>`,
   });

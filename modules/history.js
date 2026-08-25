@@ -125,8 +125,16 @@ function native(method, params) {
      1장  = 사실 고지 (처음 사진이 남은 시점)
      2장~ = 잃을 것이 처음 생긴 시점 → 기기 사진첩으로 내보내기를 권한다
      상시 = 아래 한 줄 (잊었을 때 다시 확인하는 자리) */
-function albumHTML(shots) {
-  if (!shots.length) return "";
+function albumHTML(shots, hasCrops) {
+  // 사진은 없는데 얼굴 조각은 있는 기기(= 웹에서 잰 사람)에도 지우는 문을 낸다.
+  // 조각은 웹에서도 생기는데 사진첩 카드는 photo_uri가 있어야 서므로, 안 그러면
+  // 웹 유저에게는 지울 것만 있고 지울 문이 없다. 액자는 만들지 않는다 — 걸 사진이 없다.
+  if (!shots.length) return hasCrops
+    ? `<div class="card ph-glass" id="album"><h2>얼굴 조각</h2>
+         <p class="note">해설에 쓰려고 부위별로 잘라 둔 조각이 이 기기에 있어요. 서버에는 올라가지 않습니다.</p>
+         <button class="btn ghost" id="albClear" style="margin-top:8px">저장된 사진 지우기</button>
+       </div>`
+    : "";
   const day = t => { const x = new Date(t ?? 0); return `${x.getMonth() + 1}.${x.getDate()}`; };
   const pair = shots.length > 1;
   const pick = pair ? [shots[0], shots[shots.length - 1]] : [shots[0]];
@@ -157,7 +165,7 @@ function wireAlbum(ctx, shots) {
   const { track, LS, K } = ctx;
   const imgs = [...root.querySelectorAll("img.alb-i")];
   const pick = shots.length > 1 ? [shots[0], shots[shots.length - 1]] : [shots[0]];
-  imgs.forEach((im, i) => {
+  if (shots.length) imgs.forEach((im, i) => {
     // 파일이 사라졌으면(가지치기·수동 삭제) 깨진 액자를 보이느니 카드를 통째로 뺀다.
     im.onerror = () => root.remove();
     im.src = pick[i].photo_uri;
@@ -182,8 +190,12 @@ function wireAlbum(ctx, shots) {
   const clear = document.getElementById("albClear");
   if (clear) clear.onclick = async () => {
     if (!confirm("기기에 있는 검증 사진을 모두 지웁니다. 측정 기록과 미션 이력은 그대로예요.")) return;
-    try { await native("clearPhotos", {}); }
-    catch (e) { clear.textContent = "지우지 못했어요"; return; }
+    // 지울 파일이 있을 때만 셸을 부른다. 웹에는 그 파일 시스템이 없어 native가 반드시 실패하는데,
+    // 예전엔 그 실패로 여기서 빠져나가 **조각이 안 지워졌다**. 사진은 앱에만, 조각은 양쪽에 있다.
+    if (shots.length) {
+      try { await native("clearPhotos", {}); }
+      catch (e) { clear.textContent = "지우지 못했어요"; return; }
+    }
     // 가리키는 줄도 끊는다. 파일 없는 경로가 남으면 다음에 깨진 액자가 뜬다.
     // 측정값·이력은 건드리지 않는다 — 사진을 지운다고 8주가 사라지면 그게 더 큰 배신이다.
     const o = LS.get(K.photo, null);
@@ -192,13 +204,16 @@ function wireAlbum(ctx, shots) {
       (Array.isArray(o.shots) ? o.shots : []).forEach(s => { delete s.photo_uri; });
       LS.set(K.photo, o);
     }
+    // 해설지 부위 조각도 같은 문에서 나간다. 사진은 지웠는데 얼굴 조각이 남아 있으면
+    // 그건 지운 게 아니다. 측정 수치는 그대로 둔다 — 얼굴이 아니라 좌표다.
+    LS.del(K.faceCrops);
     track("album_photos_cleared", { n: shots.length });
     root.remove();
   };
 }
 
 export function renderHistory(ctx) {
-  const { app, shell, head, esc, nav, track, DICT, CZMStats,
+  const { app, shell, head, esc, nav, track, DICT, CZMStats, LS, K,
           diag, photo, tName, cell, statNow, statsRow, STATS } = ctx;
 
   const rows = STATS.slice().sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""));
@@ -254,10 +269,11 @@ export function renderHistory(ctx) {
 
   // 사진첩은 요약 바로 아래. 숫자로 말한 변화("우아한 6 → 16") 옆에 사진을 붙이는 자리다.
   const shots = shotsOf(photo);
+  const hasCrops = !!LS.get(K.faceCrops, null);
 
   app.innerHTML = shell({
     top: head("한 것", `${rows.length}건`),
-    body: summary + albumHTML(shots) + list,
+    body: summary + albumHTML(shots, hasCrops) + list,
     btm: `<button class="btn ghost app-only-hide" id="back">홈으로</button>`,
   });
   wireAlbum(ctx, shots);
@@ -310,6 +326,12 @@ export function historyCheck() {
   eq(shotsOf({ v: 3, shots: [] }).length, 0, "shots 빈 배열");
   // 웹: 측정은 있는데 사진 파일이 없다 → 액자 0개, HTML도 0줄
   eq(albumHTML(shotsOf({ v: 3, ts: 2, shots: [{ ts: 2 }, { ts: 3 }] })), "", "웹에서 빈 액자가 떴다");
+  // 다만 얼굴 조각이 있으면 **지우는 문은 서야 한다** — 조각은 웹에서도 생긴다.
+  // 문 없이 조각만 남기면 "기기에서 지울 수 있다"는 약속이 웹에서 거짓말이 된다.
+  const cropOnly = albumHTML([], true);
+  if (!cropOnly.includes("albClear")) errs.push("조각만 있는 기기에 지우는 문이 없다");
+  if (cropOnly.includes("alb-i")) errs.push("걸 사진이 없는데 액자를 만들었다");
+  eq(albumHTML([], false), "", "조각도 사진도 없는데 카드가 섰다");
   // 앱: 순서는 오래된 것 → 최신, 같은 파일은 한 번만
   const two = shotsOf({ v: 3, shots: [
     { ts: 9 * DAY, photo_uri: u(2) }, { ts: 2 * DAY, photo_uri: u(1) }, { ts: 9 * DAY, photo_uri: u(2) }] });

@@ -78,7 +78,6 @@ function fail(msg) {
  *  연결돼 있지 않다(AppFlow .measure). 그래서 이동을 시도한 뒤 그대로 남아 있으면
  *  네이티브 '홈' 버튼 안내로 내려간다 — 눌러도 아무 일이 없는 버튼은 만들지 않는다.
  *  ponytail: AppFlow .measure에 onIntercept 한 줄이 붙으면 이 폴백은 안 탄다. */
-const RETAKE_WAIT_MS = 30000;
 function retakeAsk(hint, reason) {
   track("unified_gate_fail", { reason });
   $("dot").style.animation = "none"; $("dot").style.opacity = ".15";
@@ -101,8 +100,10 @@ function retakeAsk(hint, reason) {
   $("skip").style.display = "block"; $("skip").textContent = "이대로 설문 계속";
   $("skip").onclick = e => { e.preventDefault(); pick("survey"); goSurvey(); };
 
-  // 막다른 길 금지 — 어느 쪽도 안 고르면 종전처럼 설문으로 간다.
-  setTimeout(() => { if (!done) { pick("timeout"); goSurvey(); } }, RETAKE_WAIT_MS);
+  // 여기 있던 30초 자동 이동을 없앴다(2026-08-25). 드레이핑 타이머와 같은 부류다 —
+  // 유저가 화면을 읽는 중에 대신 골라 넘겨버린다. "다시 찍기"를 누르려던 사람이
+  // 그 사이에 설문으로 끌려간다.
+  // 막다른 길도 아니다: 두 버튼이 모두 화면에 있고 어느 쪽이든 갈 수 있다.
 }
 
 /** photo.html이 gateFail()로 그려 둔 사유 문구. 재촬영 버튼은 우리가 따로 그린다. */
@@ -116,7 +117,8 @@ function gateHintOf(doc) {
 
 // ── 계측 (데이터 운영규약 §6-1) ──
 // 이 기능에서 나오는 데이터: 통합측정 1회당 성공 여부와 사유 (scan_unified_measure)
-// 남길 것: photo_ok·scan_ok·frame(선택된 정면 프레임 태그)·fail_reason·draping(answered|skipped|timeout — 웜쿨 판정 질 지표)
+// 남길 것: photo_ok·scan_ok·frame(선택된 정면 프레임 태그)·fail_reason·draping(answered|skipped — 웜쿨 판정 질 지표)
+//   ※ timeout 값은 2026-08-25 무응답 자동 스킵 철회로 사라졌다. 과거 적재분에는 남아 있다.
 // 안 남길 것: 프레임 이미지·랜드마크 좌표 (헌법 §4 — 얼굴은 기기 밖으로 안 나간다)
 // 어디에 남기나: events 테이블 — index.html track()과 같은 스키마·같은 가드
 // 대시보드: 통합측정 성공률(photo_ok 비율) — 촬영 단계를 없앤 이 구조의 생사 지표
@@ -147,11 +149,23 @@ async function waitFor(cond, ms, why) {
  *  스킵을 전부 갖고 있어, 이 페이지의 예고 문구는 겹말이라 넣지 않는다(한 페이지 = 한 메시지).
  *  photo.html 단독 흐름의 머리(제목·전송 안내·스텝바 1~4)는 앱 통합 흐름에선 맥락이 없다 —
  *  파일 오너십은 건드리지 않고, 같은 origin 문서에 표시용 스타일만 얹어 가린다.
- *  라운드 사이 무응답 90초면 남은 라운드를 기존 '모름' 스킵으로 넘겨 흐름이 막히지 않는다. */
-const DRAPE_IDLE_MS = 90000;
+ *
+ *  ⚠ 무응답 자동 스킵 철회 (대표 버그 보고 2026-08-25 — "가만히 있었는데 갑자기 다음 단계로
+ *  진행되었음"). 여기 있던 DRAPE_IDLE_MS(90초) 타이머가 남은 라운드를 '모름'으로 대신 눌러
+ *  버렸다. 유저가 고르지 않은 값이 웜쿨 판정(가중 0.8)에 들어가는 것이라 단순 내비게이션이
+ *  아니라 **판정 위조**다 — 헌법 §4 신뢰 보호. 막다른 길 우려는 성립하지 않는다:
+ *  drapeCard에 유저가 직접 누르는 '잘 모르겠어요'가 이미 있어 언제든 스스로 넘어갈 수 있다.
+ *  기다림에는 상한을 두지 않는다. 고민하는 시간이 길다는 이유로 답을 대신 정하지 않는다. */
 async function runDraping(fr, win, doc, t0) {
-  const card = doc.getElementById("drapeCard");
-  if (!card || card.style.display === "none") return skipDraping(doc);  // 카드가 안 떴으면 종전 경로
+  // 2026-08-25부터 analyze() 직후에 뜨는 것은 드레이핑이 아니라 브릿지(2-7 "퍼스널컬러 진단을
+  // 받아본 적 있으신가요?")다. 드레이핑은 그 뒤에 온다. 예전처럼 drapeCard만 보고 판단하면
+  // 브릿지가 떠 있는 동안 "카드가 안 떴다"고 읽어 곧장 스킵해 버린다 — 유저 화면을 통째로 건너뛴다.
+  // 둘 중 **아무거나** 떠 있으면 유저에게 보여줄 것이 있다는 뜻이다.
+  const shown = () => ["pcAskCard", "drapeCard"].some(id => {
+    const el = doc.getElementById(id);
+    return el && el.style.display !== "none";
+  });
+  if (!shown()) return skipDraping(doc);  // 카드가 안 떴으면 종전 경로
   const st = doc.createElement("style");
   // 스텝바 한 줄만 가리면 된다 — 제목·안내문은 2026-08-24 셸 전환으로 1단계 안으로 들어갔고,
   // 드레이핑은 3단계라 그 단계가 통째로 display:none이다.
@@ -160,8 +174,6 @@ async function runDraping(fr, win, doc, t0) {
   Object.assign(fr.style, { display: "block", position: "fixed", inset: "0",
     width: "100%", height: "100%", border: "0", background: "#FAF7FB", zIndex: "10" });
   win.scrollTo(0, 0);   // 숨긴 채 실행된 scrollIntoView 위치를 버리고 카드부터 보이게
-  const answered = () => Object.values(win.__pm.state?.draping || {}).filter(v => v != null).length;
-  let lastN = answered(), lastAct = Date.now();
   while (true) {
     await sleep(300);
     let saved = null;
@@ -170,13 +182,6 @@ async function runDraping(fr, win, doc, t0) {
       fr.style.display = "none";     // photo.html 결과 화면이 보이기 전에 되숨김
       const vals = Object.values(win.__pm.state?.draping || {}).filter(v => v != null);
       return vals.some(v => v !== "unknown") ? "answered" : "skipped";
-    }
-    const n = answered();
-    if (n !== lastN) { lastN = n; lastAct = Date.now(); }
-    if (Date.now() - lastAct > DRAPE_IDLE_MS) {
-      fr.style.display = "none";
-      await skipDraping(doc);
-      return "timeout";
     }
   }
 }
@@ -315,7 +320,7 @@ window.__smr = { runPhotoPipe, retakeAsk };
 
     track("scan_unified_measure", {
       photo_ok: photo.ok, scan_ok: scanOk, frame: photo.frame || null,
-      draping: photo.draping || null,   // answered|skipped|timeout — 웜쿨 판정 질 지표
+      draping: photo.draping || null,   // answered|skipped — 웜쿨 판정 질 지표 (timeout은 2026-08-25 폐지)
       fail_reason: photo.ok && scanOk ? null :
         [photo.ok ? null : "photo:" + photo.reason, scanOk ? null : "scan:" + scanReason]
           .filter(Boolean).join(" · "),

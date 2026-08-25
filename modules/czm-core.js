@@ -22,6 +22,10 @@
     userEnsured:"czm_user_ensured",    // app_users 행을 만들어봤는가(중복 409 방지)
     diag:       "chugu_diag",          // 진단 결과 + scores + answers (v2~)
     photo:      "chugu_photo_result",  // 촬영 측정값 — 모양은 아래 measure가 정의한다
+    // 해설지 부위 장에 보여줄 얼굴 조각(눈·코·입…). **기기 밖으로 나가지 않는다**(헌법 §4).
+    // photo와 키를 나눈 이유: photo는 24장을 쌓고, 여기는 최신 한 벌만 둔다.
+    // 사진첩 「저장된 사진 지우기」가 이 키도 함께 지운다(history.js).
+    faceCrops:  "chugu_face_crops",
     scan:       "chugu_scan_result",
     steps:      "chugu_steps",         // 옛 걸음 기록(자기신고). 읽기 전용으로만 남긴다
     stats:      "czm_stats",           // 서버 stat_entries의 기기 사본
@@ -115,8 +119,14 @@
   // photo-module은 ratio/line/color로 나눠 저장하고 color 안에서는 이름도 다르다.
   // 이론·사전은 이론 필드명으로 말한다. 그 사이를 잇는 다리가 여기다 —
   // 이 다리가 없어서 판정이 전부 "측정값 결측"으로 흘렀다(오류대장 053).
+  // flatten은 color를 통째로 펼치지 않고 **이 표에 있는 것만** 통과시킨다.
+  // 그래서 표에 없는 색 값은 계산·저장까지 되고도 엔진·사전에 영영 안 닿는다.
+  // contrast_brow가 정확히 그 상태였다 — 마스터가 카리스마 신호로 쓰는 눈썹 진하기를
+  // "측정이 없다"고 적어 뒀는데, 실은 재고 있었고 이 표에 없었을 뿐이다
+  // (이론 측정확충 v1 P0-1). contrast_iris·ita도 같은 이유로 함께 연다.
   var COLOR_ALIAS = { hue_angle: "hue", chroma: "chroma", contrast_overall: "contrast",
-                      skinL: "skinL", hair_L: "hair_L", dyed: "dyed" };
+                      skinL: "skinL", hair_L: "hair_L", dyed: "dyed",
+                      contrast_brow: "contrast_brow", contrast_iris: "contrast_iris", ita: "ita" };
 
   function flatten(m) {
     if (!m) return null;

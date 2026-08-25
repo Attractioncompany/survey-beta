@@ -20,7 +20,9 @@ const CHIN_SECTION_LM=[18,200,199,175,152];
 
 /** 점 P에서 두 점 A,B가 만드는 직선까지의 수직 편차 벡터를 분해한다. mag=부호 없는 거리(항상 ≥0),
  *  signed=n(방향 나침반)의 + 쪽으로 자동 정렬한 부호 있는 값. E-line 편차(이론 §3-2-1 "원형")와 동일한
- *  수식(투영-차감)을 모든 돌출도 후보에 재사용하기 위해 일반화했다. */
+ *  수식(투영-차감)을 모든 돌출도 후보에 재사용하기 위해 일반화했다.
+ *  nComp = 편차의 **전방 성분**(볼 볼륨이 쓴다). signed는 편차 전체 크기에 부호만 붙인 것이라
+ *  현에서 옆으로 비켜난 성분까지 섞여 들어온다 — 볼은 "앞으로 얼마나 나왔나"만 봐야 한다. */
 function chordDeviation(P, A, B, n){
   const lineDir=NRM(SUB(B,A));
   const v=SUB(P,A);
@@ -28,7 +30,96 @@ function chordDeviation(P, A, B, n){
   const perp={x:v.x-proj*lineDir.x, y:v.y-proj*lineDir.y, z:v.z-proj*lineDir.z};
   const mag=Math.hypot(perp.x,perp.y,perp.z);
   const sign=DOT(perp,n)>=0?1:-1;
-  return {mag, signed:sign*mag};
+  return {mag, signed:sign*mag, nComp:DOT(perp,n)};
+}
+
+/** 방향 나침반 — 3점(127·356·10) 평면 법선, 코끝(1)이 +가 되도록 자동정렬.
+ *  protrusionCandidates 안에 있던 3줄을 그대로 꺼냈다(값 불변). 콧대 깊이 스캔(B2)이 같은 나침반을
+ *  써야 하는데 그쪽은 깊이맵이 있는 computeFrontSnapshot에서 돈다 — 복사하면 두 나침반이 갈린다. */
+function faceNormal(pts){
+  const planeP=pts[127];
+  if(!planeP||!pts[356]||!pts[10]||!pts[1]) return null;
+  const n=NRM(CROSS(SUB(pts[356],planeP), SUB(pts[10],planeP)));
+  return DOT(SUB(pts[1],planeP), n)<0 ? {x:-n.x,y:-n.y,z:-n.z} : n;
+}
+
+/** 볼 볼륨(B1) — 이론 측정확충 v1 §2-B1. 관골 최외측–하악각 기준현에서 볼 후보점이 전방으로
+ *  얼마나 나왔는가. 마스터 L591이 "로맨틱↔청순 최중요 경계축인데 정면 2D로는 불가"라 지목한 값이고,
+ *  에셋스코어링 §3-6이 축 가중(도톰 T−0.4·M−0.3)을 이미 확정해 둔 채 입력만 없던 자리다.
+ *  새 수학 0건 — chordDeviation의 전방 성분(nComp)만 쓴다. 최전방점 탐색은 턱(§3-2-2)과 같은 패턴.
+ *
+ *  ⚠ 볼 6점은 USED에 넣지 않는다. 완료 판정(scan-analyze L646 missing)이 USED 기준이라,
+ *    볼 점 하나가 빠졌다고 스캔 세션 전체가 버려지면 안 된다 — 코끝(1)을 LOOP에만 넣은 것과 같은 처리. */
+const CHEEK_SIDES=[{tag:"L", A:234, B:172, cand:[50,118,205]},
+                   {tag:"R", A:454, B:397, cand:[280,347,425]}];
+export const CHEEK_LM=[50,118,205,280,347,425];
+
+function cheekSide(pts, side, n){
+  const A=pts[side.A], B=pts[side.B];
+  if(!A||!B) return null;
+  let best=null;
+  for(const i of side.cand){
+    if(!pts[i]) continue;
+    const v=chordDeviation(pts[i], A, B, n).nComp;
+    if(best===null || v>best) best=v;
+  }
+  return best;
+}
+
+// ── 콧대(B2) 상수 — 둘 다 판정 문턱이 아니라 **캘리브레이션 값**이다(D26 저촉 없음).
+const DEPTH_NOISE_MM=1.0;   // TrueDepth 깊이 잡음 수준. 능선 두께의 "같은 높이"로 볼 폭
+const FIT_HALF_MM=3.0;      // 곡률 적합 반폭. 능선 폭보다 좁아야 정점 곡률이 나온다
+const BRIDGE_T=[0.25,0.45,0.65];   // nasion(168)→subnasale(2) 내분 위치 3곳
+
+/** 콧대 두께·각짐(B2) — 이론 측정확충 v1 §2-B2. **랜드마크가 아니라 깊이맵을 직접 읽는다.**
+ *  콧대 능선의 좌우 경계에 해당하는 신뢰할 랜드마크가 없어서다. 지금 배제신호 1순위("콧대 두껍/각짐")의
+ *  대리 입력인 nose_w는 콧볼 폭 — 코 아래 좌우 너비로 코 위 능선 두께를 추정하고 있었다.
+ *
+ *  ⚠ 안경. 코받침·안경다리가 깊이맵에 그대로 잡힌다. 게이트가 없다 — 촬영 안내가 유일한 방어다. */
+function noseBridge(lm, W, H, depth, dW, dH, K, n, faceWpx, faceHmm){
+  if(!lm||!lm[168]||!lm[2]||!depth||!faceHmm||!faceWpx) return null;
+  const Nx=lm[168].x*W, Ny=lm[168].y*H, Sx=lm[2].x*W, Sy=lm[2].y*H;
+  const half=0.14*faceWpx;
+  const ws=[], sharps=[];
+  for(const t of BRIDGE_T){
+    const px=Nx+(Sx-Nx)*t, py=Ny+(Sy-Ny)*t;
+    const us=[], ps=[], fs=[];
+    for(let u=px-half; u<=px+half; u+=2){
+      const hit=depthAtExpanding(depth,dW,dH,u,py,W,H);
+      if(!hit) continue;
+      const p=unproject(u,py,hit.z,K,W,H);
+      us.push(u); ps.push(p); fs.push(DOT(p,n));      // 전방 투영 profile
+    }
+    if(fs.length<5) continue;
+    let k=0; for(let i=1;i<fs.length;i++) if(fs[i]>fs[k]) k=i;   // 정점 u*
+    // 두께 — 정점에서 깊이 잡음(1mm) 안에 머무는 구간의 가로 길이. px가 아니라 3D 점 사이 실거리(mm).
+    let lo=k, hi=k;
+    while(lo>0 && fs[lo-1]>=fs[k]-DEPTH_NOISE_MM) lo--;
+    while(hi<fs.length-1 && fs[hi+1]>=fs[k]-DEPTH_NOISE_MM) hi++;
+    if(hi<=lo) continue;
+    ws.push(D(ps[lo], ps[hi]));
+    // 각짐 — 정점 ±3mm 표본의 2차 계수 a. 표본이 정점 기준 대칭이라 홀수 모멘트가 사라져
+    // 정규방정식 없이 a가 바로 나온다(= polyfit(...,2)의 2차항과 같은 값). 새 수학 0건.
+    const ss=[], ff=[];
+    for(let i=0;i<fs.length;i++){
+      const s=(us[i]<us[k]?-1:1)*D(ps[i], ps[k]);
+      if(Math.abs(s)<=FIT_HALF_MM){ ss.push(s*s); ff.push(fs[i]); }
+    }
+    if(ss.length>=5){
+      const mean2=ss.reduce((a,b)=>a+b,0)/ss.length;
+      let num=0, den=0;
+      for(let i=0;i<ss.length;i++){ const d2=ss[i]-mean2; num+=d2*ff[i]; den+=d2*d2; }
+      if(den>0) sharps.push(Math.abs(2*(num/den))*faceHmm);   // 곡률은 1/mm 차원 → faceHmm으로 무차원화
+    }
+  }
+  if(ws.length<2) return null;                                  // 유효 스캔선 2개 미만 → null
+  const med=a=>{const b=a.slice().sort((x,y)=>x-y); return b[b.length>>1];};
+  const wMm=med(ws);
+  return {
+    nose_bridge_w:+(wMm/faceHmm).toFixed(4), nose_bridge_w_mm:+wMm.toFixed(1),
+    nose_bridge_sharp: sharps.length>=2 ? +med(sharps).toFixed(3) : null,
+    nose_bridge_lines: ws.length
+  };
 }
 
 
@@ -65,10 +156,9 @@ function protrusionCandidates(pts, faceWmm){
   const faceHmm=D(pts[10],pts[152]);
   if(!faceHmm) return null;
 
-  // 방향 나침반 — 3점(127·356·10) 평면 법선, 코끝(1)이 +가 되도록 자동정렬(기존 로직 그대로 유지).
+  // 방향 나침반 — 3점(127·356·10) 평면 법선, 코끝(1)이 +가 되도록 자동정렬(기존 로직 그대로, faceNormal로 이동).
   const planeP=pts[127];
-  let n=NRM(CROSS(SUB(pts[356],planeP), SUB(pts[10],planeP)));
-  if(DOT(SUB(pts[1],planeP), n) < 0) n={x:-n.x,y:-n.y,z:-n.z};
+  const n=faceNormal(pts);
 
   // 턱 최전방점 탐색(§3-2-2) — 나침반 방향으로 가장 앞선 정중선 후보점. 결정론적.
   let chinApexIdx=CHIN_SECTION_LM[0], chinApexProj=-Infinity;
@@ -93,8 +183,17 @@ function protrusionCandidates(pts, faceWmm){
   // 비교 병기 — 기존 3점 평면(127·356·10) 방식, 같은 ÷faceH로 통제(원 구현은 ÷faceWmm이었다).
   const distToPlaneH=p=>DOT(SUB(p,planeP), n)/faceHmm;
 
+  // 볼 볼륨(B1) — 결측이 세션을 죽이지 않는다. 한쪽만 살면 그쪽 값을 쓰고 어느 쪽인지 남긴다.
+  const cvL=cheekSide(pts, CHEEK_SIDES[0], n), cvR=cheekSide(pts, CHEEK_SIDES[1], n);
+  const cvBoth=(cvL!=null && cvR!=null);
+  const cvMm = cvBoth ? (cvL+cvR)/2 : (cvL!=null ? cvL : cvR);
+
   const r4=v=>+v.toFixed(4), mm1=v=>+v.toFixed(1);
   return {
+    cheek_volume: cvMm==null?null:r4(cvMm/faceHmm),
+    cheek_volume_mm: cvMm==null?null:mm1(cvMm),
+    cheek_volume_lr: cvBoth?r4(Math.abs(cvL-cvR)/faceHmm):null,
+    cheek_volume_side: cvBoth?"LR":(cvL!=null?"L":(cvR!=null?"R":null)),
     lip_protrusion_upper:r4(lipU.signed/faceHmm), lip_protrusion_upper_mm:mm1(lipU.signed),
     lip_protrusion_lower:r4(lipL.signed/faceHmm), lip_protrusion_lower_mm:mm1(lipL.signed),
     chin_protrusion:r4(chin.signed/faceHmm), chin_protrusion_mm:mm1(chin.signed),
@@ -133,8 +232,14 @@ function computeFrontSnapshot(USED, LOOP_LM, lm, W, H, depth, dW, dH, K){
     // 이론 §3-2-6 산출 안정성 평가용 — 이 세션 자신의 3D스냅샷에서도 돌출도 후보를 뽑아 s.protrusionScan
     // (융합 3D스캔)과 세션 단위로 짝지어 비교할 수 있게 한다(기존 m3dSnap/m3dScan 짝짓기와 동일 패턴).
     rec.protrusionSnap=protrusionCandidates(p3, fw3);
+    // 콧대(B2)는 랜드마크가 아니라 깊이맵을 읽으므로 protrusionCandidates(점만 받음) 안에 못 들어간다.
+    // 깊이·K가 살아 있는 여기서만 돌 수 있다.
+    const n=faceNormal(p3);
+    const faceHmm=(p3[10]&&p3[152])?D(p3[10],p3[152]):null;
+    if(n && faceHmm) rec.noseBridge=noseBridge(lm, W, H, depth, dW, dH, K, n, fw2, faceHmm);
   }
   return rec;
 }
 
-export { protrusionCandidates, computeFrontSnapshot, chordDeviation, CROSS, CHIN_SECTION_LM };
+export { protrusionCandidates, computeFrontSnapshot, chordDeviation, faceNormal, noseBridge,
+         CROSS, CHIN_SECTION_LM };

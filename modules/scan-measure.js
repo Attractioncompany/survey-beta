@@ -10,7 +10,7 @@
 // 색 3종(chroma·contrast_overall·hue_angle)은 스캔이 내지 않는다 — 촬영(photo-module)
 // 몫이고, 앱 플로우가 촬영을 먼저 두는 이유가 그것이다.
 
-import { computeFrontSnapshot } from "./scan-metrics.js";
+import { computeFrontSnapshot, CHEEK_LM } from "./scan-metrics.js";
 import { usedLandmarkIndices } from "./poc-metrics.js";
 
 /** MediaPipe FaceLandmarker 1개를 재사용한다. 매번 만들면 wasm을 다시 올린다. */
@@ -56,7 +56,9 @@ export async function measureScan(scan, opts = {}) {
   const USED = usedLandmarkIndices();
   const LOOP = USED.slice();
   // 돌출도가 쓰는 정중선 점들 — shapeMetrics가 참조하지 않아 USED에 없다.
-  for (const i of [1, 9, 2, 18, 200, 199, 175]) if (!LOOP.includes(i)) LOOP.push(i);
+  // 볼 6점(B1)·미간 168(B2 콧대 기준선)도 같은 자리에 붙는다. **USED에는 넣지 않는다** —
+  // USED에 넣으면 볼 점 하나가 안 잡혔다고 세션 전체가 depth-miss로 버려진다.
+  for (const i of [1, 9, 2, 18, 200, 199, 175, 168, ...CHEEK_LM]) if (!LOOP.includes(i)) LOOP.push(i);
 
   const lmk = given || await landmarker(mpBase);
   const tried = [];
@@ -86,7 +88,7 @@ export async function measureScan(scan, opts = {}) {
 
       // 엔진 입력으로 합친다. 3D 형태 지표 + 돌출도. 이름이 이미 엔진과 같아 매핑이 없다
       // — 매핑 표를 두면 그 표가 또 하나의 정의가 되고, 두 정의는 언젠가 갈라진다.
-      const m = Object.assign({}, rec.m3dSnap, rec.protrusionSnap || {});
+      const m = Object.assign({}, rec.m3dSnap, rec.protrusionSnap || {}, rec.noseBridge || {});
       m._src = "scan";
       m._frame = tag;
       return { m, frameTag: tag, tried };

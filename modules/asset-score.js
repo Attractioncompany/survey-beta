@@ -80,14 +80,33 @@ export const ASSETS = [
     pos:{M:+0.4}, neg:{M:-0.4} },
   { part:"윤곽", key:"parts_vpos",      label:"파츠 상하 위치",
     pos:{M:-0.4}, neg:{M:+0.4} },                       // 아래쪽(값 큼)=동안
+
+  // ── 볼·입체 (v1.6 §3-6) — 3D 스캔 전용
+  // PART_WEIGHT.볼입체 0.07 슬롯은 v1.4부터 있었는데 에셋이 0개라, 그 0.07이 매 판정마다 다른 부위로
+  // 재분배되고 있었다("결측이 정상"인 상태로 굳어 있었다). 스캔이 cheek_volume을 내면서 자리가 채워진다.
+  // 부위명은 표시명("볼·입체")이 아니라 **PART_WEIGHT 키("볼입체")** 여야 한다 — 안 맞으면 비중이
+  // undefined→0이 되어 부위가 살아도 종합에 한 톨도 안 들어간다(part-report L206이 표시명을 따로 매핑).
+  { part:"볼입체", key:"cheek_volume", label:"볼 볼륨",
+    pos:{T:-0.4, M:-0.3}, neg:null,     // 도톰 → 로맨틱·에너제틱. 깔끔 방향은 축이 아니라 청순청량 직접 가산
+    enabled:false,                      // ⚠ 게이트가 닫혀 있다 — 아래 gate 참조
+    gate:"§3-6 반증조건: 설문 볼살 응답과 r≥0.4(n≥40) 교차검증 전까지 계산·기록만, 좌표 미투입" },
 ];
+// ⚠ 볼 "깔끔" 방향(청순청량 직접 가산 0.3)은 **구현할 자리가 없다.** §3-6은 mouth_corner와 같은
+//   applyDirect() 경로를 지정하는데 이 파일에 applyDirect()가 없다(L88 주석이 참조만 하고 있다).
+//   mouth_corner의 에너제틱 직접 가산도 같은 이유로 미구현 상태다. 없는 기구를 여기서 만들지 않는다
+//   — 타입 직접 가산은 축 가산과 결합 규칙이 다르고, 그 규칙은 이론팀 몫이다. 이론팀 고지 대상.
 // 축 가산이 없는 것(의도적 제외):
 //   chin_angle_deg  — E4 조합 규칙 전용, 단독 사용 금지(🔴4)
 //   face_taper      — 분산 신호 재료(§5-2), 축 가산 없음
 //   nose_w          — 배제신호 D1 감점 전용(§3-3), 가산 없음
+//                     ⚠ 그 D1 감점은 **이 저장소 어디에도 구현돼 있지 않다**(2026-08-25 전수 확인).
+//                     nose_w는 계산·저장만 되고 판정에 닿는 경로가 0개다. 이론 측정확충 v1 §2-B2가
+//                     "틀린 입력으로 감점 중"이라 적은 것은 문서상 설계이고, 코드에는 감점 자체가 없다.
+//                     그래서 콧대 3D(nose_bridge_w/_sharp)를 재기 시작해도 판정은 한 톨도 안 움직인다.
+//   nose_bridge_w · nose_bridge_sharp — B2 신설. 배제신호 D1의 정본 입력이 될 자리이나, D1이 구현되기
+//                     전까지 로깅 전용. 마스터 원문이 "두껍**거나** 각지면"(OR)이라 두 필드를 합치지 않는다
 //   mouth_corner    — 축이 아니라 에너제틱 타입 직접 가산. 표정 교란(U2·H4)으로 저가중 → applyDirect()
 //   jaw_w·temple_w  — 보조·게이트 전용(삼중계산 금지 🟡9)
-//   볼·입체         — 3D/설문 미도입
 
 const AXES = ["T","D","M"];
 const sum   = (...v) => v.every(isNum) ? v.reduce((a,b)=>a+b,0) : null;
@@ -97,9 +116,19 @@ function isNum(v){ return typeof v==="number" && isFinite(v); }
 /** 분포 기준(중앙값·IQR)을 만든다. 밴드가 아니라 상대 위치용 기준자다. */
 export function buildRef(samples){
   const ref={};
-  const keys=new Set([...ASSETS.map(a=>a.key), ...COLOR_ASSETS.map(a=>a.key)]);
-  for(const k of keys){
-    const vals=samples.map(s=>s[k]).filter(isNum).sort((a,b)=>a-b);
+  /* ⚠ 파생 자산은 **derive를 적용해서** 기준을 만들어야 한다.
+     여기서 s[k]만 읽으면 eye_round·lip_thickness는 샘플에 그 키가 없어 전부 undefined가 되고,
+     vals가 비어 ref[k]=null이 된다. 그러면 scoreOne이 raw를 제대로 계산해도
+     relative(raw, null)이 null을 돌려줘 **그 자산이 판정에서 통째로 빠진다.**
+     즉 입술 두께와 눈 종횡비는 지금까지 한 번도 판정에 들어간 적이 없었다
+     (dist-snapshot.json에도 null로 박혀 있다 — 2026-08-25 발견).
+     scoreOne은 L141에서 이미 derive를 쓰고 있었다. 두 곳이 갈려 있던 것이다. */
+  const defs=[...ASSETS, ...COLOR_ASSETS];
+  const seen=new Set();
+  for(const a of defs){
+    const k=a.key;
+    if(seen.has(k)) continue; seen.add(k);
+    const vals=samples.map(s => a.derive ? a.derive(s) : s[k]).filter(isNum).sort((a,b)=>a-b);
     if(vals.length<4){ ref[k]=null; continue; }          // 4개 미만이면 사분위가 무의미
     const q=p=>vals[Math.min(vals.length-1, Math.floor(vals.length*p))];
     const med=q(0.5), iqr=q(0.75)-q(0.25);
@@ -123,7 +152,9 @@ export function scoreAssets(m, ref){
     const s = relative(raw, ref[a.key]);
     const contrib = s==null ? null : (s>=0 ? a.pos : a.neg);
     const rec={ part:a.part, key:a.key, label:a.label, raw:isNum(raw)?+raw.toFixed(4):null, s:s==null?null:+s.toFixed(3) };
+    if(a.enabled===false) rec.gated=a.gate||true;         // 관측은 남기고 좌표에는 안 넣는다
     detail.push(rec);
+    if(a.enabled===false) continue;                       // 승격 게이트가 닫힌 에셋
     if(s==null || !contrib) continue;                     // 결측 또는 단방향의 반대편 → 기여 없음
     (parts[a.part] ||= {T:0,D:0,M:0,n:0});
     for(const ax of AXES) if(isNum(contrib[ax])) parts[a.part][ax] += contrib[ax]*Math.abs(s);
@@ -270,7 +301,8 @@ export function scoreOne(m, ref, dist){
  */
 export function partObservations(score, part, limit=2){
   return (score.detail||[])
-    .filter(d=>d.part===part && d.s!==null)
+    // 게이트가 닫힌 에셋은 관찰로도 안 나간다 — 좌표에 안 들어간 값이 문장 근거로 새면 안 된다.
+    .filter(d=>d.part===part && d.s!==null && !d.gated)
     .sort((a,b)=>Math.abs(b.s)-Math.abs(a.s))
     .slice(0,limit)
     .map(d=>({field:d.key, dir:d.s>=0?"hi":"lo"}));
@@ -336,9 +368,38 @@ export function selfCheck(){
   const s=scoreAssets({eye_angle:+5,eye_open:.22,eye_len:.34,interocular:1.3,brow_arch_deg:48,brow_eye_gap:.08,
                        lip_upper:.05,lip_lower:.06,mouth_w:.51,jaw_angular_deg:20,face_HW:1.65,chin_len:.22,parts_vpos:.42}, ref);
   ok(s.partsMissing.includes("코"), "3D 없으면 코 부위 결측");
-  ok(s.partsMissing.includes("볼입체"), "볼·입체 결측");
+  ok(s.partsMissing.includes("볼입체"), "cheek_volume이 없으면(=웹 경로) 볼입체 부위 결측 — 여기가 정상");
   ok(s.overallType!==null, "결측이 있어도 종합 좌표 산출");
   ok(Math.abs(s.weightUsed-(0.30+0.25+0.15+0.08))<1e-9, "결측 제외 비중 합");
+
+  // 4-b) 볼 슬롯 — **예전 단언("볼입체는 항상 결측")을 대체한다.**
+  //   그 단언은 "에셋이 0개라 이 부위는 영원히 안 산다"는 사실을 굳혀 두고 있었다. 슬롯이 채워졌으니
+  //   이제 단언해야 할 것은 셋이다: ①에셋이 있다 ②게이트가 닫혀 있어 지금은 판정이 안 움직인다
+  //   ③게이트를 열면 0.07이 제자리로 돌아간다.
+  const cheek=ASSETS.find(a=>a.key==="cheek_volume");
+  ok(!!cheek, "볼입체 슬롯에 에셋이 있다(더 이상 빈 슬롯이 아니다)");
+  ok(PART_WEIGHT[cheek.part]===0.07, "에셋 부위명이 PART_WEIGHT 키와 일치한다(표시명 '볼·입체'가 아니다)");
+  ok(cheek.enabled===false && typeof cheek.gate==="string", "볼 볼륨은 승격 게이트가 닫힌 상태");
+
+  const cvBase=k=>({eye_angle:+5,eye_open:.22,eye_len:.34,interocular:1.3,brow_arch_deg:48,brow_eye_gap:.08,
+                    lip_upper:.05,lip_lower:.06,mouth_w:.51,jaw_angular_deg:20,face_HW:1.65,chin_len:.22,
+                    parts_vpos:.42,cheek_volume:k});
+  const cvRef=buildRef([cvBase(.06),cvBase(.08),cvBase(.10),cvBase(.12)]);
+  const gatedHi=scoreAssets(cvBase(.12), cvRef);
+  ok(gatedHi.partsMissing.includes("볼입체"), "게이트가 닫혀 있으면 값이 있어도 부위가 살지 않는다");
+  ok(gatedHi.detail.find(d=>d.key==="cheek_volume").s!==null, "그래도 관측값은 detail에 기록된다");
+  ok(gatedHi.detail.find(d=>d.key==="cheek_volume").gated, "게이트 사실이 detail에 표시된다");
+  ok(partObservations(gatedHi,"볼입체").length===0, "게이트가 닫힌 에셋은 관찰(문장 근거)로 새지 않는다");
+
+  cheek.enabled=true;   // 게이트를 잠깐 열어 방향·비중을 확인한다. finally에서 반드시 되돌린다.
+  try{
+    const hi=scoreAssets(cvBase(.12), cvRef), lo=scoreAssets(cvBase(.06), cvRef);
+    ok(hi.parts.볼입체 && hi.parts.볼입체.T<0 && hi.parts.볼입체.M<0, "도톰 → T↓·M↓ (로맨틱·에너제틱 방향)");
+    ok(!lo.parts.볼입체, "얇음 방향은 단방향(neg:null)이라 기여 없음 — §3-6 표 그대로");
+    ok(Math.abs(hi.weightUsed-(gatedHi.weightUsed+0.07))<1e-9, "볼이 살면 실효 비중 분모가 0.07 늘어난다");
+    ok(Math.abs(hi.overall.T-gatedHi.overall.T)>1e-6, "0.07이 제자리로 가면 종합 좌표가 실제로 움직인다");
+  } finally { cheek.enabled=false; }
+  ok(cheek.enabled===false, "게이트 복구 확인 — 점검이 상태를 남기지 않는다");
 
   // 5) 결측 필드는 0이 아니라 기여 없음으로 처리돼야 한다
   const s2=scoreAssets({jaw_angular_deg:20}, ref);
@@ -403,5 +464,5 @@ export function selfCheck(){
   ok(obs.length<=2 && obs.every(o=>o.field && (o.dir==="hi"||o.dir==="lo")), "관찰 추출 형식");
   ok(partObservations(one, "코").length===0, "3D 없으면 코 관찰 0");
 
-  return "asset-score selfCheck 통과 (14/14)";
+  return "asset-score selfCheck 통과 (15/15 · 볼 슬롯 4-b 포함)";
 }

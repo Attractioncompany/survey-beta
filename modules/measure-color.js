@@ -58,6 +58,57 @@ function sampleBrowDark(ctx,lm,W,H,ids){
   const k=Math.max(1,Math.round(vals.length*0.4));
   return vals.slice(0,k).reduce((x,y)=>x+y,0)/k;
 }
+/** 방향성 선 에너지 — ROI 안에서 **가로 방향 구조**와 **세로 방향 구조**의 양을 견준다.
+ *  비율이라 노출·게인·화이트밸런스에 무관하다(분자·분모가 같이 밀린다).
+ *  ROI를 getImageData로 **한 번만** 읽는다 — sampleLab을 픽셀마다 부르면 수백 번 왕복한다. */
+function lineEnergyRatio(ctx, x0, y0, w, h, d, W, H){
+  x0=Math.round(x0); y0=Math.round(y0); w=Math.round(w); h=Math.round(h);
+  if(w<2 || h<2) return null;
+  if(x0-d<0 || y0-d<0 || x0+w+d>W || y0+h+d>H) return null;   // ROI가 이미지 밖 → null. 잘라 쓰지 않는다
+  const Wr=w+2*d, Hr=h+2*d;
+  const px=ctx.getImageData(x0-d, y0-d, Wr, Hr).data;
+  const L=new Float32Array(Wr*Hr);
+  for(let i=0,j=0;i<L.length;i++,j+=4) L[i]=rgb2lab(px[j],px[j+1],px[j+2]).L;
+  let gy=0, gx=0, n=0;
+  for(let yy=d; yy<Hr-d; yy++) for(let xx=d; xx<Wr-d; xx++){
+    gy+=Math.abs(L[(yy+d)*Wr+xx]-L[(yy-d)*Wr+xx]);
+    gx+=Math.abs(L[yy*Wr+xx+d]-L[yy*Wr+xx-d]);
+    n++;
+  }
+  if(!n) return null;
+  gy/=n; gx/=n;
+  return {gy:+gy.toFixed(3), gx:+gx.toFixed(3), ratio:gy/Math.max(gx,1e-6)};
+}
+
+/** 쌍꺼풀 라인(B3) — 이론 측정확충 v1 §2-B3. 마스터 배제신호 2순위인데 지금 입력이 **설문 자가응답**이고
+ *  (index.html B1 "내 쌍꺼풀과 가장 비슷한 건?"), 사내 확정 원칙이 자가응답 지양이다.
+ *  쌍꺼풀 주름은 윗눈꺼풀 위의 **가로 방향 선**이다 — 모공(등방성 고주파)과 달리 방향이 있다.
+ *  gy/gx > 1 = 가로 구조가 있다 = 뜬 눈에서 라인이 보인다.
+ *
+ *  ⚠ 정직한 한계: 이건 *쌍꺼풀 유형*이 아니라 **"눈을 떴을 때 라인이 보이는가"** 다.
+ *    뜬 눈에서 속쌍과 무쌍은 둘 다 "안 보임"으로 나온다. 그 둘을 가르려면 눈 감은 프레임이 필요하다. */
+function lidCrease(ctx, lm, W, H, faceW, eyeOpen0){
+  const NUL={lid_crease:null, lid_crease_lr:null, lid_crease_gy:null, lid_crease_gx:null};
+  if(!(eyeOpen0>0.22)) return NUL;                       // 기존 게이트 재사용 — 눈이 덜 뜨이면 ROI가 눈을 문다
+  const d=Math.max(2, Math.round(faceW*0.006));          // ≈0.8mm. 해상도가 달라도 얼굴 위 물리 크기가 고정된다
+  const one=(outer,inner,upper)=>{
+    const O=P(lm,outer,W,H), I=P(lm,inner,W,H), U=P(lm,upper,W,H);
+    const x0=Math.min(O.x,I.x), x1=Math.max(O.x,I.x);
+    // 윗눈꺼풀 가장자리(159/386) 바로 위 띠. 눈썹 아래(52)까지 올라가지 않는다.
+    return lineEnergyRatio(ctx, x0, U.y-faceW*0.055, x1-x0, faceW*0.047, d, W, H);
+  };
+  const l=one(33,133,159), r=one(263,362,386);
+  const vals=[l,r].filter(v=>v && isFinite(v.ratio));
+  if(!vals.length) return NUL;
+  const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  return {
+    lid_crease:+avg(vals.map(v=>v.ratio)).toFixed(3),
+    lid_crease_lr:(l&&r)?+Math.abs(l.ratio-r.ratio).toFixed(3):null,
+    lid_crease_gy:+avg(vals.map(v=>v.gy)).toFixed(2),    // 분자·분모 병기 — 비율이 튀었을 때 어느 쪽인지 본다
+    lid_crease_gx:+avg(vals.map(v=>v.gx)).toFixed(2)
+  };
+}
+
 function detectHairline(ctx, lm, W, H, faceW, brow, cheek){
   // v3 (대표 실기기 3장 검증 2026-07-22: 2성공 1실패 — 실패=이마 번들거림 최강 사진):
   //   v2는 기준색이 이마 샘플 단독이라, 이마가 하이라이트로 오염되면 기준이 비정상적으로 밝아져
@@ -198,7 +249,11 @@ function detectHairline(ctx, lm, W, H, faceW, brow, cheek){
   // 게이트는 '어두운 오염'(앞머리 가림)일 때만 — 밝은 차이(번들거림)는 v3가 볼 기준으로 처리하므로 검출 진행
   const hairTop = (browDelta>18 && brow.L < cheekAvg.L - 12) ? {y:P(lm,10,W,H).y, detected:false}
                 : detectHairline(ctx, lm, W, H, faceW, brow, cheekAvg);
-    return { cheekL, cheekR, brow, skin, sclera, browCol, lipCol, hairCol, irisCol, irisL, irisR,
+  // 쌍꺼풀 라인(B3) — eyeOpen0가 나온 뒤라야 게이트를 걸 수 있어 여기서 부른다.
+  const lid = lidCrease(ctx, lm, W, H, faceW, eyeOpen0);
+
+    return { ...lid,
+             cheekL, cheekR, brow, skin, sclera, browCol, lipCol, hairCol, irisCol, irisL, irisR,
              ref, refType, refWarn, bgPick, bgBlown, bgDim, scleraOK,
              L_gain, L_shift, L_corrected, Lc,
              eyeOpen0, cheekAvg, browDelta, skinPts, skin2,
@@ -215,4 +270,6 @@ function detectHairline(ctx, lm, W, H, faceW, brow, cheek){
   root.CZM.sampleRegionLab = sampleRegionLab;
   root.CZM.sampleBrowDark = sampleBrowDark;
   root.CZM.detectHairline = detectHairline;
+  root.CZM.lineEnergyRatio = lineEnergyRatio;
+  root.CZM.lidCrease = lidCrease;
 })(typeof window !== "undefined" ? window : globalThis);

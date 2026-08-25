@@ -42,8 +42,12 @@ export const OBS = {
                     lo:{c:"입술이 야무지게 정돈되고", e:"입술이 야무지게 정돈돼서요", d:"입술이 야무지게 정돈돼 있어요"} },
   mouth_w:        { hi:{c:"입이 시원하게 넓고", e:"입이 시원하게 넓어서요", d:"입이 시원하게 넓어요"},
                     lo:{c:"입이 단정하게 모이고", e:"입이 단정하게 모여서요", d:"입이 단정하게 모여 있어요"} },
-  jaw_angular_deg:{ hi:{c:"턱선이 또렷하게 꺾이고", e:"턱선이 또렷하게 꺾여서요", d:"턱선이 또렷하게 꺾여 있어요"},
-                    lo:{c:"턱선이 부드럽게 이어지고", e:"턱선이 부드럽게 이어져서요", d:"턱선이 부드럽게 이어져요"} },
+  /* ⚠ jaw_angular_deg 항목을 뺐다 (2026-08-25, 오류대장 §045 · 이론 재판정).
+     인물 간 차이(SD_b 0.7533)보다 한 사람의 촬영 간 변동(SD_w 1.4679)이 **2배 크다.**
+     이 값으로 "턱선이 또렷하게 꺾여 있어요"라고 말하면, 그건 그 사람의 턱이 아니라
+     **그날 어느 각도에서 찍었는지**를 말하는 것이다. 사전에서 빠지면 이 부위는
+     문장이 안 나가고 조용히 건너뛴다(OBS에 키가 없으면 그 필드는 발화하지 않는다).
+     판정 기여(asset-score)는 별건 — 폐기·재설계·유지는 이론 판단 대기. */
   face_HW:        { hi:{c:"얼굴에 길이감이 있고", e:"얼굴에 길이감이 있어서요", d:"얼굴에 길이감이 있어요"},
                     lo:{c:"얼굴이 동글하고", e:"얼굴이 동글해서요", d:"얼굴이 동글해요"} },
   chin_len:       { hi:{c:"턱이 길게 떨어지고", e:"턱이 길게 떨어져서요", d:"턱이 길게 내려와 있어요"},
@@ -78,7 +82,10 @@ export function gauge({ part, n, missing, flagged }) {
   return Math.max(1, Math.min(s, m, t));
 }
 
-export const dots = g => "●".repeat(g) + "○".repeat(4 - g);
+// 게이지 도트(●●○○) 표기는 삭제했다 — 대표 지시 2026-08-25.
+// "아래에 4개의 원으로 된 건 무슨 표시인지 구분이 안 됨." 범례 없이 서 있어 뜻이 전달되지 않았고,
+// 뜻이 전달됐다면 그건 "우리 측정이 못 미덥다"는 자백이라 어느 쪽이든 남길 이유가 없었다.
+// gauge()는 남긴다 — 계산은 계속 하되 화면에 내지 않는다(마스터 §4-6 "수집은 열되 카드는 닫는다").
 
 /**
  * 부위 1행 생성.
@@ -86,7 +93,7 @@ export const dots = g => "●".repeat(g) + "○".repeat(4 - g);
  */
 export function partRow({ part, type, second, adjacent, obs, n, missing, flagged }) {
   const g = gauge({ part, n, missing, flagged });
-  const row = { part, type, gauge: g, dots: dots(g) };
+  const row = { part, type, gauge: g };
 
   if (missing) {                       // 강등 ① — 라벨 교체 + 이유 문장 생략(정본 §3-3 강등)
     row.label = "사진에서 잘 안 잡혔어요";   // "흐리게 보였어요"는 측정 실패인지 안 잰 건지 구분이 안 된다(대표 지적)
@@ -116,14 +123,17 @@ export function partRow({ part, type, second, adjacent, obs, n, missing, flagged
   const decl = w => w.d || (w.e || "").replace(/서요$/, "요");
   // 앞문장이 "눈썹은 ~"인데 뒷문장도 "눈썹이 ~"로 시작하면 주어가 두 번 선다. 뒤쪽만 지운다.
   const dropSubj = (txt, p) => txt.replace(new RegExp("^" + p + "(이|가|은|는)\\s*"), "");
-  const ws = (obs || []).map(o => OBS[o.field] && OBS[o.field][o.dir]).filter(Boolean).slice(0, 2);
+  // 관찰을 2개 → 3개로 연다(대표 지시 2026-08-25 "좀더 디테일한 분석").
+  // 부위가 한 장을 통째로 갖게 됐으니 두 줄로는 장이 빈다. 사전에 이미 있는 어휘를 더 꺼낼 뿐,
+  // 새 어휘는 만들지 않았다.
+  const ws = (obs || []).map(o => OBS[o.field] && OBS[o.field][o.dir]).filter(Boolean).slice(0, 3);
   const last = ws.length ? dropSubj(decl(ws[ws.length - 1]), part) : "";
   const tail = ws.length === 0 ? ""
     : ws.length === 1 ? ` ${last}.`
     : ` ${ws.slice(0, -1).map(w => dropSubj(w.c, part)).join(", ")}, ${last}.`;
   row.line = `${eun(part)} ${type} 매력에 가까워요.${tail}`;
-  if (g <= 2 && !missing)              // 강등 ② — 저신뢰 병기
-    row.note = "사진 한 장으론 확신이 낮은 부위예요 — 방향만 참고해 주세요.";
+  // 저신뢰 병기("사진 한 장으론 확신이 낮은 부위예요")는 삭제했다 — 대표 지시 2026-08-25.
+  // 유저가 그 문장을 읽고 할 수 있는 게 없고, 신뢰만 깎인다. 결측 고지(위 강등 ①)는 남는다.
   return row;
 }
 
@@ -164,7 +174,8 @@ export function summaryNarrative(rows, overallType, varianceHigh, conv) {
   return s;
 }
 
-export const CAPTION = "확신은 측정이 쌓일수록 올라가요 — 지금은 초기 단계예요.";
+// CAPTION("확신은 측정이 쌓일수록 올라가요 — 지금은 초기 단계예요")은 삭제 — 대표 지시 2026-08-25.
+// 전원이 같은 문장을 받는 각주라 정보가 0이고, 읽는 사람 입장에서는 변명으로만 남는다.
 
 /**
  * 엔진 산출 → 리포트 8행 어댑터.
@@ -178,11 +189,12 @@ export const CAPTION = "확신은 측정이 쌓일수록 올라가요 — 지금
  * @param score  asset-score.scoreOne() 결과
  * @param opts   { n: 분포 표본 수, expressionType: 설문에서 온 표현 타입 }
  */
-export function buildPartRows(score, { n = 0, expressionType = null } = {}) {
+/** @param skip {필드:1} — 화면 다른 줄이 이미 그 필드를 말했으면 부위 문장에서 뺀다(2026-08-25). */
+export function buildPartRows(score, { n = 0, expressionType = null, skip = null } = {}) {
   const overall = score.overallType && score.overallType.type;
   const obsOf = p => (score.detail || [])
-    .filter(d => d.part === p && d.s !== null)
-    .sort((a, b) => Math.abs(b.s) - Math.abs(a.s)).slice(0, 2)
+    .filter(d => d.part === p && d.s !== null && !(skip && skip[d.key]))
+    .sort((a, b) => Math.abs(b.s) - Math.abs(a.s)).slice(0, 3)
     .map(d => ({ field: d.key, dir: d.s >= 0 ? "hi" : "lo" }));
 
   return PARTS.map(part => {
@@ -232,14 +244,17 @@ export function selfCheck() {
   const rn = partRow({ part: "코", type: "클래식", obs: [{ field: "skinL", dir: "hi" }], n: 10 });
   ok(rn.line.startsWith("코가 얼굴 중심을"), "코 승인 예문");
   ok(!/피부가 환하게/.test(rn.line), "코는 관찰 어휘 미사용");
-  // 7) 이유 문장은 관찰 2개까지
+  // 7) 이유 문장은 관찰 3개까지 (2026-08-25 확대)
   const re = partRow({ part: "눈", type: "로맨틱",
-    obs: [{ field: "eye_angle", dir: "lo" }, { field: "eye_len", dir: "hi" }, { field: "interocular", dir: "hi" }], n: 10 });
-  ok((re.line.match(/,/g) || []).length === 1, "관찰 2개(쉼표 1개)");
+    obs: [{ field: "eye_angle", dir: "lo" }, { field: "eye_len", dir: "hi" },
+          { field: "interocular", dir: "hi" }, { field: "eye_round", dir: "hi" }], n: 10 });
+  ok((re.line.match(/,/g) || []).length === 2, "관찰 3개(쉼표 2개)");
   ok(re.line.includes("눈꼬리가 부드럽게 내려오고"), "관찰 어휘 매핑");
   // 8) 금지어가 산출물에 없다
   const bad = /이상적|정상|평균보다|약해요|부족|결이에요|의 결|당신은/;
-  ok(!bad.test(re.line + rn.line + CAPTION), "금지어 없음");
+  ok(!bad.test(re.line + rn.line), "금지어 없음");
+  // 8-b) 걷어낸 변명 문구가 되살아나지 않는다(대표 지시 2026-08-25)
+  ok(re.dots === undefined && re.note === undefined, "게이지 도트·저신뢰 병기 제거");
   // 9) 인접 표기
   const ra = partRow({ part: "입", type: "로맨틱", second: "화려함", adjacent: true, obs: [], n: 10 });
   ok(ra.label === "로맨틱인데, 화려함 매력도 조금 섞여 있어요", "인접 표기");

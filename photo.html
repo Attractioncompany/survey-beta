@@ -161,10 +161,10 @@ body.cam-open{overflow:hidden;}
 
   <div class="step" id="step1" tabindex="-1" aria-labelledby="sb1">
   <div class="step-body">
-  <h1>사진 한 장으로, 나에게 어울리는 컬러 찾기</h1>
-  <!-- 머리말 문단을 지웠다 (2026-08-24) — "사진은 기기 안에서만 분석되고 전송·저장되지 않는다"는
-       바로 아래 동의 카드 첫 줄과 같은 말이었다. 같은 말을 두 번 하느라 화면 하나가 넘쳤다.
-       (원문은 동의 문안 정본 v1.2 안에 그대로 있다 — 한 글자도 줄이지 않았다.) -->
+  <!-- 페이지 h1을 지웠다 (대표 2026-08-25) — 가이드 첫 장이 곧 이 화면의 제목이 되면서
+       머리글과 첫 장이 제목 두 개로 겹쳤다. "한 페이지 = 한 메시지"(대표 2026-08-23):
+       제목은 슬라이드 안으로 들어간다. 스텝바 한 줄만 화면 위에 남는다.
+       머리말 문단은 2026-08-24에 이미 지웠다 — 동의 카드 첫 줄과 같은 말이었다. -->
 
   <!-- 동의 게이트 — 문안 정본: theory/동의문안_원격측정수집_v1_초안_2026-08-08.md §A (v1.2 [확정])
        개발팀은 문안을 쓰지 않는다. 위 문서 §A를 그대로 옮긴 것이며 수정 시 그 문서가 먼저 바뀌어야 한다.
@@ -173,27 +173,33 @@ body.cam-open{overflow:hidden;}
     <div class="tag">측정 데이터 수집 동의</div>
     <!-- 핵심 요약 3줄 + 전문 접힘 (P0-6 정보 밀도 다이어트, 2026-08-23).
          요약은 표시용 안내일 뿐 동의 문안이 아니다 — 문안 정본(v1.2)은 아래 details 안에 한 글자도 안 바꾸고 그대로 있다. -->
+    <!-- 문체 전환: 해요체 → 합니다체 (대표 지시 2026-08-25 — "동의문구가 해요체이니까 이상한 것 같아").
+         대표가 지목한 대상은 접힌 전체 문구지만, 요약 3줄·체크박스가 같은 카드 안에서 앞뒤로
+         붙어 있어 한 곳만 바꾸면 카드 안에서 문체가 갈린다. "합니다 체로 통일"을 카드 단위로 읽고
+         셋을 함께 옮겼다 — 판단 근거를 남긴다. 체크박스 문구는 대표가 준 문장 그대로다.
+         ⚠ [마케팅 게이트 필요] · ⚠ 문안 정본(theory/동의문안_원격측정수집_v1_초안_2026-08-08.md §A v1.2)이
+         아직 해요체다. 코드가 먼저 바뀌었으므로 이론팀이 정본을 v1.3으로 올려야 두 벌이 안 갈린다. -->
     <div class="small" style="margin-top:8px;line-height:1.8">
-      · <b>얼굴 사진은 서버에 저장하지 않아요</b> — 기기 안에서 측정 수치로만 바뀝니다.<br>
-      · 수치는 익명이고, 진단 정확도 연구에만 쓴 뒤 2년 안에 폐기해요.<br>
-      · 만 14세 이상만 참여할 수 있어요.
+      · <b>얼굴 사진은 서버에 저장하지 않습니다</b> — 기기 안에서 측정 수치로만 바뀝니다.<br>
+      · 수치는 익명이며, 진단 정확도 연구에만 쓴 뒤 2년 안에 폐기합니다.<br>
+      · 참여 가능 연령은 만 14세 이상입니다.
     </div>
     <details style="border-top:none;padding-top:0;margin-top:8px">
     <summary>동의 문안 전체 보기</summary>
     <div class="small" style="margin-top:8px;line-height:1.85">
-      이 촬영은 진단 정확도를 높이는 연구에 쓰여요. 시작 전에 뭘 모으고 뭘 안 모으는지 알려드릴게요.<br><br>
-      · <b>얼굴 사진은 서버에 저장하지 않아요.</b> 촬영 즉시 기기 안에서 측정 수치(눈·입·윤곽의 비율, 피부 색 값 같은 숫자)로 바뀌고, 이 수치만 전송돼요.<br>
-      · 이름·연락처처럼 누구인지 알 수 있는 정보는 받지 않아요. 수치에는 기기마다 무작위로 만든 번호만 붙어요 — 이 번호로는 누구인지 알 수 없어요.<br>
-      · 수집한 수치는 <b>진단 정확도 개선 연구에만</b> 쓰고, <b>측정한 날로부터 2년 안에</b> 폐기해요. 연구가 먼저 끝나면 그때 폐기해요.<br>
-      · 이름이 붙어 있지 않아서, 한번 보내고 나면 그중에서 내 것만 따로 골라 지우기는 어려워요. 이 점이 마음에 걸리면 동의 전에 문의해 주세요.<br>
-      · 이 연구는 <b>만 14세 이상</b>만 참여할 수 있어요.<br>
-      · 동의하지 않으면 촬영으로 넘어가지 않아요. 화면을 닫으셔도 아무 데이터도 남지 않아요.<br>
+      이 촬영은 진단 정확도를 높이는 연구에 쓰입니다. 시작 전에 무엇을 모으고 무엇을 모으지 않는지 밝힙니다.<br><br>
+      · <b>얼굴 사진은 서버에 저장하지 않습니다.</b> 촬영 즉시 기기 안에서 측정 수치(눈·입·윤곽의 비율, 피부 색 값 같은 숫자)로 바뀌며, 전송되는 것은 이 수치뿐입니다.<br>
+      · 이름·연락처처럼 누구인지 알 수 있는 정보는 받지 않습니다. 수치에 붙는 것은 기기마다 무작위로 만든 번호 하나이고, 이 번호로는 누구인지 알아낼 수 없습니다.<br>
+      · 수집한 수치는 <b>진단 정확도 개선 연구에만</b> 씁니다. <b>측정일로부터 2년 안에</b> 폐기하며, 연구가 먼저 끝나면 그 시점에 폐기합니다.<br>
+      · 이름이 붙어 있지 않아 한번 보내고 나면 그중에서 본인 것만 골라 지우기는 어렵습니다. 이 점이 마음에 걸리신다면 동의 전에 문의해 주십시오.<br>
+      · 이 연구에 참여할 수 있는 연령은 <b>만 14세 이상</b>입니다.<br>
+      · 동의하지 않으면 촬영으로 넘어가지 않습니다. 화면을 닫으셔도 데이터는 아무것도 남지 않습니다.<br>
       · 문의: welcome.rainby@gmail.com
     </div>
     </details>
     <label style="display:flex;gap:9px;align-items:flex-start;margin-top:12px;font-size:13.5px;line-height:1.6;cursor:pointer">
       <input type="checkbox" id="consentChk" style="margin-top:3px;width:18px;height:18px;flex:none">
-      <span>만 14세 이상이고, 위 내용을 읽었으며, 측정 수치 수집에 동의해요.</span>
+      <span>만 14세 이상이며, 위의 내용을 충분히 숙지하였습니다.</span>
     </label>
   </div>
 
@@ -202,7 +208,24 @@ body.cam-open{overflow:hidden;}
   <div class="card" id="guideCard" style="padding:16px 18px">
     <div class="tag">촬영 가이드 — 정확도를 크게 좌우해요</div>
     <div id="gStage">
+      <!-- 1장: 스캔 예고 (대표 2-3, 2026-08-25). 대표 원문 "얼굴스캔을 통해 ~ 찾아볼거에요"에서
+           "~를 통해"는 헌법 §6 블랙리스트(번역투)라 조사를 바꿔 옮겼다. 뜻은 그대로다.
+           ⚠ [마케팅 게이트 필요] -->
       <div class="gstep on">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="30" r="17"/>
+          <circle cx="26" cy="27" r="1.4" fill="currentColor" stroke="none"/>
+          <circle cx="38" cy="27" r="1.4" fill="currentColor" stroke="none"/>
+          <path d="M27 36q5 3.5 10 0"/>
+          <path d="M8 14V8h6"/><path d="M56 14V8h-6"/>
+          <path d="M8 50v6h6"/><path d="M56 50v6h-6"/>
+        </svg>
+        <div class="gt">얼굴 스캔을 시작합니다</div>
+        <!-- 줄바꿈은 폭이 아니라 문장이 정한다 (대표 2026-08-25) — pre-line + 개행 -->
+        <div class="gs" style="white-space:pre-line">눈·코·입과 얼굴선을 하나씩 잽니다
+어디에 어떤 매력이 있는지 찾아드릴게요</div>
+      </div>
+      <div class="gstep">
         <svg viewBox="0 0 64 64" aria-hidden="true">
           <rect x="23" y="8" width="18" height="36" rx="4"/>
           <circle cx="32" cy="16" r="3.6"/>
@@ -221,6 +244,21 @@ body.cam-open{overflow:hidden;}
         </svg>
         <div class="gt">흰 배경 앞에서</div>
         <div class="gs">흰 종이·A4를 얼굴 옆에 들면 최고예요</div>
+      </div>
+      <!-- 흰 조명 (대표 2-4, 2026-08-25). 근거 있는 항목만 넣으라는 지시에 따라 확인했다 —
+           liveStart()가 화이트밸런스를 5500K 수동 고정(colorTemperature)으로 잠그고,
+           analyze()는 그 기준으로 피부 a*/b*를 보정한다. 노란 전구 밑에서 찍으면 그 보정이
+           통째로 어긋나 웜쿨이 뒤집힌다. 표시용 문구가 아니라 실제 측정 전제다.
+           ⚠ [마케팅 게이트 필요] -->
+      <div class="gstep">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M24 40c-5-3.5-8-9-8-15a16 16 0 0 1 32 0c0 6-3 11.5-8 15v6H24z"/>
+          <path d="M26 52h12"/><path d="M27 57h10"/>
+          <path d="M32 21v10"/>
+        </svg>
+        <div class="gt">흰 빛 아래에서</div>
+        <div class="gs" style="white-space:pre-line">낮의 창가나 주광색 조명이 좋아요
+노란 전구 밑에선 피부색이 통째로 바뀝니다</div>
       </div>
       <div class="gstep">
         <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -258,7 +296,8 @@ body.cam-open{overflow:hidden;}
     </div>
     <div class="gnav">
       <button type="button" id="gPrev">이전</button>
-      <div class="gdots" id="gDots"><span class="on"></span><span></span><span></span><span></span><span></span></div>
+      <!-- 점은 gShow()가 GSTEPS 수만큼 만든다 — 손으로 세어 박아 두면 장을 늘릴 때마다 어긋난다 -->
+      <div class="gdots" id="gDots"></div>
       <button type="button" class="primary" id="gNext">다음</button>
     </div>
     <details style="border-top:none;padding-top:6px;margin-top:8px">
@@ -274,7 +313,7 @@ body.cam-open{overflow:hidden;}
     </details>
   </div>
 
-  <div class="card">
+  <div class="card" id="dyeCard">
     <div style="margin:2px 0 8px;font-size:13.5px"><b>머리 염색을 하셨나요?</b></div>
     <div class="seg-row" role="radiogroup" aria-label="머리 상태">
       <label class="seg"><input type="radio" name="dye" value="n" checked> 자연모</label>
@@ -331,6 +370,15 @@ body.cam-open{overflow:hidden;}
 
   <div class="step" id="step3" tabindex="-1" aria-labelledby="sb3">
   <div class="step-body">
+  <!-- 2-7 브릿지 / 2-8-1 타입 선택 / 2-8-2-1 드레이핑 예고 (대표 지시 2026-08-25).
+       한 카드에 한 메시지만 담고 화면을 갈아 끼운다 — 세 화면이 동시에 뜨지 않는다. -->
+  <div class="card" id="pcAskCard" style="display:none">
+    <div class="drape-step" id="pcAskStep"></div>
+    <div style="font-size:15px;font-weight:700;margin-top:6px" id="pcAskQ"></div>
+    <div class="small" id="pcAskHint" style="margin-top:6px;line-height:1.75;white-space:pre-line"></div>
+    <div id="pcAskOpts" style="margin-top:14px"></div>
+  </div>
+
   <div class="card" id="drapeCard" style="display:none">
     <div class="drape-step" id="drapeStep"></div>
     <div style="font-size:15px;font-weight:700;margin-top:6px" id="drapeQ">어느 쪽에서 얼굴이 더 살아 보여요?</div>
@@ -397,9 +445,9 @@ body.cam-open{overflow:hidden;}
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="modules/czm-core.js?v=0766eee"></script>
-<script src="modules/measure-color.js?v=0766eee"></script>
-<script src="modules/measure-structure.js?v=0766eee"></script>
+<script src="modules/czm-core.js?v=dd41d4c"></script>
+<script src="modules/measure-color.js?v=dd41d4c"></script>
+<script src="modules/measure-structure.js?v=dd41d4c"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -436,8 +484,8 @@ window.__pm={ analyze:img=>analyze(img), get state(){ return STATE; } };
 // 개발/검수 모드: 주소 뒤에 ?dev=1 — 출력 JSON·랜드마크 오버레이·엔진 버전 표기 등 순수 개발용만.
 // 지표(수치+해설)는 기본 화면에 항상 표시한다 (대표 2회 확정 07-11·07-20, REQUEST_dev_ux_restore §1).
 // 과거의 "수치는 내부·검증·B2B 전용" 근거는 폐기됨 — 지표를 다시 숨기려면 대표 승인 필요.
-const DEV = new URLSearchParams(location.search).get("0766eee")==="1";
-if(DEV) document.body.classList.add("0766eee");
+const DEV = new URLSearchParams(location.search).get("dd41d4c")==="1";
+if(DEV) document.body.classList.add("dd41d4c");
 // 성별 전달 경로 (이론 이목구비앵커 §3, 2026-07-30) — index GENDER를 ?gender=f/m 로 수신. 여성한정 앵커(eye_len F1)·성별밴드(U30) 검증용.
 // ⚠ photo_measurements payload에는 넣지 않음(성별은 app_users.gender 조인, backend 결정 2026-07-30). 현재는 경로만 확보, 실사용은 통합/eye_len 카드 구현 시.
 const GENDER_PM = new URLSearchParams(location.search).get("gender")||null;
@@ -554,12 +602,23 @@ $("restartBtn").addEventListener("click", ()=>location.reload());
 // ── 촬영 가이드 스텝 넘김 (P0-7) — 표시 전용, 게이트·측정 무관 ──
 let GI=0;
 const GSTEPS=document.querySelectorAll("#gStage .gstep");
+$("gDots").innerHTML = Array.from(GSTEPS, ()=>"<span></span>").join("");
+// 주의사항을 다 넘기기 전에는 동의·염색모·시작 버튼을 내지 않는다 (대표 2026-08-25).
+// 그전에는 가이드 카드와 동의 카드가 같은 화면에 함께 쌓여 있었다 — 대표가 반복해 지적한
+// "한 화면에 정보가 많이 들어가는" 그 화면이다. 마지막 장에 닿아야 동의가 나온다.
+// 표시 전용 게이트다. CONSENT·측정·전송 가드는 종전 그대로 손대지 않았다.
+const GATED=[$("consentCard"), $("dyeCard"), $("toStep2Btn")];
+// 가이드가 동의 카드보다 위로 온다. HTML을 통째로 옮기는 대신 한 줄로 자리만 바꾼다 —
+// 동의 문안 블록은 정본 대조 대상이라 이동 중 한 글자라도 흐트러지면 안 된다.
+$("consentCard").parentNode.insertBefore($("guideCard"), $("consentCard"));
 function gShow(i){
   GI=Math.max(0, Math.min(GSTEPS.length-1, i));
   GSTEPS.forEach((el,k)=>el.classList.toggle("on", k===GI));
-  document.querySelectorAll("#gDots span").forEach((el,k)=>el.classList.toggle("on", k===GI));
+  $("gDots").querySelectorAll("span").forEach((el,k)=>el.classList.toggle("on", k===GI));
   $("gPrev").style.visibility = GI===0 ? "hidden" : "visible";
-  $("gNext").style.visibility = GI===GSTEPS.length-1 ? "hidden" : "visible";
+  const last = GI===GSTEPS.length-1;
+  $("gNext").style.visibility = last ? "hidden" : "visible";
+  GATED.forEach(el=>{ if(el) el.style.display = last ? "" : "none"; });
 }
 $("gPrev").addEventListener("click", ()=>gShow(GI-1));
 $("gNext").addEventListener("click", ()=>gShow(GI+1));
@@ -770,6 +829,9 @@ function analyze(img){
   const faceCrop = cropFace(cv, lm, W, H, faceW);
   // 셀카 측정 오버레이(VLAS #2) — 위와 같은 이유로 dev 랜드마크 점이 찍히기 전에 뜹니다. STATE 메모리 전용, out(JSON)에는 넣지 않습니다.
   const overlayImg = overlayFace(cv, lm, W, H, faceW, {upper:f_upper, mid:f_mid, lower:f_lower, browY, topY:hairTop.y, eye_angle:+eyeAngle.toFixed(2), face_HW:+faceRatio.toFixed(2)});
+  // 해설지 부위 장에 붙일 조각. 위 둘과 같은 이유로 dev 랜드마크 점이 찍히기 전에 뜬다.
+  // 원본 캔버스(cv)는 읽기만 한다 — 측정은 이미 위에서 끝났고 여기서 아무것도 바뀌지 않는다.
+  const partCrops = cropParts(cv, lm, W, H);
 
   // ---------- 랜드마크 오버레이 (개발/검수 모드 전용) ----------
   if(DEV){
@@ -784,6 +846,7 @@ function analyze(img){
   STATE = {
     crop: faceCrop,
     overlay: overlayImg,   // 셀카 측정 오버레이(VLAS #2) — 메모리 전용, finalize()의 out(JSON)에 절대 포함하지 않는다
+    partCrops: partCrops,  // 부위 조각 — 위와 같다. out(JSON)에 넣지 않고, 저장은 별도 키로만 나간다
     N,
     wc_color: warm_cool,                    // 색채 측정 단독 신호 (보조로 강등 — 가중 0.2)
     draping: {r1:null, r2:null, r3:null, r4:null},
@@ -839,8 +902,76 @@ function analyze(img){
     setTimeout(()=>location.replace(_safe), 900);
     return;
   }
-  $("status").textContent="분석은 끝났어요 — 두 장만 골라주세요";
-  askDraping("r1");
+  $("status").textContent="";
+  askPcBridge();
+}
+
+/* ── 2-7 / 2-8-1 / 2-8-2-1 (대표 지시 2026-08-25) ─────────────────────────────
+   스캔이 끝나고 드레이핑으로 바로 떨어지지 않는다. 브릿지 한 장을 두고,
+   퍼스널컬러를 이미 아는 사람에게는 그 타입을 물어본 뒤 드레이핑으로 넘긴다.
+
+   ⚠ 판정 반영 보류 — 이건 개발팀이 정할 사안이 아니라서 그대로 둔다.
+     대표 지시대로면 타입을 고른 사람은 드레이핑을 건너뛰게 되는데, 그러면
+     (a) fuseWarmCool의 드레이핑 가중 0.8이 통째로 비고, drape===null이라
+         '경계'가 강제로 켜진다(오류대장 001 — 색채 0.2 단독 확정 금지),
+     (b) 자가응답으로 판정을 대체하게 되어 "고객에게 판단을 되묻지 말 것 ·
+         드레이핑형(판정을 '받는' 경험) 우선" 원칙과 정면으로 부딪친다.
+     그래서 지금은 **고른 타입을 기록만 하고 드레이핑은 모두가 거친다.**
+     드레이핑은 두 번 탭이면 끝나고, 기록된 타입은 결과에서 측정값과 맞대볼 수 있다.
+     타입 선언이 드레이핑을 대체하게 만들려면 이론팀 판단이 먼저다 — 대표 보고에 올렸다.
+   ⚠ [마케팅 게이트 필요] — 아래 유저향 문구 전부 */
+const PC_CHOICES = ["봄 라이트","봄 클리어","봄 스트롱","여름 라이트","여름 클리어","여름 뮤트",
+                    "가을 뮤트","가을 스트롱","가을 딥","겨울 클리어","겨울 스트롱","겨울 딥"];
+function pcAskShow({step, q, hint, opts}){
+  goStep(3);
+  $("resultCard").style.display="none";
+  $("drapeCard").style.display="none";
+  $("pcAskCard").style.display="block";
+  $("pcAskStep").textContent=step||"";
+  $("pcAskQ").textContent=q;
+  $("pcAskHint").textContent=hint||"";
+  $("pcAskOpts").innerHTML=opts.map((o,i)=>
+    `<button type="button" class="btn ${o.primary?"":"sub"}" data-i="${i}" style="margin-top:8px">${o.label}</button>`).join("");
+  $("pcAskOpts").querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click", ()=>opts[+b.dataset.i].go());
+  });
+}
+function askPcBridge(){
+  pmTrack("photo_pc_bridge",{stage:"ask"});
+  pcAskShow({
+    step:"거의 다 왔어요",
+    q:"퍼스널컬러 진단을 받아본 적 있으신가요?",
+    opts:[
+      {label:"네, 받아봤어요", primary:true, go:()=>askPcType()},
+      {label:"아니요", go:()=>{ STATE.pc_declared="none"; pmTrack("photo_pc_bridge",{stage:"no"}); drapeIntro(); }}
+    ]
+  });
+}
+function askPcType(){
+  pmTrack("photo_pc_bridge",{stage:"type_list"});
+  pcAskShow({
+    step:"거의 다 왔어요",
+    q:"어떤 타입으로 나오셨어요?",
+    hint:"기억나는 대로 골라주시면 돼요. 측정 결과와 맞대보는 데 씁니다.",
+    opts:PC_CHOICES.map(name=>({label:name, go:()=>{
+      STATE.pc_declared=name;
+      pmTrack("photo_pc_bridge",{stage:"type_pick", type:name});
+      drapeIntro();
+    }})).concat([{label:"기억나지 않음 또는 다시 테스트하고 싶음", go:()=>{
+      STATE.pc_declared="forgot";
+      pmTrack("photo_pc_bridge",{stage:"forgot"});
+      drapeIntro();
+    }}])
+  });
+}
+// 2-8-2-1 드레이핑 예고 — 대표가 준 문구를 그대로 옮겼다. ✓ 세 줄이 그 원문이다.
+function drapeIntro(){
+  pcAskShow({
+    step:"",
+    q:"지금부터 퍼스널컬러 진단을 시작합니다",
+    hint:"진단은 육안진단(드레이핑)과 기기 스캔 데이터를 함께 놓고 진행합니다.\n\n✓ 더 자연스럽고 편안해 보이는 쪽을 골라주세요\n✓ 다크서클·홍조·피부 잡티가 부각되면 안 어울리는 거예요\n✓ 더 정확한 진단을 원하신다면 전문가 컨설팅을 권합니다",
+    opts:[{label:"시작하기", primary:true, go:()=>{ $("pcAskCard").style.display="none"; askDraping("r1"); }}]
+  });
 }
 
 // ---------- 추구미 8타입 (SSOT: attraction_library_v1.json — types[].coord / oneLiner) ----------
@@ -893,6 +1024,59 @@ function cropFace(cv, lm, W, H, faceW){
   g.drawImage(cv, cx-r, cy-r, r*2, r*2, 0, 0, 320, 320);
   return c.toDataURL("image/jpeg", 0.92);
 }
+
+// ── 부위 크롭 (온디바이스 전용 · 대표 지시 2026-08-25) ─────────────────────
+// 왜: 해설지 부위 장이 "눈꼬리가 부드럽게 내려와 있어요"라고만 말한다. 어디를 말하는지 안 보인다.
+//
+// 헌법 §4가 금지하는 것은 **서버 저장**이다. 여기서 만든 조각은 localStorage에만 들어가고
+// out(JSON)·rec(측정 저장본)·track()·공유카드 어디에도 실리지 않는다 — 이 파일에 그 통로가 없다.
+// 전체 얼굴이 아니라 부위 조각이라, 남는 것 자체가 원본보다 적다.
+//
+// 기울어져 찍힌 얼굴: 눈꼬리 선(33↔263)의 각만큼 되돌려 자른다. 안 그러면 비뚤어진 조각이 나온다.
+// 각 계산은 게이트(L1313)가 이미 쓰는 것과 같은 두 점이라 새 측정이 아니다.
+//
+// 인덱스는 전부 이 파일이 이미 쓰던 것들이다(234·454·152·10 얼굴박스 / 33·133·362·263 눈 /
+// 118·347 볼 샘플점 = 실제로 피부색을 잰 자리). 표현 방식 장은 조각을 만들지 않는다 —
+// 설문이 정하는 장이라 보여줄 자리가 얼굴에 없다.
+const CROP_SPEC = {
+  face:  { i:[234,454,152,50,280],                   pad:0.14, ar:1.10 },  // 턱선·볼 — 얼굴형 장
+  ratio: { i:[10,152,234,454],                       pad:0.10, ar:0.78 },  // 정면 전체 — 비율 장(좌우 균형 장도 이걸 쓴다)
+  eye:   { i:[33,133,159,145,362,263,386,374],       pad:0.45, ar:2.60 },
+  brow:  { i:[70,63,105,66,107,336,296,334,293,300], pad:0.35, ar:2.80 },
+  nose:  { i:[168,4,98,327,129,358],                 pad:0.28, ar:1.00 },
+  mouth: { i:[61,291,0,17,13,14],                    pad:0.45, ar:1.70 },
+  skin:  { i:[118,347,205,425],                      pad:0.30, ar:2.20 },
+};
+// 표시 폭은 화면에서 ~160 CSS px다. 더 키우면 용량만 늘고 카드에서 안 보인다.
+const CROP_W = 168;
+function cropParts(cv, lm, W, H){
+  const ang = Math.atan2((lm[263].y-lm[33].y)*H, (lm[263].x-lm[33].x)*W);
+  const cs = Math.cos(ang), sn = Math.sin(ang);
+  const out = {};
+  for(const k in CROP_SPEC){
+    try{
+      const sp=CROP_SPEC[k], pts=sp.i.map(i=>P(lm,i,W,H));
+      const cx=pts.reduce((a,p)=>a+p.x,0)/pts.length, cy=pts.reduce((a,p)=>a+p.y,0)/pts.length;
+      // 눈이 수평인 좌표계로 옮겨 상자를 잡는다(기울기 보정의 실체가 이 한 줄이다)
+      let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+      pts.forEach(p=>{ const dx=p.x-cx, dy=p.y-cy;
+        const rx=dx*cs+dy*sn, ry=-dx*sn+dy*cs;
+        if(rx<x0)x0=rx; if(rx>x1)x1=rx; if(ry<y0)y0=ry; if(ry>y1)y1=ry; });
+      let w=x1-x0, h=y1-y0;
+      const pad=Math.max(w,h)*sp.pad; w+=pad*2; h+=pad*2;
+      if(w/h > sp.ar) h=w/sp.ar; else w=h*sp.ar;   // 목표 비율까지 짧은 쪽을 넓힌다 — 카드 안 높이를 예측 가능하게
+      const mx=(x0+x1)/2, my=(y0+y1)/2;
+      const bx=cx+mx*cs-my*sn, by=cy+mx*sn+my*cs;  // 상자 중심을 원본 좌표계로 되돌린다
+      const ow=CROP_W, oh=Math.max(1, Math.round(ow/sp.ar));
+      const c=document.createElement("canvas"); c.width=ow; c.height=oh;
+      const g=c.getContext("2d");
+      g.translate(ow/2, oh/2); g.scale(ow/w, ow/w); g.rotate(-ang); g.translate(-bx,-by);
+      g.drawImage(cv,0,0);
+      out[k]=c.toDataURL("image/jpeg",0.72);
+    }catch(e){}   // 한 부위가 실패해도 나머지는 낸다. 없는 부위는 화면에서 자리째 빠진다.
+  }
+  return out;
+}
 // 셀카 측정 오버레이 (VLAS 이식 #2 · REPLY_dev_VLAS 2026-07-22) — 온디바이스 렌더 전용.
 // 서버 전송·저장·JSON 포함 전부 금지(STATE 메모리에만). 새 측정 없음 — analyze()가 이미 계산한
 // 랜드마크 인덱스(10/152/234/454 얼굴박스, 105·334·2 3분할, 33·133·362·263 눈꼬리)와
@@ -938,6 +1122,7 @@ function askDraping(id){
   const R=ROUNDS[id];
   goStep(3);
   $("resultCard").style.display="none";
+  $("pcAskCard").style.display="none";   // 브릿지·타입 선택 카드와 겹쳐 뜨지 않게
   $("drapeCard").style.display="block";
   $("drapeStep").textContent=R.step;
   $("drapeQ").textContent=R.q||"어느 쪽에서 얼굴이 더 살아 보여요?";
@@ -1067,6 +1252,9 @@ function finalize(){
     // 전부 저장 원칙 (요청서 §2D) — 미응답도 "none"이 아니라 원값 그대로 남깁니다
     draping_r1:S.draping.r1, draping_r2:S.draping.r2, draping_r3:S.draping.r3, draping_r4:S.draping.r4,
     draping_r4_variant: S._r4variant || null,
+    // 2-7·2-8-1 응답 (대표 2026-08-25) — 기록만 한다. 판정에는 한 글자도 안 들어간다.
+    // "none"=진단받은 적 없음 / "forgot"=기억 안 남·재검사 희망 / 그 외=선언한 12타입 이름 / null=흐름을 안 탐
+    pc_declared: S.pc_declared || null,
     mute_display,
     warm_cool_fusion:{fused:WC.value, borderline:WC.borderline, disagree:WC.disagree, unknown_n:WC.unknown_n,
       draping:WC.drape, color:WC.col, weights:{draping:0.8, color:0.2}},
@@ -1448,31 +1636,45 @@ function render(o){
     ? `<div class="small" style="background:#F6F1FF;border-radius:12px;padding:10px 14px;margin-bottom:12px"><b>드레이핑 응답</b> — ${drapeTxt}</div>` : "";
   // ── P2: 경고 배너 단일화 — 심각도순 1개만, 나머지는 하단 한 줄 요약 ──
   // (게이트 실패는 결과 자체가 없으므로 이 시스템 밖 — gateFail이 전담)
+  /* 남기는 기준(대표 2026-08-25): **유저가 할 수 있는 일이 있으면 남기고, 없으면 뺀다.**
+     "우리 측정이 못 미덥다"는 고백은 유저에게 아무 쓸모가 없고 신뢰만 깎는다. */
   const warns=[];
+  // 꼬리에 있던 "지금 건 참고만 해주세요"를 뺐다 — 렌즈를 닦고 다시 찍으라는 안내로 충분하고,
+  // 그 한마디가 방금 받은 결과를 통째로 못 믿을 것으로 만든다.
   if(o.quality.hazy) warns.push({label:"뿌연 사진 안내",
-    html:`사진이 살짝 뿌옇게 나왔어요. 렌즈 한 번 쓱 닦고 다시 찍으면 색이 확 살아나요 — 지금 건 참고만 해주세요`});
+    html:`사진이 살짝 뿌옇게 나왔어요. 렌즈 한 번 쓱 닦고 다시 찍으면 색이 확 살아납니다`});
   if(o.pc12.contrast_anchor.gate===0) warns.push({label:"밝은 염색모 안내",
     html:`밝게 염색한 머리는 <b>또렷함(대비)을 정확히 재기 어려워요</b> — 이번 결과는 색감 중심으로 봤어요.<br>
       눈동자로 다시 잴 수 있어요 — <b>밝은 창가나 조명을 마주 보고</b>(태양은 절대 직접 보지 마세요),
       <b>얼굴이 화면에 꽉 차게 가까이서</b> 한 장만 더 부탁해요. 눈이 부시면 억지로 뜨지 않아도 돼요 — 편하게 뜬 정도면 충분해요
       <button class="btn" id="eyeRetakeBtn" style="margin-top:10px">가까이서 다시 찍기</button>`});
-  if(!w.pc_agrees) warns.push({label:"판정 교차확인 안내",
-    html:`두 판정이 서로 다른 쪽을 가리켜요 — 사진 조건에 따라 갈릴 수 있는 구간이라 다른 사진으로 한 번 더 보면 좋겠어요`});
+  // "두 판정이 서로 다른 쪽을 가리켜요"를 뺐다 — 이건 **우리 내부 사정**이다.
+  // 유저는 이미 하나의 답을 받았는데, 그 답을 만든 두 경로가 다퉜다는 사실까지 알 이유가 없다.
+  // 할 수 있는 일도 "다시 찍기"뿐인데 그건 어느 결과에서든 언제나 할 수 있다.
+  // 값은 계측에 그대로 남는다(pc_agrees) — 우리가 보고 고칠 몫이지 유저가 감당할 몫이 아니다.
   $("warnBox").innerHTML = warns.length ? `<div class="warn" style="margin-bottom:10px">${warns[0].html}</div>` : "";
   const eyeBtn=document.getElementById("eyeRetakeBtn");
   if(eyeBtn) eyeBtn.addEventListener("click", ()=>liveStart());
   $("warnRest").innerHTML = warns.length>1
     ? `<div style="margin-top:10px;opacity:.75">참고: ${warns.slice(1).map(x=>x.label).join(" · ")} ${warns.length-1}건이 더 있어요</div>` : "";
-  // 신뢰도는 항상 정직하게 표기(헌법 신뢰보호). 이유는 신뢰도가 낮을 때만 — 고칠 게 있을 때만 알려드립니다.
-  const LOW_CONF = 0.75;  // 표시용 임계값(UI 전용) — 판정에는 영향 없음
-  const showReason = o.axes.confidence < LOW_CONF || DEV;
-  const refMsg = !showReason ? ""
-    : o.quality.bg_blown ? "<br>배경이 하얗게 날아가서 밝기를 정확히 재지 못했어요 — 조금만 덜 밝은 곳에서 한 장 더 주시면 좋아요"
-    : o.quality.bg_dim ? "<br>배경이 어둡게 찍혀서 밝기 보정을 못 했어요 — 조명을 조금 밝게 하거나 창가에서 한 장 더 부탁해요"
-    : !o.quality.L_corrected ? "<br>흰 배경이나 흰 종이가 함께 잡히면 밝기·색을 더 정확히 잴 수 있어요" : "";
-  const fhMsg = (showReason && !o.quality.forehead_used) ? "<br>이마가 머리카락에 가려서 색 판정에서는 빼고 봤어요" : "";
-  const devNote = DEV ? ` · ${o.engine_ver.replace("photo_","")} 추정 — 검수 데이터 보정 전` : "";
-  $("confBox").innerHTML=`<div class="warn ok">신뢰도 ${(o.axes.confidence*100).toFixed(0)}%${devNote} · 아직 베타라 사진 조건에 따라 달라질 수 있어요${refMsg}${fhMsg}</div>`;
+  /* 신뢰도 수치 표기를 걷어냈다 (대표 2026-08-25).
+       "측정 신뢰도 수치랑 '측정이 제대로 안 됐다' 이런 문구들은 다 빼야 될 것 같아.
+        실제로 정확하지 않더라도 그걸 우리가 수치로 증명해서 보여주는 건 신뢰도에서 큰 문제"
+
+     여기 있던 것은 **항상** 떴다 — "신뢰도 87% · 아직 베타라 사진 조건에 따라 달라질 수 있어요".
+     유저가 그 87%로 할 수 있는 일이 없다. 낮으면 불안하고 높아도 "왜 100이 아니지"가 된다.
+     우리가 자신 없다는 것을 유저에게 숫자로 증명해 보이는 문장이었다.
+
+     헌법 신뢰보호와 부딪히지 않는다 — 그 조항이 막는 것은 **없는 확신을 파는 것**이고,
+     여기서 지운 것은 **있는 불확실성을 수치로 파는 것**이다. 둘 다 유저를 위한 정보가 아니다.
+     정직은 판정을 안 하는 것으로 지킨다: 근거가 약하면 그 문장을 안 내보낸다(결측 고지는 남는다).
+
+     유저가 **고칠 수 있는 것**은 촬영 전 가이드 7장이 이미 말한다(흰 배경·흰 빛·눈높이).
+     심각해서 다시 찍어야 하는 경우는 gateFail/warns가 재촬영 버튼과 함께 받는다.
+     confidence 값 자체는 판정·계측에 그대로 살아 있다 — 화면에서만 뺐다. */
+  $("confBox").innerHTML = DEV
+    ? `<div class="warn ok">[개발] 신뢰도 ${(o.axes.confidence*100).toFixed(0)}% · ${o.engine_ver.replace("photo_","")}</div>`
+    : "";
   const L={
     hue_angle:"① 웜쿨 — 색상각 hue° (낮음=붉은기·쿨 / 높음=노란기·웜)", skin_a:"　 적색도 a*", skin_b:"　 황색도 b*",
     skin_L:"② 명도 — 피부 L* (노출 보정 후 · 높음=라이트/낮음=딥)", skin_L_raw:"　 피부 L* (보정 전 원값)", ita:"　 ITA° (밝기 계열)",
@@ -1539,12 +1741,21 @@ function render(o){
       pc:{primary:o.pc12.primary, secondary:o.pc12.secondary, borderline:o.pc12.borderline},
       warm_cool:{v:o.axes.warm_cool, borderline:o.pc12.wc_borderline},
       mute:o.mute_display?o.mute_display.label:null, confidence:o.axes.confidence,
+      // 2-7·2-8-1 응답 (대표 2026-08-25) — 판정 미투입, 측정 결과와 맞대보기 위한 기록.
+      // 여기 안 실으면 저장본(rec)은 out과 모양이 달라 index.html이 영영 못 읽는다.
+      pc_declared:o.pc_declared||null,
       axes:{line_score:o.axes.line_score, soft_deep:o.axes.soft_deep, warm_cool:o.axes.warm_cool},
       ratio:o.ratio, line:o.line,
       // hair_L·dyed는 산출은 되는데 여기서 빠져 있어 헤어 걸음이 판정될 수 없었다.
       // 값 자체는 §3-5가 "필드 없음"이라 적은 뒤에 이미 생겼다 — 이론팀 C3 승인 대기(2026-08-17).
+      // contrast_brow는 measure-color가 이미 계산하는데(L185 |skinL − browL|) 여기 안 담겨
+      // 기기 밖으로도, flatten으로도 못 나갔다. 마스터가 "진하고 직선적"을 카리스마 신호로
+      // 쓰는데 **진하기를 못 잰다**고 적혀 있던 것의 정체가 이것이다 — 재고 있었고 통로가 없었다
+      // (이론 측정확충 v1 P0-1). 축 가중은 에셋스코어링 §3-2에 이미 확정돼 있다(진함 → D+0.4).
+      // contrast_iris·ita도 같은 이유로 함께 연다 — 산출 비용 0이고 버리고 있었다.
       color:{skinL:o.color.skin_L, hue:o.color.hue_angle, chroma:o.color.chroma, contrast:o.color.contrast_overall,
-             hair_L:o.color.hair_L, dyed:o.color.dyed},
+             hair_L:o.color.hair_L, dyed:o.color.dyed,
+             contrast_brow:o.color.contrast_brow, contrast_iris:o.color.contrast_iris, ita:o.color.ita},
       // hairline_detected가 빠져 있어 리포트가 3분할을 게이트할 수 없었다. 미검출이면 상안부가
       // 이마 중간 기준으로 잡혀 **체계적으로 짧게** 나오는데(검출O 0.173~0.314 vs 검출X 0.141~0.161),
       // 그 상태로 "하안부가 긴 편"을 내면 틀린 말이다. 옛 저장분은 이 값이 없어 undefined로 통과한다.
@@ -1559,6 +1770,16 @@ function render(o){
       localStorage.setItem("chugu_photo_result",
         JSON.stringify(Object.assign({}, rec, {shots: prev.concat([rec]).slice(-24)})));
     }catch(e){}
+    // 부위 조각 — **다른 키에 둔다.** 두 가지 이유가 있다:
+    //  ① rec은 24장을 쌓는다. 여기 이미지를 넣으면 24배가 되어 한도를 그대로 밀어낸다.
+    //  ② 조각 저장이 용량으로 실패해도 측정값은 살아야 한다. 순서가 뒤면 그게 안 된다.
+    // 한 벌만 남긴다 — 가장 최근 사진의 조각. 다시 찍으면 덮어쓴다(옛 얼굴 조각이 쌓이지 않는다).
+    // 실패하면 반쪽 저장분을 남기지 않고 지운다. 없으면 화면에서 이미지 자리가 통째로 빠질 뿐이다.
+    try{
+      if(STATE && STATE.partCrops && Object.keys(STATE.partCrops).length)
+        localStorage.setItem("chugu_face_crops",
+          JSON.stringify({v:1, ts:rec.ts, parts:STATE.partCrops}));
+    }catch(e){ try{ localStorage.removeItem("chugu_face_crops"); }catch(_e){} }
     $("restartBtn").insertAdjacentHTML("beforebegin", FLOW_VERIFY
       ? `<a class="btn stepnav" id="toSurveyBtn" style="display:block;text-align:center;text-decoration:none" href="modules/home.html">확인하러 돌아가기 →</a>`
       : `<a class="btn stepnav" id="toSurveyBtn" style="display:block;text-align:center;text-decoration:none" href="index.html?flow=full">다음 — 추구미 설문으로 →</a>`);
