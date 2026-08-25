@@ -178,7 +178,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=931aff2"></script>
+<script src="czm-core.js?v=9ba2600"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -207,12 +207,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "931aff2";
+const BUILD = "9ba2600";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=931aff2";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=9ba2600";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -989,25 +989,13 @@ function renderReport(){
     parts:(part.lines||[]).concat(vs.map(x=>x.k.includes(":")?x.v:`${x.k}: ${x.v}`)),
     tips:tips.map(t=>t.tip)};
 
-  // 다리 1 (앱플로우 v1 §3-2-③, 방향성 로드맵 G1 전 항목): 강의가 여기서 끝나면
-  // 유일한 유입 채널이 루프로 안 이어진다. 진단 데이터는 이미 이 기기 localStorage에
-  // 있으므로(setSame origin) 홈이 바로 미션을 낼 수 있다 — 다리는 버튼 하나면 된다.
-  PAGES.push({t:"이어서 하기", skipSave:true,
-    draw:null,
-    html:`
-    <div class="card" style="text-align:center;padding:26px 20px">
-      <p style="font-size:17px;font-weight:800;color:#2B2233;margin-bottom:8px">오늘 진단이 미션으로 이어집니다</p>
-      <p style="font-size:14px;color:#6E6478;line-height:1.7;margin-bottom:16px">
-        받은 결과로 이번 주에 해볼 미션을 하나 드려요.<br>기록이 남으려면 로그인이 필요해요.</p>
-      <a class="btn" href="home.html${srcQ?("?"+srcQ.slice(1)):""}"
-         style="display:block;text-align:center;text-decoration:none"
-         onclick="lecTrack('bridge_to_app',{})">내 미션 받기</a>
-    </div>`});
+  // 「이어서 하기」(내 미션 받기) 장은 뺐다 — 대표 지시 2026-08-25.
+  // 강의 리포트는 그날 받은 결과로 끝난다. 미션은 앱의 일이다.
 
   // 대표 확정 순서(2026-08-18): 오늘의 진단 → 퍼스널컬러 → 얼굴·이목구비 → 추구미 → 비교 → 오늘 해볼 것
   // ⚠ 새 페이지를 만들면 여기에도 제목을 넣어야 한다. 없으면 조용히 맨 뒤로 밀린다.
   const ORDER=["지금 나의 매력과 추구미","내 퍼스널컬러","이렇게 쟀어요","얼굴형","눈","코","입","부위별로 보면",
-               "내 추구미","지금과 추구미, 벌어진 곳","색 이야기","오늘 해볼 것","오늘 해볼 것 2","오늘 해볼 것 3","색은 이렇게","이어서 하기"];
+               "내 추구미","지금과 추구미, 벌어진 곳","색 이야기","오늘 해볼 것","오늘 해볼 것 2","오늘 해볼 것 3","색은 이렇게"];
   PAGES.sort((a,b)=>{ const i=ORDER.indexOf(a.t), j=ORDER.indexOf(b.t);
     return (i<0?99:i)-(j<0?99:j); });
 
@@ -1049,7 +1037,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=931aff2"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=9ba2600"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
