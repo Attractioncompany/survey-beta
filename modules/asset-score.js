@@ -49,7 +49,13 @@ export const ASSETS = [
   { part:"눈", key:"eye_angle",   label:"눈꼬리",
     pos:{T:+0.6}, neg:{T:-0.4} },                       // 상향=카리·세련·에너 / 하향·수평=로맨·우아
   { part:"눈", key:"eye_round",   label:"눈 종횡비", derive:m => ratio(m.eye_open, m.eye_len),
-    pos:{T:-0.4}, neg:{T:+0.4, D:+0.2} },               // 동그람 / 길고 가늠
+    pos:{T:-0.4}, neg:{T:+0.4, D:+0.2},                 // 동그람 / 길고 가늠
+    /* ⚠ 재현성 게이트 실격 (2026-08-25 12명 판정). r = SD_w/SD_b = **0.497** (기준 0.35).
+       LOO 최소값조차 0.450이라 표본이 바뀌어도 안 뒤집힌다 — 견고한 실격이다.
+       어제 buildRef가 derive를 안 써서 이 자산이 판정에서 빠져 있던 것을 고쳤는데,
+       그 수정이 **실격 필드를 판정에 넣은 셈**이 됐다(타입 17.5% 이동의 원인).
+       buildRef 수정 자체는 옳다(기준을 못 만드는 건 버그) — 여기서 게이트로 막는다. */
+    enabled:false, gate:"재현성 r=0.497 (기준 0.35) — 2026-08-25 12명 판정" },
   { part:"눈", key:"eye_len",     label:"눈 크기",
     pos:{M:-0.4}, neg:{M:+0.4} },                       // 큼=동안. D 소적재(여성한정)는 섀도라 제외(§5-3)
   { part:"눈", key:"interocular", label:"눈 사이 간격",
@@ -67,7 +73,10 @@ export const ASSETS = [
 
   // ── 입 (v1.4 §3-4)
   { part:"입", key:"lip_thickness", label:"입술 두께", derive:m => sum(m.lip_upper, m.lip_lower),
-    pos:{T:-0.4}, neg:{T:+0.2, D:+0.2} },               // 도톰 / 얇음~보통
+    pos:{T:-0.4}, neg:{T:+0.2, D:+0.2},                 // 도톰 / 얇음~보통
+    /* ⚠ 재현성 게이트 실격 (2026-08-25 12명 판정). r = **0.442** (기준 0.35).
+       LOO 최소 0.377로 역시 견고한 실격. eye_round와 같은 경위다 — 위 주석 참조. */
+    enabled:false, gate:"재현성 r=0.442 (기준 0.35) — 2026-08-25 12명 판정" },
   { part:"입", key:"mouth_w",       label:"입 크기",
     pos:{D:+0.4}, neg:null },                           // 큼만 — 조합 판독 전용(D28 단독 금지)
 

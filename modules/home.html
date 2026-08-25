@@ -532,7 +532,13 @@ const tileGrid = () => `<div class="ph-grid">${HOME_TILES
 function renderNoDiag(){
   track("hub_shown", {diagnosed:false});
   app.innerHTML = shell({
-    // [마케팅 게이트 필요] 대표 지시 문구 2026-08-25.
+    // [게이트 통과 2026-08-25] 대표 지시 문구. 본문은 대표가 준 그대로 두고 둘만 손봤다 —
+    //   ① 제목이 "지금부터 매력 분석을 시작합니다"였는데 본문 둘째 줄이 "지금부터 여러분의
+    //      매력을 분석합니다"였다. 같은 말이 위아래로 두 번 서서 제목만 바꿨다.
+    //      («지금부터 ~ 시작합니다»는 photo.html 드레이핑 예고에도 같은 꼴로 있다.)
+    //   ② "여덟 가지 스탯으로 나뉘고," 의 줄 끝 쉼표를 뺐다 — 줄바꿈이 이미 쉼표의 일을 한다.
+    // ⚠ 남겨 둔 것: "여러분". 한 사람이 보는 화면이라 어색하다는 판단이지만 대표 원문이라
+    //   고치지 않고 의견만 올린다(보고서 참조).
     // 원문의 "각 스텟은 레벨로 표기됩니다"는 이론 판정과 어긋나 한 줄만 고쳤다 —
     // 레벨은 8칸 전부가 아니라 **성장분에만** 붙는다(이론설계_해설개편4건 §1).
     // 총합 30이 고정이라 8칸에 레벨을 매기면 배분의 재표기일 뿐이고, 9와 6이 같은
@@ -540,10 +546,10 @@ function renderNoDiag(){
     // 줄바꿈은 의미 단위로 직접 끊는다(폭에 맡기면 한가운데가 갈린다).
     body: `<div class="ph-glass ph-hero snap intro-hero">
         <div class="ph-gumi"><div class="pad"></div><img src="../character/분석중.png" alt="" onerror="this.parentNode.style.display='none'"></div>
-        <div class="ph-title">지금부터 매력 분석을<br>시작합니다</div>
+        <div class="ph-title">사진 한 장에서<br>시작합니다</div>
         <div class="ph-whytxt">추구미즘에 오신 것을 환영해요.<br>
           지금부터 여러분의 매력을 분석합니다.
-          <br><br>결과는 여덟 가지 스탯으로 나뉘고,<br>
+          <br><br>결과는 여덟 가지 스탯으로 나뉘고<br>
           미션을 해낼 때마다 그 스탯이 자랍니다.
           <br><br>그럼 시작해볼까요?</div>
       </div>`,
@@ -841,11 +847,14 @@ function homeOffer(){
 // [게이트 통과 2026-08-25] 넷 다 "무엇을 치르나"만 말한다. 좋다·아깝지 않다 류는 없다.
 // mid의 옛 문안("새로 갖추는 미션이에요")은 규모를 안 알려줘서 low와 구별이 안 됐다 —
 // 사전 고지가 안 되는 것 자체가 다크패턴이라는 게 이 등급이 넷인 이유다.
+// 재검수 2026-08-25: 넷이 전부 "~요"로 끝나 목록을 내리읽으면 같은 어미가 칸마다 반복됐다.
+//   time·mid를 어미 없는 꼴로 돌렸다. 이 칸의 형제 태그가 "+2"·"확인은 대략까지만"·
+//   "사진 확인은 준비 중" — 원래 문장이 아니라 라벨이 서는 자리다.
 const COST_TAG = {
   free: ["free", "돈 안 들어요"],
-  time: ["free", "연습만 하면 돼요"],
+  time: ["free", "준비물 없이 연습만"],
   low:  ["", "소모품 하나 사요"],
-  mid:  ["", "옷이나 시술 한 번이에요"],
+  mid:  ["", "옷이나 시술 한 번"],
 };
 const FREE_COST = new Set(["free", "time"]);
 const costTag = c => {
@@ -911,8 +920,9 @@ function renderList(){
   // 목록이 짧은 것은 사전 공백의 정직한 표시다 — 채우려고 없는 걸음을 지어내지 않는다(§4-4)
   app.innerHTML = shell({
     top: head("미션 고르기"),
-    body: `<div class="card"><p class="lead">마음 가는 걸 하나만 골라보세요.</p>
-      <p class="note">하나씩 해야 뭐가 달라졌는지 알 수 있어요.</p></div>` + cards,
+    // 옛 문안은 "하나만" 다음 줄에 "하나씩"이 또 서서 같은 말이 두 번 읽혔다.
+    body: `<div class="card"><p class="lead">마음 가는 걸로 골라보세요.</p>
+      <p class="note">한 번에 하나씩 해야 뭐가 달라졌는지 보입니다.</p></div>` + cards,
     btm: `<div class="btm-quiet"><button class="btn quiet" id="reroll">다른 미션 보기</button>
           <i>·</i><button class="btn quiet" id="back">홈으로</button></div>`,
   });
@@ -1157,7 +1167,7 @@ async function renderCloset(){
   // 빈 자리는 조합의 재료다 — "사라"가 아니라 "이만큼 더 조합된다"로만 말한다.
   const empty = slotsHere.filter(s => !items.some(i => i.slot === s));
   const emptyCard = empty.length ? `<div class="card" style="margin-top:16px">
-      <p class="note" style="margin:0 0 8px">아직 비어 있는 자리</p>
+      <p class="note" style="margin:0 0 8px">비어 있는 자리</p>
       <div class="chips">${empty.map(s =>
         `<button class="chip" data-empty="${s}">${SLOT_LABEL[s]}</button>`).join("")}</div>
       <p class="note" style="margin-top:10px;opacity:.75">${
@@ -1176,7 +1186,7 @@ async function renderCloset(){
     body: tabs + (items.length ? groups : `<div class="card ph-glass">
       <p class="lead">${mine ? "파우치에 담긴 게 아직 없어요." : "옷장에 담긴 게 아직 없어요."}</p>
       <p class="note">${mine
-        ? "자주 쓰는 립이나 쿠션 하나만 있어도 그날 차림에 맞춰 같이 골라드려요."
+        ? "자주 쓰는 립이나 쿠션 하나만 있어도 그날 차림에 맞춰 같이 골라드립니다."
         : "오늘 입은 것 한 벌만 담아도 내일 아침 추천이 나옵니다."}</p></div>`) + emptyCard,
     btm: `<button class="btn" id="add">담기</button>
           <button class="btn quiet" id="back">오늘로</button>`,

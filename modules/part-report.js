@@ -28,18 +28,18 @@ export const iga = w => w + (jong(w) ? "이" : "가");
 export const OBS = {
   eye_angle:    { hi:{c:"눈꼬리가 살짝 올라가고", e:"눈꼬리가 살짝 올라가서요", d:"눈꼬리가 살짝 올라가 있어요"},
                     lo:{c:"눈꼬리가 부드럽게 내려오고", e:"눈꼬리가 부드럽게 내려와서요", d:"눈꼬리가 부드럽게 내려와 있어요"} },
-  eye_round:      { hi:{c:"눈이 동그랗게 트이고", e:"눈이 동그랗게 트여서요", d:"눈이 동그랗게 트여 있어요"},
-                    lo:{c:"눈이 길고 시원하게 뻗고", e:"눈이 길고 시원하게 뻗어서요", d:"눈이 길고 시원하게 뻗어 있어요"} },
-  eye_len:        { hi:{c:"눈이 시원하게 자리를 잡고", e:"눈이 시원하게 자리를 잡아서요", d:"눈이 시원하게 길어요"},
-                    lo:{c:"눈매가 아담하고", e:"눈매가 아담해서요", d:"눈매가 아담해요"} },
+  /* ⚠ eye_round(0.50) · eye_len(0.44) · brow_arch_deg(0.57) · brow_eye_gap(0.52) ·
+     lip_thickness(0.44) 항목을 뺐다 (2026-08-25 재현성 검증 · 12명 × 21회 촬영).
+     판정 기준은 SD_w < 0.35 × SD_b — **한 사람이 다시 찍었을 때의 변동이 사람들 사이 차이의
+     35%보다 작아야** 그 측정이 사람을 구별한다고 볼 수 있다. 다섯 값 전부 기준을 넘겼다.
+     같은 사람이 5분 뒤에 다시 찍기만 해도 "눈이 시원하게 길어요"가 "눈매가 아담해요"로 넘어가는
+     폭이라, 그 문장은 얼굴이 아니라 **그날의 촬영**을 서술한다. 잘 다듬어도 틀린 말이라
+     문구를 고치지 않고 항목을 뺐다 — jaw_angular_deg를 뺀 것과 같은 처리다.
+     ⚠ 결과: 눈썹은 등재 어휘가 0개가 되어 판정 문장만 남는다("눈썹은 ~ 매력에 가까워요.").
+       bandRows의 「눈썹 모양」 값 행(brow_arch_deg)은 여기가 아니라 report-explain에 있다 —
+       같은 값을 다른 계층에서 계속 말하고 있으므로 **이론 회부 대기**다. */
   interocular:    { hi:{c:"눈 사이가 넉넉하고", e:"눈 사이가 넉넉해서요", d:"눈 사이가 넉넉해요"},
                     lo:{c:"눈 사이가 가깝고", e:"눈 사이가 가까워서요", d:"눈 사이가 가까워요"} },
-  brow_arch_deg:  { hi:{c:"눈썹이 둥글게 휘고", e:"눈썹이 둥글게 휘어서요", d:"눈썹이 둥글게 휘어 있어요"},
-                    lo:{c:"눈썹이 곧게 뻗고", e:"눈썹이 곧게 뻗어서요", d:"눈썹이 곧게 뻗어 있어요"} },
-  brow_eye_gap:   { hi:{c:"눈썹과 눈 사이가 여유롭고", e:"눈썹과 눈 사이가 여유로워서요", d:"눈썹과 눈 사이가 여유로워요"},
-                    lo:{c:"눈썹이 눈에 가깝게 붙고", e:"눈썹이 눈에 가깝게 붙어서요", d:"눈썹이 눈에 가깝게 붙어 있어요"} },
-  lip_thickness:  { hi:{c:"입술이 도톰하고", e:"입술이 도톰해서요", d:"입술이 도톰해요"},
-                    lo:{c:"입술이 야무지게 정돈되고", e:"입술이 야무지게 정돈돼서요", d:"입술이 야무지게 정돈돼 있어요"} },
   mouth_w:        { hi:{c:"입이 시원하게 넓고", e:"입이 시원하게 넓어서요", d:"입이 시원하게 넓어요"},
                     lo:{c:"입이 단정하게 모이고", e:"입이 단정하게 모여서요", d:"입이 단정하게 모여 있어요"} },
   /* ⚠ jaw_angular_deg 항목을 뺐다 (2026-08-25, 오류대장 §045 · 이론 재판정).
@@ -131,7 +131,11 @@ export function partRow({ part, type, second, adjacent, obs, n, missing, flagged
   const tail = ws.length === 0 ? ""
     : ws.length === 1 ? ` ${last}.`
     : ` ${ws.slice(0, -1).map(w => dropSubj(w.c, part)).join(", ")}, ${last}.`;
-  row.line = `${eun(part)} ${type} 매력에 가까워요.${tail}`;
+  // 어미 (게이트 2026-08-25): 관찰 문장이 붙으면 그 문장이 "~어 있어요"로 끝난다. 앞줄까지
+  // "~가까워요"로 두면 부위 장마다 세로로 "~요 / ~요"가 붙었다(실측: 눈·피부톤·눈썹).
+  // 뒤에 붙을 말이 있을 때만 앞을 ~니다로 받는다. 한 줄로 끝나는 부위는 ~요 그대로 — 혼자 선
+  // 문장까지 합니다체로 바꾸면 판정 통보처럼 읽힌다.
+  row.line = `${eun(part)} ${type} 매력에 ${tail ? "가깝습니다" : "가까워요"}.${tail}`;
   // 저신뢰 병기("사진 한 장으론 확신이 낮은 부위예요")는 삭제했다 — 대표 지시 2026-08-25.
   // 유저가 그 문장을 읽고 할 수 있는 게 없고, 신뢰만 깎인다. 결측 고지(위 강등 ①)는 남는다.
   return row;
@@ -162,7 +166,8 @@ export function summaryNarrative(rows, overallType, varianceHigh, conv) {
   const differ = rows.filter(r => r.type && r.type !== overallType && r.line);
   // 채널 수렴 미충족 → 확신 화법 금지. 방향 제시 + 인접 표기로 강등(정본 v1.4 §3-3)
   if (conv && !conv.strong) {
-    let s = `지금 보이는 건 ${overallType} 쪽 방향이에요.`;
+    // 앞 줄이 "…모은 결과예요."라 여기까지 ~이에요로 받으면 세로로 같은 어미가 셋 이어진다.
+    let s = `지금 보이는 방향은 ${overallType} 쪽입니다.`;
     if (differ.length) s += ` ${differ[0].type} 매력도 섞여 있어요.`;
     return s;
   }
@@ -246,8 +251,8 @@ export function selfCheck() {
   ok(!/피부가 환하게/.test(rn.line), "코는 관찰 어휘 미사용");
   // 7) 이유 문장은 관찰 3개까지 (2026-08-25 확대)
   const re = partRow({ part: "눈", type: "로맨틱",
-    obs: [{ field: "eye_angle", dir: "lo" }, { field: "eye_len", dir: "hi" },
-          { field: "interocular", dir: "hi" }, { field: "eye_round", dir: "hi" }], n: 10 });
+    obs: [{ field: "eye_angle", dir: "lo" }, { field: "interocular", dir: "hi" },
+          { field: "skinL", dir: "hi" }, { field: "chroma", dir: "hi" }], n: 10 });
   ok((re.line.match(/,/g) || []).length === 2, "관찰 3개(쉼표 2개)");
   ok(re.line.includes("눈꼬리가 부드럽게 내려오고"), "관찰 어휘 매핑");
   // 8) 금지어가 산출물에 없다
@@ -267,18 +272,25 @@ export function selfCheck() {
   ok(iga("눈썹") === "눈썹이" && iga("코") === "코가", "이/가");
   // 12) 어미 — 마지막 관찰만 종결형. "잡고해서요" 류가 나오면 안 된다
   const r2 = partRow({ part:"눈", type:"로맨틱", n:10,
-    obs:[{field:"eye_angle",dir:"lo"},{field:"eye_len",dir:"hi"}] });
+    obs:[{field:"eye_angle",dir:"lo"},{field:"interocular",dir:"hi"}] });
   ok(!/고해서요|고 해서요/.test(r2.line), "연결형+종결형 중복 없음");
   // 마케팅 확정 2026-08-18: 이유형(-서요)이 아니라 평서 종결형(d)으로 끝난다.
   // 동작 동사는 "-어 있어요"여야 상태로 읽힌다("붙어요"는 지금 붙는 중으로 들린다).
   ok(!/서요\./.test(r2.line), "이유형 종결 없음");
-  ok(r2.line.endsWith("시원하게 길어요."), "마지막 관찰이 평서 종결형");
+  ok(r2.line.endsWith("눈 사이가 넉넉해요."), "마지막 관찰이 평서 종결형");
   // 앞문장이 "눈은 ~"인데 뒷문장도 "눈이 ~"면 주어가 두 번 선다 — 뒤쪽은 지운다
   ok(!/가까워요\. 눈이 /.test(r2.line), "주어 중복 없음");
   ok(r2.line.startsWith("눈은 로맨틱"), "부위 조사 정상");
   // 13) 관찰 1개일 때도 종결형
-  const r1 = partRow({ part:"눈썹", type:"로맨틱", n:10, obs:[{field:"brow_arch_deg",dir:"hi"}] });
-  ok(r1.line === "눈썹은 로맨틱 매력에 가까워요. 둥글게 휘어 있어요.", "관찰 1개 종결형");
+  // 눈썹은 재현성 미달로 등재 어휘가 0개가 됐다(위 OBS 주석). 살아 있는 부위로 옮겨 같은 경로를 잰다.
+  const r1 = partRow({ part:"입", type:"로맨틱", n:10, obs:[{field:"mouth_w",dir:"hi"}] });
+  ok(r1.line === "입은 로맨틱 매력에 가깝습니다. 시원하게 넓어요.", "관찰 1개 종결형");
+  // 관찰이 하나도 없으면 혼자 서는 문장이라 ~요를 지킨다
+  ok(partRow({ part:"입", type:"로맨틱", n:10, obs:[] }).line === "입은 로맨틱 매력에 가까워요.",
+     "관찰 0개는 ~요 유지");
+  // 뺀 어휘가 사전에 되살아나면 여기서 걸린다(재현성 미달 5종 · 2026-08-25)
+  ok(["eye_round","eye_len","brow_arch_deg","brow_eye_gap","lip_thickness"]
+       .every(k => OBS[k] === undefined), "재현성 미달 어휘 미등재");
   // 14) 종합 서사 조사
   const sn = summaryNarrative(
     [{part:"눈",type:"로맨틱",line:"x"},{part:"눈썹",type:"로맨틱",line:"x"},{part:"코",type:"클래식",line:"x"}],
@@ -300,7 +312,7 @@ export function selfCheck() {
   const rr = [{part:"눈",type:"세련된",line:"x"},{part:"윤곽",type:"세련된",line:"x"},{part:"코",type:"클래식",line:"x"}];
   const weak = summaryNarrative(rr, "세련된", false, cvNo);
   ok(!/같은 방향을 가리켜서|모였어요/.test(weak), "미충족 → 확신 화법 없음");
-  ok(weak.includes("쪽 방향이에요"), "미충족 → 방향 제시 화법");
+  ok(weak.includes("보이는 방향은") && weak.includes("쪽입니다"), "미충족 → 방향 제시 화법");
   const strong = summaryNarrative(rr, "세련된", false, cvYes);
   ok(strong.includes("모였어요"), "충족 → 확신 화법");
   // 17) conv 미전달이면 기존 동작(하위 호환)

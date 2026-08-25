@@ -132,7 +132,7 @@ function albumHTML(shots, hasCrops) {
   if (!shots.length) return hasCrops
     ? `<div class="card ph-glass" id="album"><h2>얼굴 조각</h2>
          <p class="note">해설에 쓰려고 부위별로 잘라 둔 조각이 이 기기에 있어요. 서버에는 올라가지 않습니다.</p>
-         <button class="btn ghost" id="albClear" style="margin-top:8px">저장된 사진 지우기</button>
+         <button class="btn ghost" id="albClear" style="margin-top:8px">저장된 조각 지우기</button>
        </div>`
     : "";
   const day = t => { const x = new Date(t ?? 0); return `${x.getMonth() + 1}.${x.getDate()}`; };
@@ -140,17 +140,22 @@ function albumHTML(shots, hasCrops) {
   const pick = pair ? [shots[0], shots[shots.length - 1]] : [shots[0]];
   const cap  = pair ? ["처음 · " + day(pick[0].ts), "지금 · " + day(pick[1].ts)]
                     : ["처음 · " + day(pick[0].ts)];
-  // [마케팅 게이트 필요] — 아래 문구 5개는 유저향 신규 카피다.
+  // [게이트 통과 2026-08-25] 말하는 자리 셋이 서로 다른 말을 하게 갈랐다.
+  //   1장 = 사실 고지 · 2장~ = 잃을 것이 생긴 시점 · 아래 상시 한 줄 = 서버 미전송.
+  //   1장 문안에서 "서버로 보내지 않습니다"를 뺐다 — 같은 카드 맨 아래 상시 줄이 이미 그 말을 한다.
+  //   2장 문안에서 "나란히"를 뺐다 — 바로 위 제목이 "나란히 놓고 보기"다.
   const lead = pair
-    ? `나란히 볼 수 있게 됐어요. 남겨두고 싶으면 사진첩으로 저장해 두세요.`
-    : `이 사진은 폰 안에만 있어요. 서버로 보내지 않습니다. 대신 폰을 바꾸면 같이 사라져요.`;
+    ? `이제 비교할 게 생겼어요. 폰을 바꾸면 같이 사라지니 사진첩에도 한 벌 남겨두세요.`
+    : `이 사진은 폰 안에만 남아요. 폰을 바꾸면 같이 사라지니 그 점만 알아두세요.`;
   const frames = pick.map((s, i) =>
     `<figure style="flex:1;min-width:0;margin:0;text-align:center">
        <img class="alb-i" alt="" style="width:100%;aspect-ratio:3/4;object-fit:cover;
             border-radius:14px;background:var(--line);display:block">
        <figcaption style="font-size:12px;color:var(--sub);margin-top:6px">${cap[i]}</figcaption>
      </figure>`).join("");
-  return `<div class="card ph-glass" id="album"><h2>나란히 놓고 보기</h2>
+  // 사진이 한 장뿐인데 "나란히 놓고 보기"라고 쓰면 액자가 하나인 화면과 어긋난다.
+  // pair는 위에서 이미 정해져 있다 — 새 판단을 만들지 않고 제목만 그 값에 맞춘다.
+  return `<div class="card ph-glass" id="album"><h2>${pair ? "나란히 놓고 보기" : "처음 사진"}</h2>
     <div style="display:flex;gap:10px;align-items:flex-start">${frames}</div>
     <p class="note">${lead}</p>
     ${pair ? `<button class="btn ghost" id="albSave">사진첩에 저장</button>` : ``}
@@ -189,7 +194,9 @@ function wireAlbum(ctx, shots) {
 
   const clear = document.getElementById("albClear");
   if (clear) clear.onclick = async () => {
-    if (!confirm("기기에 있는 검증 사진을 모두 지웁니다. 측정 기록과 미션 이력은 그대로예요.")) return;
+    // 이 문은 사진과 얼굴 조각을 같이 지운다. 사진이 없는 기기(웹에서 잰 사람)에도 이 문이 서므로
+    // "검증 사진"만 적으면 조각만 있는 유저에게는 사실과 다른 고지가 된다.
+    if (!confirm("기기에 남은 사진과 얼굴 조각을 모두 지웁니다. 측정 기록과 미션 이력은 그대로예요.")) return;
     // 지울 파일이 있을 때만 셸을 부른다. 웹에는 그 파일 시스템이 없어 native가 반드시 실패하는데,
     // 예전엔 그 실패로 여기서 빠져나가 **조각이 안 지워졌다**. 사진은 앱에만, 조각은 양쪽에 있다.
     if (shots.length) {

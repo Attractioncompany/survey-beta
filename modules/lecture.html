@@ -178,7 +178,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=dd41d4c"></script>
+<script src="czm-core.js?v=931aff2"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -207,12 +207,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "dd41d4c";
+const BUILD = "931aff2";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=dd41d4c";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=931aff2";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -731,14 +731,14 @@ function verdicts(r, l, q){
     out.push({group:"좌우 대칭", k:"좌우 균형", v:av.label,
       s: worst&&KO[worst] ? `가장 차이가 큰 곳은 ${KO[worst]}${jong(KO[worst])?"이에요":"예요"}` : "얼굴 중앙선을 기준으로 좌우를 견줬어요"});
   }
-  if(l.jaw_angular_deg!=null) push("얼굴형","턱선",l.jaw_angular_deg,"jaw_angular_deg",
-    `${l.jaw_angular_deg}° — 턱선이 꺾이는 정도예요`);
+  // 턱선(jaw_angular_deg)·눈썹 모양(brow_arch_deg)은 뺐다 (2026-08-25, 앱과 같은 선).
+  // jaw_angular_deg는 SD_b 0.7533 vs SD_w 1.4679 — 인물 간 차이보다 한 사람의 촬영 간 변동이
+  // 2배 크다. 그런 값으로 만든 문장은 그 사람의 얼굴이 아니라 그날의 조명과 각도를 서술한다.
+  // 강의장은 조명이 제각각이라 더 그렇다. 나머지 line 3종은 앱과 동일하게 [잠정] 유지.
   if(l.chin_angle_deg!=null) push("얼굴형","턱끝",l.chin_angle_deg,"chin_angle_deg",
     `${l.chin_angle_deg}° — 턱 끝이 모이는 각도예요`);
   if(l.eye_angle!=null) push("눈","눈매",l.eye_angle,"eye_angle",
     "눈꼬리가 눈머리보다 얼마나 올라가 있는지 본 값이에요");
-  if(l.brow_arch_deg!=null) push("눈썹","눈썹 모양",l.brow_arch_deg,"brow_arch_deg",
-    `${l.brow_arch_deg}° — 눈썹 산이 솟은 정도예요`);
   if(l.mouth_corner!=null) push("입","입꼬리",l.mouth_corner,"mouth_corner",
     "입꼬리가 향하는 쪽이에요");
   return out;
@@ -1049,7 +1049,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=dd41d4c"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=931aff2"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
