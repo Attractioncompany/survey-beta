@@ -91,12 +91,24 @@ export function gauge({ part, n, missing, flagged }) {
  * 부위 1행 생성.
  * @param part 부위명 / @param type 부위 판정 타입(에셋 엔진) / @param obs 관찰 [{field, dir}]
  */
-export function partRow({ part, type, second, adjacent, obs, n, missing, flagged }) {
+/* 이 부위가 판정에 못 들어온 이유가 **게이트 때문인가**.
+   detail에는 게이트로 닫힌 에셋도 관측값과 함께 남는다(asset-score가 rec.gated로 표시한다).
+   그 부위 항목이 하나라도 있고 **전부 gated**면, 못 잰 게 아니라 안 쓴 것이다. */
+function gatedOnly(score, part) {
+  const rows = (score && score.detail || []).filter(x => x.part === part);
+  if (!rows.length) return false;
+  return rows.every(x => x.gated);
+}
+
+export function partRow({ part, type, second, adjacent, obs, n, missing, flagged, gated }) {
   const g = gauge({ part, n, missing, flagged });
   const row = { part, type, gauge: g };
 
   if (missing) {                       // 강등 ① — 라벨 교체 + 이유 문장 생략(정본 §3-3 강등)
-    row.label = "사진에서 잘 안 잡혔어요";   // "흐리게 보였어요"는 측정 실패인지 안 잰 건지 구분이 안 된다(대표 지적)
+    // gated = 측정은 됐고 판정에만 안 쓴 경우. 사진 탓으로 돌리지 않는다(2026-08-26).
+    row.label = gated ? "측정은 했고, 판정 기준을 세우는 중이에요"
+                      : "사진에서 잘 안 잡혔어요";
+    row.gated = !!gated;
     row.line = "";
     return row;
   }
@@ -222,7 +234,16 @@ export function buildPartRows(score, { n = 0, expressionType = null, skip = null
 
     const key = part === "볼·입체" ? "볼입체" : part;   // 엔진 부위명과의 표기 차이
     const t = score.partTypes && score.partTypes[key];
-    if (!t) return partRow({ part, n, missing: true });
+    /* 판정이 없는 이유가 둘인데 한 문장으로 뭉쳐 있었다 (2026-08-26 · 대표 지적
+       "그럼 측정이 잘못된거 아니냐고 내가 몇 번을 얘기하지?").
+         ① 사진에서 그 부위를 못 잡았다 — 재촬영이 답이다
+         ② 잡았지만 **우리가 판정에 안 쓴다** — 재현성 게이트가 닫혀 있어서다
+       실제로 화면에 뜨던 「볼·입체 · 입은 이번 사진에서 잘 안 잡혀」는 ②였다.
+       볼입체는 에셋이 cheek_volume 하나뿐인데 게이트가 닫혀 있고, 입은 lip_thickness가
+       재현성 실격(r=0.442)이라 남은 mouth_w가 단방향(neg:null)이다. 둘 다 **측정은 됐다.**
+       사진 탓으로 돌린 것은 사실과 다르고, 유저에게는 "내가 잘못 찍었나"로 읽힌다.
+       → gated 사유를 구분해 넘긴다. 문구는 partRow가 고른다. */
+    if (!t) return partRow({ part, n, missing: true, gated: gatedOnly(score, key) });
     return partRow({ part, type: t.type, second: t.second, adjacent: t.adjacent,
                      obs: obsOf(key), n });
   });

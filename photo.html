@@ -32,8 +32,16 @@ b,strong{font-variant-numeric:tabular-nums;}
 .btn:hover{filter:brightness(1.06);}
 .btn:active{filter:brightness(.94);}
 .btn:focus-visible{outline:3px solid var(--accent-btn);outline-offset:2px;}
-/* 전역 포커스 링 통합 (Plan C Task5 · 개별 규칙과 중복되어도 무해) */
-a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+/* 전역 포커스 링 통합 (Plan C Task5 · 개별 규칙과 중복되어도 무해)
+   ⚠ tabindex="-1"은 뺀다 (2026-08-26 · 대표: "이 색상 테두리는 또 갑자기 어디서 튀어나왔으며").
+   `.step`이 tabindex="-1"이고 단계가 바뀔 때 스크린리더 안내용으로 focus()를 받는다.
+   **Safari는 프로그램적 포커스에도 focus-visible을 준다** — 그래서 화면을 통째로 감싸는
+   보라 테두리가 떴고, 컨테이너가 화면보다 길어 아래가 잘린 것처럼 보였다.
+   앱만 그런 이유도 이것이다(WKWebView = Safari 엔진). 크롬에서는 안 뜬다.
+   tabindex="-1"은 탭 순서에 없어 키보드로 도달할 수 없으므로, 포커스 링이 필요 없다.
+   스크린리더 안내는 포커스 이동만으로 되고 테두리와 무관하다 — 접근성 손실 없음. */
+a:focus-visible, button:focus-visible, input:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
 .btn.sub{background:var(--line);color:var(--ink);}
 canvas{width:100%;border-radius:12px;background:#eee;}
 .metric{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F0EDF4;font-size:13px;color:var(--sub);}
@@ -72,7 +80,16 @@ details[open] summary::after{content:" ▴";}
 .step.active{display:flex;flex-direction:column;flex:1;min-height:0;animation:stepIn .25s ease;}
 /* 스크롤 스냅은 넣지 않는다 — proximity 스냅이 로드 직후 첫 카드로 붙어버려
    위쪽 제목·안내가 화면 밖으로 밀려났다(실측 2026-08-24). */
-.step-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;}
+/* 카드가 남는 자리를 채운다 (2026-08-26 · 대표: "배경안에들어간 흰박스는 풀로쓰라고
+   몇번을 얘기한거같은데?"). 그전에는 카드가 내용만큼만 크고 아래 3분의 2가 배경이었다 —
+   화면 위쪽에 흰 박스 하나가 떠 있고 나머지는 빈 연보라였다.
+   마지막 카드가 남는 높이를 먹는다. 내용은 위에서 시작하고(가운데로 몰지 않는다),
+   늘어난 것은 카드의 바닥이다. 카드가 여럿인 화면에서도 마지막 것만 늘어난다. */
+.step-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;
+  display:flex;flex-direction:column;}
+/* :last-child로는 안 된다 — 뒤에 display:none인 카드가 서 있으면 그것이 마지막이 된다
+   (촬영 화면은 동의·염색모 카드를 숨겨 뒀다가 나중에 낸다). 보이는 것 중 마지막을 JS가 찍는다. */
+.step-body > .card.grow{flex:1;}
 @keyframes stepIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 #stepbar{display:flex;gap:6px;flex-shrink:0;margin:0 0 12px;}
 #stepbar .sb{flex:1;text-align:center;font-size:11px;color:var(--sub);padding:7px 2px 8px;border-radius:10px;background:#fff;border:1.5px solid var(--line);}
@@ -449,9 +466,9 @@ body.cam-open{overflow:hidden;}
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="modules/czm-core.js?v=9ba2600"></script>
-<script src="modules/measure-color.js?v=9ba2600"></script>
-<script src="modules/measure-structure.js?v=9ba2600"></script>
+<script src="modules/czm-core.js?v=71a6da7"></script>
+<script src="modules/measure-color.js?v=71a6da7"></script>
+<script src="modules/measure-structure.js?v=71a6da7"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -461,9 +478,21 @@ let CUR_STEP=1;
 // 여정 스텝바 모드 (P0-2): flow=full이면 스텝바가 전체 여정(사진→설문→결과)을 그린다.
 // 그때 내부 단계(준비~측정)로 스텝바를 움직이면 "설문"에 불이 들어오는 거짓말이 되므로 잠근다.
 let JOURNEY=false;
+/* 보이는 카드 중 마지막이 남는 자리를 먹는다 (대표 2026-08-26 — 흰 박스를 풀로).
+   카드는 화면마다 숨었다 나타나므로 CSS 선택자로는 못 잡는다. 화면이 바뀔 때마다 다시 찍는다.
+   내용이 이미 넘치는 화면에서는 flex:1이 아무 일도 안 한다 — 자연히 꺼진다. */
+function fillLastCard(){
+  const b = document.querySelector(".step.active .step-body");
+  if(!b) return;
+  const cards = [...b.querySelectorAll(":scope > .card")];
+  cards.forEach(c => c.classList.remove("grow"));
+  const vis = cards.filter(c => getComputedStyle(c).display !== "none");
+  vis.at(-1)?.classList.add("grow");
+}
 function goStep(n){
   if(n===CUR_STEP) return;
   CUR_STEP=n;
+  setTimeout(fillLastCard, 0);   // 클래스 전환이 끝난 뒤에 재야 숨김 상태가 정확하다
   document.querySelectorAll(".step").forEach(el=>el.classList.toggle("active", el.id==="step"+n));
   if(!JOURNEY) document.querySelectorAll("#stepbar .sb").forEach(el=>{
     const k=+el.dataset.s;
@@ -488,8 +517,8 @@ window.__pm={ analyze:img=>analyze(img), get state(){ return STATE; } };
 // 개발/검수 모드: 주소 뒤에 ?dev=1 — 출력 JSON·랜드마크 오버레이·엔진 버전 표기 등 순수 개발용만.
 // 지표(수치+해설)는 기본 화면에 항상 표시한다 (대표 2회 확정 07-11·07-20, REQUEST_dev_ux_restore §1).
 // 과거의 "수치는 내부·검증·B2B 전용" 근거는 폐기됨 — 지표를 다시 숨기려면 대표 승인 필요.
-const DEV = new URLSearchParams(location.search).get("9ba2600")==="1";
-if(DEV) document.body.classList.add("9ba2600");
+const DEV = new URLSearchParams(location.search).get("71a6da7")==="1";
+if(DEV) document.body.classList.add("71a6da7");
 // 성별 전달 경로 (이론 이목구비앵커 §3, 2026-07-30) — index GENDER를 ?gender=f/m 로 수신. 여성한정 앵커(eye_len F1)·성별밴드(U30) 검증용.
 // ⚠ photo_measurements payload에는 넣지 않음(성별은 app_users.gender 조인, backend 결정 2026-07-30). 현재는 경로만 확보, 실사용은 통합/eye_len 카드 구현 시.
 const GENDER_PM = new URLSearchParams(location.search).get("gender")||null;
@@ -631,6 +660,7 @@ function gShow(i){
   const last = GI===GSTEPS.length-1;
   $("gNext").style.visibility = last ? "hidden" : "visible";
   GATED.forEach(el=>{ if(el) el.style.display = last ? "" : "none"; });
+  fillLastCard();   // 동의 카드가 나타나면 늘어나야 할 카드가 바뀐다
 }
 $("gPrev").addEventListener("click", ()=>gShow(GI-1));
 $("gNext").addEventListener("click", ()=>gShow(GI+1));
@@ -965,10 +995,21 @@ function askPcType(){
     step:"거의 다 왔어요",
     q:"어떤 타입으로 나오셨어요?",
     hint:"기억나는 대로 골라주시면 돼요. 측정 결과와 맞대보는 데 씁니다.",
+    /* ⚠ 타입을 고른 사람은 드레이핑을 하지 않는다 (2026-08-26 수정 · 대표 제보
+       "진단 받아봐서 내가 타입을 골랐는데도 드레이핑이 진행되는데?").
+
+       대표 지시 2-8-1 원문: "마지막보기에 기억나지 않음 또는 다시테스트하고싶음 항목 추가,
+       **이항목선택시** 아니오선택자와 동일하게 드레이핑으로 이동".
+       즉 드레이핑으로 가는 사람은 셋 중 둘이다 — 「아니요」와 「기억나지 않음」.
+       이미 아는 타입을 말해 준 사람에게 같은 걸 또 묻는 것은 그 답을 안 쓰겠다는 뜻이 된다.
+
+       고른 타입은 판정에 그대로 쓴다(아래 finalize의 pc_source="declared").
+       PC_CHOICES가 12타입 정본 이름과 같은 형식이라 변환이 필요 없다. */
     opts:PC_CHOICES.map(name=>({label:name, go:()=>{
       STATE.pc_declared=name;
       pmTrack("photo_pc_bridge",{stage:"type_pick", type:name});
-      drapeIntro();
+      $("pcAskCard").style.display="none";
+      CZM.trace.run("종합판정", finalize);
     }})).concat([{label:"기억나지 않음 또는 다시 테스트하고 싶음", go:()=>{
       STATE.pc_declared="forgot";
       pmTrack("photo_pc_bridge",{stage:"forgot"});
@@ -986,7 +1027,9 @@ function drapeIntro(){
     step:"",
     q:"지금부터 퍼스널컬러 진단을 시작합니다",
     hint:"진단은 육안진단(드레이핑)과 기기 스캔 데이터를 함께 놓고 진행합니다.\n\n✓ 더 자연스럽고 편안해 보이는 쪽을 골라주세요\n✓ 다크서클·홍조·잡티가 도드라져 보이면 그 색은 넘기시면 됩니다\n✓ 더 정확한 진단을 원하신다면 전문가 컨설팅을 권합니다",
-    opts:[{label:"시작하기", primary:true, go:()=>{ $("pcAskCard").style.display="none"; askDraping("r1"); }}]
+    // ⚠ 라운드 id가 t1이다 (2026-08-26 재설계). "r1"을 넘기면 drapeRound가 못 찾아 null을 돌려주고
+    //   드레이핑을 한 판도 안 물은 채 판정으로 직행한다 — 대표 제보 "시작하기 누르니까 다쟀어요 하고 그냥 넘어감".
+    opts:[{label:"시작하기", primary:true, go:()=>{ $("pcAskCard").style.display="none"; askDraping("t1"); }}]
   });
 }
 
@@ -1008,25 +1051,51 @@ const T8LINE=Object.fromEntries(T8.map(t=>[t.name,t.line]));
 
 // ---------- 가상 드레이핑 A/B (이론 요청서 2026-07-20 §2A) ----------
 // 좌우 위치는 라운드마다 교차합니다 — "왼쪽을 더 고르는" 습관이 웜쿨 신호에 섞이지 않게.
-const ROUNDS = {
-  // Lab 등명도 페어(확정서 2026-07-22)·강사검수 전 초기값 — 목표 R1 L62/C50/h55·h280. 화면 '실버'는 C*3.0 무채색=채도를 잼이라 폐기(§1.3)
-  r1:{step:"1/2 단계", hint:"둘 다 마음에 안 들어도 괜찮아요. 얼굴이 더 환해 보이는 쪽이면 돼요. 화면 야간 모드(노랗게 보이는 설정)는 잠깐 꺼주세요",
-      opts:[{v:"orange",name:"주황",color:"#D6804E"},{v:"blue",name:"파랑",color:"#6296ED"}]},
-  r2:{step:"2/2 단계", hint:"비슷해 보이면 턱·눈 밑 그늘이 옅은 쪽으로 봐주세요",
-      opts:[{v:"white",name:"퓨어 화이트",color:"#FFFFFF"},{v:"ivory",name:"아이보리",color:"#F5EDDC"}]},
-  r3:{step:"마지막 한 장", hint:"이번엔 흰색과 검정이에요 — 얼굴이 또렷하게 살아나는 쪽으로",
-      opts:[{v:"white",name:"퓨어 화이트",color:"#FFFFFF"},{v:"black",name:"블랙",color:"#111111"}]},
-  // R4 온도 분기(확정서 2026-07-22 §2): 판정된 온도 계열 안에서 채도만 대비. 목표 Lab L60/C45·C15/h55·h275·h17
-  // 정적 opts는 wcSide 판정 전 폴백 — 로즈 교정판(기존 #D14D5E/#B08A8E 교체, 자기 스펙 ΔL*9.6 위반 교정 §2.2)
-  r4:{step:"한 장 더", q:"어느 쪽에서 얼굴이 더 또렷하고 생기 있어 보여요?",
-      hint:"같은 색인데 선명함만 달라요 — 얼굴이 칙칙해 보이지 않는 쪽으로",
-      opts:[{v:"vivid",name:"선명한 로즈",color:"#DB707C"},{v:"tonedown",name:"차분한 로즈",color:"#AC8889"}]}
+/* ── 드레이핑 (2026-08-26 전면 재설계 · 대표 지시 2-8-2-2) ────────────────────
+   옛 판은 4라운드 고정(웜쿨 → 화이트/아이보리 → 화이트/블랙 → 채도)이었고,
+   **12타입 중 어디로 가는지를 이 흐름이 정하지 않았다** — 색채 측정과 섞어 8타입을 냈다.
+   대표가 준 것은 실제 컨설팅이 쓰는 순서다:
+
+     1단계  톤을 먼저 가른다 — 라이트 / 뮤트 / 클리어 / 딥
+             웜 색 넉 장으로 토너먼트: 봄라이트(웜파스텔) vs 가을뮤트(웜애쉬브라운)
+             → 이긴 쪽 vs 봄클리어(주황 원색) → 이긴 쪽 vs 가을딥(딥웜브라운)
+     2단계  정해진 톤 안에서 웜/쿨 — 같은 밝기·톤의 파랑 계열과 대비 → 여기서 8개가 확정된다
+     3단계  화이트 vs 블랙 — 클리어로 온 사람만. 화이트=클리어, 블랙=스트롱
+     4단계  선명도 한 판 — 대표 계산대로 **가을스트롱·여름클리어**만 길이 없어서 붙인다
+             ("스트롱/클리어가 한쌍밖에없는 가을스트롱이랑 여름클리어만 판별이 안될건데?")
+             가을뮤트로 온 사람 → 가을뮤트 vs 가을스트롱
+             여름라이트로 온 사람 → 여름라이트 vs 여름클리어
+             나머지 여섯은 2·3단계에서 이미 확정이라 이 판을 안 본다.
+
+   이러면 12타입 전부에 길이 난다. 라운드 수는 사람마다 4~5판.
+
+   색은 modules/pc-palette.json(12타입 정본)의 best에서 뽑았다 — 여기서 새 색을 만들지 않는다.
+   ⚠ 등명도·등채도 통제는 이론팀 검수 대상이다(requests/ 요청서). 지금 값은 팔레트 대표색이고,
+     드레이핑 천의 Lab 페어링(확정서 2026-07-22 §1.3이 옛 라운드에 걸었던 조건)은 다시 잡아야 한다. */
+/* ⚠ 쿨 색은 팔레트에서 뽑지 않는다 (2026-08-26 수정 · 대표 제보
+   "선명한오렌지가 톤체크에서 1위를 했는데 웜쿨비교에서 라이트블루가 나왔어").
+
+   처음엔 12타입 팔레트의 대표색을 그대로 웜/쿨에 넣었다. 그런데 **드레이핑의 웜쿨 판은
+   밝기·채도를 붙들어 놓고 온도만 흔들어야 한다.** 팔레트에서 뽑으면 그게 안 된다 —
+   겨울 클리어 팔레트가 파스텔뿐이라 선명한 오렌지(#F26A2D)의 짝으로 연한 하늘(#D5E8F3)이
+   나왔고, 지각 밝기 차가 49였다. 그 두 장을 나란히 대면 유저는 온도가 아니라
+   **진하기를 고른다.** 판정이 통째로 다른 것을 재게 된다.
+
+   그래서 쿨 색은 **웜 색에서 계산해 만든다** — 색상(H)만 파랑 쪽으로 돌리고,
+   WCAG 상대휘도가 웜 색과 같아지도록 명도를 미세 조정했다. 네 쌍 모두 지각 밝기 차 0이다.
+   (옛 코드가 "Lab 등명도 페어"라 부르던 조건과 같은 목적이고, 방법만 계산으로 바꿨다.)
+   ⚠ key는 판정 결과 이름이라 팔레트 정본 그대로 둔다 — 바뀐 것은 화면에 보이는 천 색뿐이다. */
+const TONE = {
+  light: {name:"라이트", warm:{key:"봄 라이트",   color:"#F8D38A"}, cool:{key:"여름 라이트", color:"#CBD7FC"}},
+  mute:  {name:"뮤트",   warm:{key:"가을 뮤트",   color:"#B78D6E"}, cool:{key:"여름 뮤트",   color:"#8196C0"}},
+  clear: {name:"클리어", warm:{key:"봄 클리어",   color:"#F26A2D"}, cool:{key:"겨울 클리어", color:"#4F94F4"}},
+  deep:  {name:"딥",     warm:{key:"가을 딥",     color:"#8D582F"}, cool:{key:"겨울 딥",     color:"#3765A6"}},
 };
-const R4_VARIANTS = {
-  warm:{variant:"orange", opts:[{v:"vivid",name:"선명한 오렌지",color:"#CB7E51"},{v:"tonedown",name:"차분한 오렌지",color:"#A88B7B"}]},
-  cool:{variant:"blue",   opts:[{v:"vivid",name:"선명한 블루",color:"#5793DF"},{v:"tonedown",name:"차분한 블루",color:"#8591AB"}]},
-  both:{variant:"rose",   opts:[{v:"vivid",name:"선명한 로즈",color:"#DB707C"},{v:"tonedown",name:"차분한 로즈",color:"#AC8889"}]}
-};
+// 3단계(화이트/블랙) — 클리어로 온 사람만. 계절을 유지한 채 톤만 스트롱으로 옮긴다.
+const STRONG_OF = {"봄 클리어":"봄 스트롱", "겨울 클리어":"겨울 스트롱"};
+// 4단계(선명도) — 짝이 없어 못 가던 두 칸으로 가는 유일한 길.
+const VIVID_OF = {"가을 뮤트":"가을 스트롱", "여름 라이트":"여름 클리어"};
+const VIVID_COLOR = {"가을 스트롱":"#C55A2E", "여름 클리어":"#56C6D6"};
 // ---------- 헤어라인 검출 (상안부 꼭대기 = 이마 끝) ----------
 // MediaPipe 메시 최상단(10번)은 이마 중간에서 끝난다 — 삼정 비율의 기준(헤어라인)에 못 미침 (대표 실측 지적 2026-07-22).
 // 이마 중간에서 위로 세로선 3개를 스캔, '피부색 닮음'이 끊기는 첫 지속 지점(3연속 비피부)을 헤어라인으로 본다.
@@ -1134,16 +1203,35 @@ function overlayFace(cv, lm, W, H, faceW, m){
 
   return c.toDataURL("image/jpeg", 0.9);
 }
+/* 드레이핑 진행 — 판마다 두 장을 대고 이긴 쪽을 들고 다음 판으로 간다.
+   STATE.drapePath에 지나온 판을 다 남긴다(무엇을 물었고 무엇을 골랐나). 결과만 남기면
+   나중에 "이 사람이 왜 이 타입이 됐나"를 되짚을 수 없다. */
+const DRAPE_PLAN = [
+  // 1단계 — 톤 토너먼트. 웜 색끼리만 붙인다. 여기서 정해지는 것은 계절이 아니라 **톤**이다.
+  {id:"t1", step:"1단계", hint:"둘 다 마음에 안 들어도 괜찮아요. 얼굴이 더 환해 보이는 쪽이면 돼요. 화면 야간 모드는 잠깐 꺼주세요",
+   a:{v:"light", name:"연한 살구", color:TONE.light.warm.color},
+   b:{v:"mute",  name:"차분한 브라운", color:TONE.mute.warm.color}},
+  {id:"t2", step:"2단계", hint:"턱·눈 밑 그늘이 옅어 보이는 쪽으로 봐주세요",
+   b:{v:"clear", name:"선명한 오렌지", color:TONE.clear.warm.color}},
+  {id:"t3", step:"3단계", hint:"얼굴선이 또렷하게 살아나는 쪽으로",
+   b:{v:"deep",  name:"진한 브라운", color:TONE.deep.warm.color}},
+];
 function askDraping(id){
-  const R=ROUNDS[id];
   goStep(3);
   $("resultCard").style.display="none";
   $("pcAskCard").style.display="none";   // 브릿지·타입 선택 카드와 겹쳐 뜨지 않게
   $("drapeCard").style.display="block";
+  // 해당 없는 판은 **건너뛰고 다음 판으로 간다.** 여기서 곧장 판정으로 가면
+  // 뒤에 남은 판이 통째로 사라진다 — 가을 뮤트는 wb가 해당 없어서 vivid(가을 스트롱으로 가는
+  // 유일한 길)를 못 보고 끝났다. 판마다 "나에게 해당하나"가 다르므로 순서만 따라가면 안 된다.
+  let R = drapeRound(id), cur = id, guard = 0;
+  while(!R && DRAPE_NEXT[cur] && guard++ < 8){ cur = DRAPE_NEXT[cur]; R = drapeRound(cur); }
+  if(!R){ $("drapeCard").style.display="none"; return CZM.trace.run("종합판정", finalize); }
+  id = cur;
   $("drapeStep").textContent=R.step;
   $("drapeQ").textContent=R.q||"어느 쪽에서 얼굴이 더 살아 보여요?";
   $("drapeHint").textContent=R.hint;
-  $("drapeRow").innerHTML = R.opts.map(o=>
+  $("drapeRow").innerHTML = [R.a, R.b].map(o=>
     `<div class="drape-opt" data-v="${o.v}">
        <div class="drape-panel" style="background:${o.color}"><img src="${STATE.crop}" alt="드레이핑 미리보기"></div>
        <div class="drape-name">${o.name}</div>
@@ -1154,10 +1242,69 @@ function askDraping(id){
   $("drapeSkip").onclick = ()=>answerDraping(id, "unknown");
   $("drapeCard").scrollIntoView({behavior:"smooth", block:"center"});
 }
+
+/** 다음에 무엇을 물을지. null이면 판정으로 넘어간다. */
+function drapeRound(id){
+  const D = STATE.draping;
+  // 1단계 — 이긴 톤을 들고 다음 웜 색과 붙는다
+  const p = DRAPE_PLAN.find(x=>x.id===id);
+  if(p){
+    if(id==="t1") return p;
+    const prev = D.tone;                       // 앞 판에서 살아남은 톤
+    if(!prev) return null;
+    const w = TONE[prev].warm;
+    return {...p, a:{v:prev, name:TONE[prev].name, color:w.color}};
+  }
+  // 2단계 — 톤 안에서 웜/쿨
+  if(id==="wc"){
+    const t = TONE[D.tone]; if(!t) return null;
+    return {step:"온도", q:"이번엔 같은 밝기의 파랑 계열이에요. 어느 쪽이 더 편안해 보여요?",
+            hint:"얼굴이 칙칙해 보이지 않는 쪽으로",
+            a:{v:"warm", name:"따뜻한 쪽", color:t.warm.color},
+            b:{v:"cool", name:"시원한 쪽", color:t.cool.color}};
+  }
+  // 3단계 — 클리어로 온 사람만. 화이트=클리어 유지, 블랙=스트롱
+  if(id==="wb"){
+    if(!STRONG_OF[D.type]) return null;
+    return {step:"마지막", q:"흰색과 검정 중 얼굴이 또렷하게 살아나는 쪽은요?",
+            hint:"둘 다 어색하면 덜 어색한 쪽으로",
+            a:{v:"white", name:"퓨어 화이트", color:"#FFFFFF"},
+            b:{v:"black", name:"블랙", color:"#111111"}};
+  }
+  // 4단계 — 짝이 없어 못 가던 두 칸(가을 스트롱·여름 클리어)으로 가는 길
+  if(id==="vivid"){
+    const to = VIVID_OF[D.type]; if(!to) return null;
+    return {step:"마지막", q:"같은 색인데 선명함만 달라요. 어느 쪽이 더 생기 있어 보여요?",
+            hint:"얼굴이 눌리지 않는 쪽으로",
+            a:{v:"keep",  name:"지금 그대로", color:TONE[D.tone][D.wc === "cool" ? "cool" : "warm"].color},
+            b:{v:"vivid", name:"더 선명하게", color:VIVID_COLOR[to]}};
+  }
+  return null;
+}
+
+const DRAPE_NEXT = {t1:"t2", t2:"t3", t3:"wc", wc:"wb", wb:"vivid", vivid:null};
 function answerDraping(id, v){
+  const D = STATE.draping;
   pmTrack("photo_draping",{round:id, v});
-  STATE.draping[id]=v;
-  if(id==="r1") return askDraping("r2");   // r2 이후는 finalize()가 필요 라운드(r3/r4)를 판단해 되부른다
+  (STATE.drapePath ??= []).push({round:id, pick:v});
+  if(id==="t1" || id==="t2" || id==="t3"){
+    // 모르겠다고 하면 앞 판의 승자를 그대로 들고 간다 — 여기서 임의로 정하면 판정을 지어내는 것이다.
+    if(v !== "unknown") D.tone = v;
+    else if(!D.tone && id==="t1") D.tone = "light";   // 첫 판을 건너뛰면 기준이 없다. 가장 무난한 칸에서 출발.
+  } else if(id==="wc"){
+    D.wc = v === "unknown" ? null : v;
+    const t = TONE[D.tone];
+    D.type = t ? (D.wc === "cool" ? t.cool.key : t.warm.key) : null;   // 모르겠음은 웜으로 둔다(측정이 뒤에서 보정)
+  } else if(id==="wb"){
+    D.wb = v;
+    if(v === "black" && STRONG_OF[D.type]) D.type = STRONG_OF[D.type];
+  } else if(id==="vivid"){
+    D.vivid = v;
+    if(v === "vivid" && VIVID_OF[D.type]) D.type = VIVID_OF[D.type];
+  }
+  D.type_final = D.type;
+  const nx = DRAPE_NEXT[id];
+  if(nx) return askDraping(nx);
   $("drapeCard").style.display="none";
   CZM.trace.run("종합판정", finalize);
 }
@@ -1165,10 +1312,11 @@ function answerDraping(id, v){
 // 웜쿨 최종 = 드레이핑 0.8 + 색채 측정 0.2 (확정서 2026-07-22 §1.5 — 자가체크 0.3은 드레이핑으로 이관)
 // 결측 신호는 가중치를 재정규화해 제외하고, 모름이 많거나 신호가 엇갈리면 경계로 처리합니다.
 function fuseWarmCool(S){
-  const d1 = S.draping.r1==="orange"?1 : S.draping.r1==="blue"?-1 : null;
-  const d2 = S.draping.r2==="ivory"?1 : S.draping.r2==="white"?-1 : null;
-  const dv = [d1,d2].filter(v=>v!==null);
+  // 2026-08-26: 온도를 묻는 판이 하나로 합쳐졌다(wc). 옛 r1(주황/파랑)·r2(화이트/아이보리)는 없다.
+  const d1 = S.draping.wc==="warm"?1 : S.draping.wc==="cool"?-1 : null;
+  const dv = [d1].filter(v=>v!==null);
   const drape = dv.length ? dv.reduce((a,b)=>a+b,0)/dv.length : null;
+  const d2 = null;   // 아래 불일치 판정이 세 신호를 보던 자리 — 신호가 둘로 줄었다
   const col   = clamp(S.wc_color, -1, 1);
   const parts = [[drape,0.8],[col,0.2]];              // 자가체크(0.3) → 드레이핑으로 이관 (확정서 §1.5)
   let sum=0, wsum=0;
@@ -1217,40 +1365,48 @@ function finalize(){
   }).sort((a,b)=>a.d-b.d);
   let pcClose = (scored[1].d - scored[0].d) < 0.10;  // 경계 케이스
 
-  // R3(화이트 vs 블랙)은 클리어·스트롱이 경합할 때만 묻습니다 — 대표 확정: 클리어=화이트 친화, 스트롱=블랙 친화
-  const isCS = a => /클리어/.test(a) || /스트롱/.test(a);
-  const csRace = pcClose && isCS(scored[0].name) && isCS(scored[1].name)
-                 && /클리어/.test(scored[0].name)!==/클리어/.test(scored[1].name);
-  if(csRace && S.draping.r3===null) return askDraping("r3");
-  if(csRace && (S.draping.r3==="white" || S.draping.r3==="black")){
-    const want = S.draping.r3==="white" ? /클리어/ : /스트롱/;
-    const i = scored.findIndex(t=>want.test(t.name));
-    if(i>0){ const [pick]=scored.splice(i,1); scored.unshift(pick); }  // 드레이핑 응답을 1순위로
-    pcClose = true;  // 근소한 차이로 갈린 케이스임을 계속 표기
-  }
-  // R4(비비드 vs 톤다운)는 뮤트↔비뮤트 근소 경합일 때만 (이론 v2.7 — csRace와 동일 패턴, 응답은 1순위 승격)
+  /* 드레이핑이 주(主)다 (대표 2026-08-25 — "퍼스널컬러는 드레이핑결과 위주로 판단하되,
+     실측데이터도 함께 누적시켜 둘 것"). 그전에는 반대였다 — 색채 측정 거리가 타입을 정하고
+     드레이핑은 경합일 때만 순위를 흔들었다. 그래서 대표가 준 드레이핑 순서를 그대로 태워도
+     결과가 측정에 끌려갔다.
+
+     이제 드레이핑이 낸 타입을 1순위로 올린다. 측정 순위(scored)는 지우지 않고 그대로 둔다 —
+     둘이 갈리는 케이스가 쌓여야 나중에 어느 쪽이 맞는지 판정할 수 있다. 지금 그 답이 없으므로
+     한쪽을 버리지 않는다. 어긋난 사실 자체를 pc_source에 남긴다. */
   const isMuteName = a => /뮤트/.test(a);
-  const muteRace = pcClose && (isMuteName(scored[0].name) !== isMuteName(scored[1].name));
-  if(muteRace && S.draping.r4===null){
-    const r4v = R4_VARIANTS[wcSide] || R4_VARIANTS.both;
-    ROUNDS.r4.opts = r4v.opts; S._r4variant = r4v.variant;
-    return askDraping("r4");
+  /* 유저가 선언한 타입이 있으면 그것이 드레이핑과 같은 자리에 선다 (2026-08-26).
+     그전에는 pc_declared를 "기록만 하고 판정에는 한 글자도 안 넣는다"고 두었는데,
+     그 결과 **이미 진단받은 사람에게 그 답을 왜 물었는지 설명할 수 없게 됐다.**
+     전문가 대면 진단은 우리 사진 판정보다 조건이 좋다 — 표준 조명, 실물 천, 사람의 눈.
+     그걸 제쳐 두고 사진 측정을 앞세울 이유가 없다.
+     ⚠ "forgot"은 타입이 아니라 상태다. 이 경로는 드레이핑으로 갔으므로 여기 안 온다. */
+  const declared = (S.pc_declared && S.pc_declared !== "none" && S.pc_declared !== "forgot")
+                   ? S.pc_declared : null;
+  const drapeType = declared || S.draping.type_final || null;
+  let pcSource = declared ? "declared" : "measure";
+  if(drapeType){
+    const i = scored.findIndex(t=>t.name===drapeType);
+    if(i >= 0){
+      pcSource = i === 0 ? "agree" : "draping";
+      if(i > 0){ const [pick]=scored.splice(i,1); scored.unshift(pick); }
+    } else {
+      // 측정 후보에 아예 없는 타입을 드레이핑이 골랐다 — 그래도 드레이핑을 따른다. 사람이 얼굴을 보고 고른 값이다.
+      scored.unshift({name:drapeType, side:null, d:null});
+      pcSource = "draping_only";
+    }
+    pcClose = pcSource !== "agree";   // 측정과 갈렸으면 단정하지 않는다
   }
-  if(muteRace && (S.draping.r4==="vivid" || S.draping.r4==="tonedown")){
-    const wantMute = S.draping.r4==="tonedown";
-    const i = scored.findIndex(t=>isMuteName(t.name)===wantMute);
-    if(i>0){ const [pick]=scored.splice(i,1); scored.unshift(pick); }
-    pcClose = true;
-  }
+  S.pc_source = pcSource;
   const pc1=scored[0], pc2=scored[1];
 
   // 탁기 해설용 표시 전용 값 (v2.6 — 판정 거리식 절대 미사용)
   // strength(피부 저채도 스칼라)는 v2.8-C로 폐기 — "뮤트=피부 저채도"는 팔레트→피부 범주 오류로 판명 (label 분기 단독)
+  // 2026-08-26: r4(비비드/톤다운) 라운드가 없어졌다. 이제 뮤트 여부는 드레이핑이 고른 톤이 직접 말한다.
   const mute_display =
-    (S.draping.r4==="tonedown") ? {label:"mute_confirmed",  basis:"r4"}
-  : (S.draping.r4==="vivid")    ? {label:"clear_confirmed", basis:"r4"}
-  : isMuteName(pc1.name)        ? {label:"mute_tentative",  basis:"type"}
-  :                               {label:"none",            basis:"none"};
+    (S.draping.tone === "mute")   ? {label:"mute_confirmed",  basis:"drape_tone"}
+  : (S.draping.tone === "clear")  ? {label:"clear_confirmed", basis:"drape_tone"}
+  : isMuteName(pc1.name)          ? {label:"mute_tentative",  basis:"type"}
+  :                                 {label:"none",            basis:"none"};
 
   // ---------- [추구미 8타입 판정] ----------
   const temp8 = -WC.value, depth8 = S.axes_partial.soft_deep;   // ← 부호 반전 지점 (T8 주석 참고)
@@ -1266,8 +1422,12 @@ function finalize(){
     axes:{warm_cool:WC.value, soft_deep:S.axes_partial.soft_deep, line_score:S.axes_partial.line_score, confidence:+confidence.toFixed(2)},
     color:S.color, ratio:S.ratio, line:S.line,
     // 전부 저장 원칙 (요청서 §2D) — 미응답도 "none"이 아니라 원값 그대로 남깁니다
-    draping_r1:S.draping.r1, draping_r2:S.draping.r2, draping_r3:S.draping.r3, draping_r4:S.draping.r4,
-    draping_r4_variant: S._r4variant || null,
+    // 2026-08-26 새 구조: 톤(t1~t3) → 온도(wc) → 화이트/블랙(wb) → 선명도(vivid).
+    // 지나온 판을 통째로 남긴다 — 결과만 남기면 "왜 이 타입이 됐나"를 되짚을 수 없다.
+    draping_tone:S.draping.tone ?? null, draping_wc:S.draping.wc ?? null,
+    draping_wb:S.draping.wb ?? null, draping_vivid:S.draping.vivid ?? null,
+    draping_type:S.draping.type_final ?? null, draping_path:S.drapePath ?? [],
+    pc_source:S.pc_source ?? null,   // agree=측정과 일치 / draping=드레이핑 우선 / draping_only=측정 후보 밖
     // 2-7·2-8-1 응답 (대표 2026-08-25) — 기록만 한다. 판정에는 한 글자도 안 들어간다.
     // "none"=진단받은 적 없음 / "forgot"=기억 안 남·재검사 희망 / 그 외=선언한 12타입 이름 / null=흐름을 안 탐
     pc_declared: S.pc_declared || null,
@@ -1564,7 +1724,7 @@ function render(o){
     if(o.pc12.borderline){ out+=`<br><span style="opacity:.8">사실 <b>${o.pc12.secondary}</b>의 매력도 함께 갖고 있어요 — 한 끗 차이예요.</span>`; }
     // 탁기 해설 (v2.6 계층③ — 확정 타입의 속성으로만, 근거 주체는 드레이핑 반응)
     if(o.mute_display.label==="mute_confirmed"){
-      out+=`<br><span>아까 쨍한 색보다 차분한 색에서 얼굴이 더 또렷해 보였죠? 그게 ${o.pc12.primary}의 신호예요. 톤이 안개처럼 부드럽게 가라앉아 있어서, 회색빛이 살짝 도는 그레이시 컬러가 피부에 자연스럽게 스며요.</span>`;
+      out+=`<br><span>아까 쨍한 색보다 차분한 색에서 얼굴이 더 또렷해 보이지 않았나요? 그게 ${o.pc12.primary}의 신호예요. 톤이 안개처럼 부드럽게 가라앉아 있어서, 회색빛이 살짝 도는 그레이시 컬러가 피부에 자연스럽게 스며요.</span>`;
     }else if(o.mute_display.label==="mute_tentative"){
       out+=`<br><span style="opacity:.9">톤이 차분하게 가라앉아서, 쨍한 색보다 그레이시하게 톤 다운된 컬러가 잘 스밀 거예요.</span>`;
     }
@@ -1837,7 +1997,7 @@ function signalCards(o){
       icon:"👁️", title:"눈-눈썹 거리",
       bands:[{name:"좁음",on:!wide},{name:"넉넉",on:wide}],
       text: wide
-        ? "눈과 눈썹 사이에 여백이 넉넉해요. 이 한 뼘이 인상을 한 톤 여리게 풀어주죠. 로맨틱한 매력이 얼굴에 이미 얹혀 있는 거예요."
+        ? "눈과 눈썹 사이에 여백이 넉넉해요. 이 한 뼘이 인상을 한 톤 여리게 풀어줍니다. 로맨틱한 매력이 얼굴에 이미 얹혀 있는 거예요."
         : "눈썹이 눈 가까이에 자리해서 눈매에 힘이 실려 보여요. 시선이 또렷하게 꽂히는 얼굴이라, 깊고 강한 매력을 낼 때 그 힘이 그대로 살아나요.",
       hypo: !wide // 좁음 방향만 [가설] — 이론초안 §2 M1
     });
@@ -1892,7 +2052,7 @@ function signalCards(o){
     const b = jaw>=SB.jawHi ? "각" : (jaw>=SB.jawLo && chin<SB.chin ? "매끈한 직선" : "곡선");  // N7(이론확정 2026-07-30): 꺾임각 하한(7≤jaw) 복원 · 경계 단일소스 SB
     cards.push({icon:"🫤", title:"턱선·턱끝",
       bands:[{name:"곡선",on:b==="곡선"},{name:"매끈한 직선",on:b==="매끈한 직선"},{name:"각",on:b==="각"}],
-      text: b==="각" ? "턱선에 각이 또렷해요. 사진에서 얼굴이 흐트러지지 않고 딱 잡히죠. 강하고 시크한 매력을 낼 때, 이 턱선이 주인공이 돼요."
+      text: b==="각" ? "턱선에 각이 또렷해요. 사진에서 얼굴이 흐트러지지 않고 딱 잡힙니다. 강하고 시크한 매력을 낼 때, 이 턱선이 주인공이 돼요."
           : b==="매끈한 직선" ? "턱선이 각지진 않은데 샤프하게 떨어져요. 군더더기 없는 라인이라, 도시적이고 세련된 매력에 딱 맞아떨어져요."
           : "턱선이 각 없이 둥글게 흘러요. 인상 전체를 순하게 감싸는 라인이라, 부드러운 매력이 기본값으로 깔려 있는 얼굴이에요.",
       hypo:false});

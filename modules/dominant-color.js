@@ -41,9 +41,10 @@ export const toHex = c =>
  *
  * @param file  <input type="file"> 이 준 File
  * @param inset 가장자리에서 얼마나 안쪽만 볼지 (0~0.5, 기본 0.25 = 가운데 절반)
- * @returns {hex, share} | null
+ * @param thumb 썸네일도 만들지 (기본 false). true면 결과에 dataURL이 붙는다.
+ * @returns {hex, share, thumb?} | null
  */
-export async function colorOfFile(file, inset = 0.25){
+export async function colorOfFile(file, inset = 0.25, thumb = false){
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise((ok, no) => {
@@ -64,7 +65,21 @@ export async function colorOfFile(file, inset = 0.25){
     const x0 = Math.round(w * inset), y0 = Math.round(h * inset);
     const cw = Math.max(1, w - x0 * 2), ch = Math.max(1, h - y0 * 2);
     const c = dominantColor(ctx, x0, y0, cw, ch);
-    return c ? { hex: toHex(c), share: c.share } : null;
+    if (!c) return null;
+    const out = { hex: toHex(c), share: c.share };
+    /* 썸네일 — 이미 그려 둔 캔버스에서 한 번 더 줄인다. 파일을 다시 읽지 않는다.
+       160px 정사각 가운데 자르기: 인벤토리는 행마다 작은 칸이라 비율이 제각각이면 줄이 흔들린다.
+       q0.72 JPEG면 한 장 8~14KB고, 옷 50벌이라도 1MB를 넘지 않는다.
+       ⚠ 원본은 저장하지 않는다. 얼굴이 아니어서 헌법 §4 대상은 아니지만, 옷 사진에도
+       방·거울·사람이 같이 찍힌다. 남기는 것은 알아볼 수 있는 최소 크기까지다. */
+    if (thumb) {
+      const S = 160, side = Math.min(w, h);
+      const tv = document.createElement("canvas");
+      tv.width = tv.height = S;
+      tv.getContext("2d").drawImage(cv, (w - side) / 2, (h - side) / 2, side, side, 0, 0, S, S);
+      out.thumb = tv.toDataURL("image/jpeg", 0.72);
+    }
+    return out;
   } finally {
     URL.revokeObjectURL(url);
   }

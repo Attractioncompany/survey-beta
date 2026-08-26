@@ -131,16 +131,33 @@ button,input,textarea,select{font-family:inherit;}
 .screen-btm .btn{margin-top:0;}
 .screen-btm .btn + .btn{margin-top:var(--sp-2);}
 
-/* 본문 — "콘텐츠가 적으면 아래가 텅 빈다"를 여기서 구조로 막는다.
-   항목 수를 세어 분기하지 않는다(세는 순간 화면마다 기준이 갈린다).
-   `safe center`가 그 일을 정확히 한다 — 내용이 화면에 들어가면 세로 중앙,
-   넘치면 자동으로 위 정렬로 돌아가 첫 줄이 잘리지 않는다.
-   앞줄 flex-start는 safe 키워드를 모르는 구형 브라우저의 폴백이다. */
+/* 본문 — 위에서 시작한다.
+   ⚠ 2026-08-26 개정 (대표: "아직도 이런 여백이 존재하는곳이 많고").
+   앞선 판이 모든 화면에 `safe center`를 걸었다. 의도는 "아래가 텅 비는 것"을 막는 것이었는데,
+   실제로 한 일은 **그 빈 자리를 위아래로 반씩 나눈 것**이다 — 문제를 없앤 게 아니라 갈랐다.
+   실측(375×812): 「나」 위 229·아래 233(내용 150px), 「한 것」 227·231, 「오늘의 차림」 200·204.
+   화면의 4분의 3이 빈 공간이고, 카드 하나가 허공에 뜬다.
+
+   목록·표·행이 있는 화면은 위에서 시작해야 읽힌다. 아래에 남는 자리는 스크롤 여지로 읽히지만,
+   위아래로 갈라진 여백은 그냥 빈 화면으로 읽힌다. 대표의 "한 화면에 정보 적게"(2026-08-24)도
+   내용을 위에서 채우라는 뜻이지 가운데 띄우라는 뜻이 아니었다.
+
+   중앙 정렬은 **구미가 주인공인 히어로 화면에만** 남긴다 — 거기서는 여백이 연출이다.
+   `:has()`를 못 읽는 구형 브라우저는 위 정렬로 떨어진다(히어로가 위로 붙을 뿐, 깨지지 않는다). */
 .screen-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
   padding:var(--sp-2) var(--gutter) var(--sp-3);display:flex;flex-direction:column;
   justify-content:flex-start;
-  justify-content:safe center;
   scroll-snap-type:y proximity;scroll-padding-top:var(--sp-2);position:relative;}
+.screen-body:has(> .ph-hero), .screen-body.center{justify-content:safe center;}
+/* ⚠ 본문의 자식은 절대 눌리지 않는다 (2026-08-26).
+   본문이 세로 flex라 자식은 전부 flex item이고, 내용이 화면보다 길면 flex-shrink가 작동해
+   **자식이 제 높이보다 작게 눌린다.** 자식 안에 overflow가 있으면 그 안이 소리 없이 잘린다.
+   실제로 두 번 났다: 홈의 .ph-hero가 266px 잘려 아래 두 칸이 사라졌고(08-25),
+   인벤토리의 .chips는 40px 칩을 12px 칸에 담아 「옷장/파우치」가 반만 보였다(08-26).
+   둘 다 화면에서만 보이고 좌표로는 안 잡힌다 — 요소는 제자리에 있고 컨테이너만 눌린 것이라
+   getBoundingClientRect로 재면 정상으로 나온다. 그래서 한참 못 찾는다.
+   스크롤은 .screen-body가 맡는다. 자식이 줄어들 이유가 없으므로 여기서 통째로 막는다. */
+.screen-body > *{flex:none;}
 /* 손을 떼는 위치에 반쯤 잘린 카드가 남지 않게 (고객팀 G5) */
 .snap{scroll-snap-align:start;}
 /* 바닥에 붙여야 하는 줄이 있을 때만 붙인다. 이 클래스를 쓰면 그 화면은 중앙 정렬을

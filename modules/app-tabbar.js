@@ -56,14 +56,22 @@
   // 명사 넷으로 정렬한다(대표 확정 2026-08-25). 전에는 홈·기록·내 결과·도구였는데
   // 둘이 어긋나 있었다 — '내 결과'는 1회성 진단 리포트를 여는데 RPG에서 상시로 보는 것은
   // 캐릭터 시트이고, '도구'는 어디 둘지 몰라 만든 서랍이었다(영상·옷색·추천·재진단·의견·로그아웃).
+  //
+  // 2026-08-26 개명 (대표: "메뉴명이 한것 가진것 이런게 너무 단어가별로잖아.
+  // 차라리 진짜 게임 컨셉에 맞춰서"). 「가진 것」·「한 것」은 화면이 무엇인지는 맞게 가리키지만
+  // 이름이 아니라 설명이었다 — 사람은 앱 메뉴를 저렇게 부르지 않는다.
+  // 이 앱의 뼈대가 이미 RPG다(스탯·미션·가산·성장 좌표). 이름도 그 뼈대를 따른다:
+  //   미션(오늘 할 것) · 스탯(캐릭터 시트) · 인벤토리(옷장+파우치) · 기록(해온 것)
+  // '미션'은 유저향 확정어다(대표 2026-08-21 — 내부·이론은 '걸음' 유지).
+  // '인벤토리'는 옷장과 파우치를 한 이름으로 덮는다 — 「옷장」이면 립·쿠션이 밖에 남는다.
   var TABS = [
-    { id: "home",   label: "오늘",    href: M + "home.html#home",
+    { id: "home",   label: "미션",     href: M + "home.html#home",
       d: "M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" },
-    { id: "me",     label: "나",      href: M + "home.html#me",
+    { id: "me",     label: "스탯",     href: M + "home.html#me",
       d: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8.5 10l7 4M15.5 10l-7 4" },
-    { id: "closet", label: "가진 것", href: M + "home.html#closet",
+    { id: "closet", label: "인벤토리", href: M + "home.html#closet",
       d: "M9 3h6l1 3-4 2-4-2zM12 8 4 12v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8z" },
-    { id: "record", label: "한 것",   href: M + "home.html#record",
+    { id: "record", label: "기록",     href: M + "home.html#record",
       d: "M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h5" },
   ];
 
@@ -74,9 +82,12 @@
     if (/view=report/.test(location.search)) return "me";
     if (/\/home\.html$/.test(p)) {
       var h = location.hash.slice(1);
-      if (h === "tools") return "me";         // 해체된 도구는 '나' 탭 아래로 들어갔다
-      if (h === "history") return "record";   // 이력·비교는 '한 것'의 안쪽 화면
-      if (h === "outfit") return "closet";    // 오늘의 착용은 가진 것에서 조합한다
+      // 설정(tools)은 어느 탭에도 속하지 않는다 — 우측 상단 톱니로 어디서나 열리는 화면이라
+      // 탭 하나를 켜면 "여기 있다"는 거짓말이 된다(2026-08-26). 넷 다 꺼둔다.
+      if (h === "tools") return "";
+      if (h === "content") return "me";       // 영상은 스탯 탭 안쪽 화면
+      if (h === "history") return "record";   // 이력·비교는 기록의 안쪽 화면
+      if (h === "outfit") return "closet";    // 오늘의 착용은 인벤토리에서 조합한다
       return (h === "me" || h === "closet" || h === "record") ? h : "home";
     }
     return "";   // cloth-check·pick 등 — 어느 탭도 켜지 않는다(여기 있다고 거짓말하지 않는다)

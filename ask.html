@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>잠깐만 봐주실 수 있나요</title>
+<!--
+  친구 설문 — 링크를 받은 사람이 여는 화면 (2026-08-26 · 대표 설계)
+
+  ⚠ 이 파일만 로그인·앱 설치 없이 돈다. 부탁받은 사람에게 문턱을 두면 답을 못 받는다.
+  ⚠ 접근은 RPC 둘로만 한다(friend_survey_get / friend_response_add).
+    테이블 정책은 0건이라 직접 접근이 막혀 있다 — 링크의 토큰이 곧 열람권이고,
+    토큰을 아는 사람이 그 한 건만 본다(대표: "사진은 내가 보낸 친구한테 열람권한을 주는 식").
+  ⚠ 여기서 측정하지 않는다. 판정도 하지 않는다. 받은 답을 그대로 저장할 뿐이다.
+-->
+<link rel="stylesheet" href="modules/czm-ui.css">
+<style>
+  body{margin:0;background:var(--bg,#FAF7FB);color:var(--ink,#2B2233);
+    font-family:-apple-system,"Apple SD Gothic Neo","Pretendard",sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 22px) 18px 40px}
+  .kick{font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--accent,#9C4680);opacity:.85}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1.4;margin:8px 0 6px;word-break:keep-all}
+  .sub{font-size:14px;color:var(--sub,#6E6478);line-height:1.7;margin:0 0 18px;word-break:keep-all}
+  .card{background:#fff;border-radius:16px;padding:20px 18px;margin-bottom:14px;
+    box-shadow:0 2px 14px rgba(74,43,92,.07)}
+  .shots{display:flex;gap:10px}
+  .shots figure{flex:1;margin:0}
+  .shots img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:13px;display:block;background:#EFEAF3}
+  .shots figcaption{font-size:11.5px;color:var(--sub,#6E6478);text-align:center;margin-top:6px}
+  h2{font-size:15.5px;font-weight:700;margin:0 0 4px;letter-spacing:-.015em;word-break:keep-all}
+  .hint{font-size:12.5px;color:var(--sub,#6E6478);margin:0 0 12px;line-height:1.6}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .opt{border:1.5px solid var(--line,#E7E3EC);background:#fff;border-radius:12px;padding:13px 10px;
+    font-size:14px;font-weight:600;color:var(--ink,#2B2233);cursor:pointer;min-height:48px;
+    transition:border-color .12s,background .12s}
+  .opt.on{border-color:var(--accent,#9C4680);background:var(--soft,#F6EDF5);color:var(--deep,#4A2B5C)}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row .opt{flex:1 1 auto;min-width:88px}
+  textarea{width:100%;min-height:84px;border:1.5px solid var(--line,#E7E3EC);border-radius:12px;
+    padding:12px;font:inherit;font-size:14px;resize:vertical;background:#fff;color:inherit}
+  .btn{width:100%;min-height:52px;border:0;border-radius:14px;color:#fff;font-size:16px;font-weight:700;
+    background:linear-gradient(135deg,#C93B72,#7A4AA6 52%,#3E5FA8);cursor:pointer;margin-top:6px}
+  .btn[disabled]{background:#EBE5F1;color:#5F5568;cursor:default}
+  .msg{text-align:center;padding:36px 12px}
+  .msg .big{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+  .msg p{font-size:14px;color:var(--sub,#6E6478);line-height:1.75;margin:0}
+  .foot{margin-top:20px;font-size:11.5px;color:var(--sub,#6E6478);opacity:.8;line-height:1.7;text-align:center}
+</style>
+</head><body>
+<main class="wrap" id="app">
+  <div class="msg"><p>불러오는 중이에요.</p></div>
+</main>
+
+<script>
+const SB_URL = "https://qngylynylgqlbidvtbci.supabase.co";
+const SB_KEY = "sb_publishable_bGVbZ31O7OX_rnkLVb0i5Q_SDa8JEri";
+const ID = new URLSearchParams(location.search).get("s") || "";
+const app = document.getElementById("app");
+const esc = s => String(s ?? "").replace(/[<&"]/g, c => ({"<":"&lt;","&":"&amp;",'"':"&quot;"}[c]));
+
+async function rpc(fn, body){
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+      method:"POST", headers:{"Content-Type":"application/json", apikey:SB_KEY, Authorization:`Bearer ${SB_KEY}`},
+      body: JSON.stringify(body)});
+    if(!r.ok) return null;
+    return await r.json();
+  }catch(e){ return null; }
+}
+
+function screenMsg(big, p){
+  app.innerHTML = `<div class="msg"><div class="big">${esc(big)}</div><p>${p}</p></div>`;
+}
+
+const TYPES = ["로맨틱","청순청량","우아한","에너제틱","화려함","클래식","카리스마","세련된"];
+const REASONS = ["얼굴선","눈매","색","옷차림","분위기"];
+const CHANGED = ["확실히 달라졌어요","조금 달라졌어요","비슷해요","잘 모르겠어요"];
+
+let pick = {type8:null, reasons:[], changed:null};
+
+function render(sv){
+  const two = !!sv.prev_photo;   // 2회차부터 이전 사진이 온다
+  app.innerHTML = `
+    <div class="kick">부탁이 하나 왔어요</div>
+    <h1>${two ? "이 사람, 예전과 달라 보이나요?" : "이 사람은 어떤 인상인가요?"}</h1>
+    <p class="sub">친구가 요즘 모습을 봐 달라고 보냈습니다.
+      정답은 없고, 처음 보고 든 느낌이면 충분합니다. 1분이면 끝납니다.</p>
+
+    <div class="card">
+      <div class="shots">
+        ${two ? `<figure><img src="${esc(sv.prev_photo)}" alt=""><figcaption>예전</figcaption></figure>` : ``}
+        <figure><img src="${esc(sv.photo)}" alt=""><figcaption>${two ? "지금" : "요즘 모습"}</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>어떤 인상에 가까운가요?</h2>
+      <p class="hint">가장 먼저 떠오르는 하나를 골라주세요.</p>
+      <div class="grid" id="t8">
+        ${TYPES.map(t=>`<button class="opt" data-t="${t}">${t}</button>`).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>어디를 보고 그렇게 느끼셨나요?</h2>
+      <p class="hint">여러 개 고르셔도 됩니다.</p>
+      <div class="row" id="rs">
+        ${REASONS.map(r=>`<button class="opt" data-r="${r}">${r}</button>`).join("")}
+      </div>
+    </div>
+
+    ${two ? `<div class="card">
+      <h2>예전과 견주면 어떤가요?</h2>
+      <p class="hint">두 사진을 나란히 놓고 봐주세요.</p>
+      <div class="row" id="ch">
+        ${CHANGED.map(c=>`<button class="opt" data-c="${c}">${c}</button>`).join("")}
+      </div>
+    </div>` : ``}
+
+    <div class="card">
+      <h2>한마디 남긴다면 <span style="font-weight:400;font-size:12.5px;color:var(--sub,#6E6478)">(안 쓰셔도 돼요)</span></h2>
+      <textarea id="cm" placeholder="예) 지난번보다 얼굴이 환해 보여요"></textarea>
+    </div>
+
+    <button class="btn" id="send" disabled>골라주시면 보낼 수 있어요</button>
+    <p class="foot">답한 내용은 친구에게만 전해집니다.<br>
+      사진은 이 부탁을 위해 잠시 보관되며, 기간이 지나면 지워집니다.</p>`;
+
+  const upd = () => {
+    const b = document.getElementById("send");
+    const need = pick.type8 && (!two || pick.changed);
+    b.disabled = !need;
+    b.textContent = need ? "보내기" : (pick.type8 ? "예전과 견준 답을 골라주세요" : "인상을 하나 골라주세요");
+  };
+  // 한 개만 고르는 칸
+  const single = (box, key) => app.querySelectorAll(`#${box} .opt`).forEach(b => b.onclick = () => {
+    const v = b.dataset.t || b.dataset.c;
+    pick[key] = pick[key] === v ? null : v;
+    app.querySelectorAll(`#${box} .opt`).forEach(x =>
+      x.classList.toggle("on", (x.dataset.t || x.dataset.c) === pick[key]));
+    upd();
+  });
+  single("t8", "type8");
+  if(two) single("ch", "changed");
+  // 여러 개 고르는 칸
+  app.querySelectorAll("#rs .opt").forEach(b => b.onclick = () => {
+    const v = b.dataset.r, i = pick.reasons.indexOf(v);
+    if(i >= 0) pick.reasons.splice(i, 1); else pick.reasons.push(v);
+    b.classList.toggle("on", i < 0);
+  });
+
+  document.getElementById("send").onclick = async e => {
+    const b = e.currentTarget;
+    b.disabled = true; b.textContent = "보내는 중…";
+    const ok = await rpc("friend_response_add", {
+      p_survey: ID, p_type8: pick.type8, p_reasons: pick.reasons,
+      p_changed: pick.changed || "", p_comment: document.getElementById("cm").value });
+    if(ok === true) return screenMsg("고맙습니다", "답을 전했어요.<br>친구가 오늘 이걸 보고 웃을 겁니다.");
+    b.disabled = false; b.textContent = "다시 보내기";
+    alert("보내지 못했어요. 잠시 뒤 다시 눌러주세요.");
+  };
+}
+
+(async () => {
+  if(!ID) return screenMsg("주소가 완전하지 않아요", "친구가 보낸 링크를 그대로 열어주세요.");
+  const rows = await rpc("friend_survey_get", {p_id: ID});
+  const sv = Array.isArray(rows) ? rows[0] : null;
+  if(!sv)         return screenMsg("찾을 수 없는 부탁이에요", "링크가 잘못되었거나 이미 지워졌습니다.");
+  if(sv.expired)  return screenMsg("기간이 지났어요", "친구에게 새로 보내 달라고 해주세요.");
+  render(sv);
+})();
+</script>
+</body></html>

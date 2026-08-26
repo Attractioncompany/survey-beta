@@ -279,10 +279,17 @@ export function renderHistory(ctx) {
   const hasCrops = !!LS.get(K.faceCrops, null);
 
   app.innerHTML = shell({
-    top: head("한 것", `${rows.length}건`),
+    top: head("기록", `${rows.length}건`, true),
     body: summary + albumHTML(shots, hasCrops) + list,
-    btm: `<button class="btn ghost app-only-hide" id="back">홈으로</button>`,
+    /* 「친구에게 물어보기」가 기록 탭에 있는 이유 (2026-08-26):
+       재측정이 리셋이 되면서 **변화를 재는 유일한 수단**이 친구 설문이 됐다.
+       변화는 기록에서 보는 것이므로 그 문도 여기 있어야 한다.
+       설정에 두면 어쩌다 한 번 여는 서랍이 되고, 그러면 4주마다 보내야 하는 일이 잊힌다. */
+    btm: `<button class="btn" id="askFriend">친구에게 물어보기</button>
+          <button class="btn ghost app-only-hide" id="back">홈으로</button>`,
   });
+  const af = document.getElementById("askFriend");
+  if (af) af.onclick = () => ctx.nav("askfriend");
   wireAlbum(ctx, shots);
   const b = document.getElementById("back");
   if (b) b.onclick = () => nav("home");
@@ -292,7 +299,7 @@ export function renderHistory(ctx) {
 function empty(ctx) {
   const { app, shell, head, nav, statsRow } = ctx;
   app.innerHTML = shell({
-    top: head("한 것"),
+    top: head("기록", "", true),
     body: `<div class="card ph-glass">
         <p class="lead">기록이 아직 한 줄도 없어요.</p>
         <p class="note">미션을 하나 마치면 그날 뭐가 얼마나 올랐는지 여기 남습니다.</p>

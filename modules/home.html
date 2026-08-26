@@ -55,6 +55,12 @@ html,body{overscroll-behavior-y:none}
 h1{font-size:21px;margin:0;letter-spacing:-.02em}
 .hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .hd small{color:var(--sub);font-size:12px;flex:none}
+.hd-r{display:flex;align-items:center;gap:10px;flex:none}
+/* 톱니는 44px 안에 든다 — 애플 최소 터치 크기. 아이콘만 21px이라 보기엔 작고 누르기엔 넉넉하다. */
+.hd-gear{width:44px;height:44px;margin:-11px -10px -11px 0;padding:0;border:0;background:none;
+  color:var(--sub);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  border-radius:22px;transition:color .15s,background .15s}
+.hd-gear:active{color:var(--accent);background:rgba(0,0,0,.05)}
 /* 하단 보조 조작 — 주 CTA 아래 한 줄. 버튼 셋을 세로로 쌓지 않는다 */
 .btm-quiet{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:2px}
 .btm-quiet .btn.quiet{margin:0;padding:8px 10px}
@@ -73,10 +79,46 @@ button{font:inherit;cursor:pointer}
 .q{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);
    border-radius:12px;padding:var(--sp-4);margin-bottom:var(--sp-2);color:var(--ink)}
 .q:active{background:var(--soft);border-color:var(--accent)}
-.q .t{font-size:15.5px;line-height:1.45;font-weight:600}
+/* 제목은 두 줄까지. 지식 미션은 퀴즈 질문이 그대로 제목이라 세 줄을 넘기는 칸이 있고
+   ("색 신호 중 지금까지 검증으로 확인된 유일한 주축은?"), 그 한 칸이 길어지면 목록의
+   리듬이 그 자리에서 끊긴다. 짧은 제목을 따로 두는 게 정답이지만 그건 사전을 고치는 일이라
+   이론팀 몫이다 — 화면에서 할 수 있는 것은 줄 수를 맞추는 데까지다. */
+.q .t{font-size:15.5px;line-height:1.45;font-weight:600;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .q .m{font-size:12.5px;color:var(--sub);margin-top:5px;display:flex;gap:7px;flex-wrap:wrap;align-items:center;font-weight:400}
 .tag{border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-size:11px;color:var(--sub)}
 .tag.free{border-color:#CFE0D4;color:var(--ok)}
+/* 미션 종류 배지 — 테두리 태그들과 달리 채워서 낸다. 한 줄에 태그가 서넛 서므로
+   전부 같은 얼굴이면 다시 다 읽어야 한다. 종류만 색 면으로 앞에 세워 먼저 눈에 걸리게 한다. */
+.kind{display:inline-flex;align-items:center;gap:3.5px;border-radius:99px;
+  padding:2px 8px 2px 6px;font-size:11px;font-weight:700;letter-spacing:-.01em}
+.kind svg{flex:none;opacity:.9}
+.kind-item{background:#F6EAF2;color:#8E4585}
+.kind-skill{background:#EAF0F8;color:#3E5C88}
+.kind-knowledge{background:#F1EDF8;color:#5B4A8A}
+
+/* 보상 팝업 (2026-08-26) — 미션을 마쳤을 때 무엇이 얼마나 올랐는지.
+   그전에는 조용히 다음 화면으로 넘어가서 **해냈다는 사실이 눈에 남지 않았다.**
+   모바일 게임이 획득을 늘 팝업으로 세우는 이유가 그것이다. 다만 화려하게 만들지 않는다 —
+   우리 앱에서 오르는 것은 점수가 아니라 그 사람의 매력이고, 그 자리는 요란할수록 가벼워진다. */
+.rw-back{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:rgba(28,22,34,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  animation:rwFade .22s ease both}
+.rw{width:100%;max-width:332px;background:#fff;border-radius:22px;padding:26px 22px 20px;
+  text-align:center;box-shadow:0 22px 60px rgba(28,22,34,.24);animation:rwRise .3s cubic-bezier(.2,.9,.3,1) both}
+/* character/ 원본은 배경이 채워진 정사각 PNG다 — 그냥 얹으면 흰 네모가 뜬다.
+   intro.html과 같은 규약으로 라운드 프레임을 씌워 카드로 읽히게 한다(에셋 매핑 규약). */
+.rw .rw-gumi{width:92px;height:92px;margin:0 auto 14px;display:block;object-fit:cover;
+  border-radius:26px;box-shadow:0 6px 20px rgba(74,43,92,.12)}
+.rw h3{margin:0 0 6px;font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.rw p{margin:0;font-size:13.5px;color:var(--sub);line-height:1.7}
+.rw .grew{margin:16px 0 4px}
+.rw .btn{margin-top:18px}
+@keyframes rwFade{from{opacity:0}to{opacity:1}}
+@keyframes rwRise{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .rw-back,.rw{animation:none}
+}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
 .st{background:var(--soft);border-radius:13px;padding:13px 11px;text-align:center}
 .st b{display:block;font-size:24px;font-weight:700;letter-spacing:-.02em}
@@ -185,7 +227,10 @@ button{font:inherit;cursor:pointer}
 .home-hero .ph-gumi img{width:84px;height:84px;}
 .home-hero .ph-gumi .pad{width:84px;height:84px;}
 .home-hero .ph-title{font-size:20px;padding-right:88px;}
-.home-hero .ph-whytxt{padding-right:0;}
+/* 부제도 구미를 피한다 (2026-08-26). padding-right:0이던 탓에 "하나만 골라주세요"가
+   구미 뒤로 들어가 글자가 안 읽혔다 — 제목만 피하게 해 두면 두 줄짜리 부제가 그대로 겹친다.
+   구미는 top:12px에 84px이라 제목 한 줄 + 부제 한 줄 높이를 함께 덮는다. */
+.home-hero .ph-whytxt{padding-right:88px;}
 .home-hero .btn{margin-top:0;}
 .home-hero .btm-quiet{margin-top:0;}
 /* 홈에 편 미션 목록 — 히어로의 그라데이션 위에 얹히므로 카드를 반투명으로 눕힌다.
@@ -227,8 +272,10 @@ const SS = await mod("./session.js", "계정");
 // 여기에 더 얹으면 한 파일을 여러 사람이 동시에 못 고친다(모듈구조 v1 규칙 4).
 const SHEET = await mod("./stat-sheet.js", "캐릭터 시트");
 const HIST  = await mod("./history.js", "이력");
+// 옷의 소재·실루엣 표(이론 HAVE-2). 못 뜨면 색 판정만으로 종전처럼 돈다 — 옷장이 안 죽는다.
+const TAGS  = await mod("./cloth-tags.js", "옷 태그");
 const { issueOffer, judgeSkill, selfCheck, withKnowledge } = QE ?? {};
-const { ensureUser, linkUid, sbFetch, fetchStats, removeStat, PUBLIC,
+const { ensureUser, linkUid, sbFetch, sbRpc, fetchStats, removeStat, PUBLIC,
         isSignedIn, oauthStart, captureRedirect, signOut,
         signUpPassword, signInPassword, sendRecover, setPassword } = SS ?? {};
 const downBanner = () => DOWN.length
@@ -289,7 +336,21 @@ const count = kind => STATS.filter(s => s.kind === kind).length;
    규칙은 czm-stats.js가 갖고 있다 — 여기서 판정을 다시 짜지 않는다.
    대상 타입은 발행 시점에 확정해 active quest에 심는다(§1-2). 완료 때 재판정하지 않는다. */
 const USER  = () => ({want_type: diag?.want ?? null, have_type: diag?.have ?? null});
-const tName = k => DICT?.type_names?.[k] ?? k;
+/* 타입 키 → 한글 이름. 사전에 없으면 czm-core의 정본을 한 번 더 본다.
+   마지막 폴백은 빈 문자열이다 — 예전에는 못 찾은 키를 그대로 화면에 내보내서,
+   값이 어긋나면 "2 +1" 같은 숫자가 타입 이름 자리에 그대로 떴다(2026-08-26 확인).
+   유저에게 내부 값을 보이느니 그 자리를 비우는 편이 낫다. 배지 자체가 사라진다. */
+const tName = k => DICT?.type_names?.[k] ?? CZM.TYPE_NAMES?.[k] ?? "";
+
+/* 타입별 구미 (헌법 §9 확장 로드맵 — 8타입 구미). 보상 팝업이 **추구미 쪽 구미**를 세운다:
+   미션 하나를 마칠 때마다 지금 어디로 가고 있는지가 그림으로 보인다.
+   파일 이름이 이론 키와 안 맞는 자리가 둘 있다 — 우아한=소프트, 화려함=화려한.
+   못 찾으면 기본형으로 떨어지고, 그것도 없으면 img가 스스로 숨는다. */
+const GUMI_FILE = {
+  romantic:"로맨틱", pure:"청순청량", elegant:"소프트", energetic:"에너제틱",
+  gorgeous:"화려한", classic:"클래식", charisma:"카리스마", chic:"세련",
+};
+const gumiOf = k => `../character/${encodeURIComponent(GUMI_FILE[k] ?? "기본형")}.png`;
 // 표시 스탯 = 출발선 + 쌓은 것. 출발선은 진단이 정해 chugu_diag에 남긴다(index.html).
 // 그 값이 없는 옛 진단에서는 숫자 대신 오른 양만 말한다 — 없는 기준선을 지어내지 않는다.
 const statNow = () => diag?.base_stats
@@ -347,8 +408,20 @@ const esc = s => String(s).replace(/[<&]/g, c => ({"<":"&lt;","&":"&amp;"}[c]));
 const shell = ({top = "", body = "", btm = ""}) =>
   `<div class="screen-top">${top}</div><div class="screen-body">${body}</div><div class="screen-btm">${btm}</div>`;
 
-function head(title, sub = ""){
-  return `<div class="hd"><h1>${title}</h1>${sub ? `<small>${sub}</small>` : ``}</div>`;
+/* 제목 줄. gear=true면 오른쪽 끝에 설정 문을 낸다 (대표 2026-08-26 — "설정은 우측상단").
+   **탭 화면 넷에만 붙인다.** 하위 화면(담기·미션 고르기·완료)에 두면 뒤로 갈 자리와 겹치고,
+   지금 하던 일을 두고 설정으로 새는 문이 된다. 클릭은 아래 한 곳에서 위임으로 받는다 —
+   화면마다 핸들러를 달면 새 화면을 만들 때마다 빠뜨린다(그게 죽은 버튼이 생기는 경로다). */
+const GEAR = `<button class="hd-gear" data-gear aria-label="설정">
+  <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor"
+       stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3.1"></circle>
+    <path d="M19.4 15a1.6 1.6 0 0 0 .33 1.76l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.76-.33 1.6 1.6 0 0 0-1 1.46V21a2 2 0 1 1-4 0v-.11a1.6 1.6 0 0 0-1.05-1.46 1.6 1.6 0 0 0-1.76.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.6 15a1.6 1.6 0 0 0-1.46-1H3a2 2 0 1 1 0-4h.11a1.6 1.6 0 0 0 1.46-1.05 1.6 1.6 0 0 0-.33-1.76l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.6a1.6 1.6 0 0 0 1-1.46V3a2 2 0 1 1 4 0v.11a1.6 1.6 0 0 0 1 1.46 1.6 1.6 0 0 0 1.76-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.33 1.76V9a1.6 1.6 0 0 0 1.46 1H21a2 2 0 1 1 0 4h-.11a1.6 1.6 0 0 0-1.46 1z"></path>
+  </svg></button>`;
+function head(title, sub = "", gear = false){
+  return `<div class="hd"><h1>${title}</h1>
+    ${sub || gear ? `<div class="hd-r">${sub ? `<small>${sub}</small>` : ``}${gear ? GEAR : ``}</div>` : ``}
+  </div>`;
 }
 
 // 쌓인 것 3칸. 합계는 어디에도 그리지 않는다 — 셋을 더한 수는 매력 총량으로 읽힌다.
@@ -597,10 +670,12 @@ function renderHome(){
   // 좌표가 어디까지 갔는지는 재측정이 답하고, 그건 「나의 4주」 끝에서 다시 찍는다.
   const grown = CZMStats.gainsOf(STATS)[diag.want] || 0;
   const weeks = Math.max(1, Math.ceil(days/7));
+  // 홈은 제목 구조가 달라(.ph-head) head()를 안 쓴다 — 톱니만 같은 자리에 얹는다.
   const greet = `
-    <div class="ph-head">
-      <div class="ph-h1">오늘</div>
-      <div class="ph-sub">${wName}${/[가-힣]$/.test(wName)&&(wName.charCodeAt(wName.length-1)-44032)%28>0?"으로":"로"} 가는 ${days}일째예요</div>
+    <div class="ph-head" style="flex-direction:row;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div><div class="ph-h1">미션</div>
+        <div class="ph-sub">${wName}${/[가-힣]$/.test(wName)&&(wName.charCodeAt(wName.length-1)-44032)%28>0?"으로":"로"} 가는 ${days}일째예요</div></div>
+      ${GEAR}
     </div>`;
   // ① 지금 내 상태 — 어디에서 어디로 가는 중이고, 무엇이 몇 개 쌓였나. 한 카드에 묶는다.
   // "물들어가는 중"은 뺐다: 무엇이 무엇으로 바뀌는지 안 말하는 문장이었다(문구원칙 §2-2).
@@ -727,38 +802,95 @@ function renderHome(){
    "해냈다"가 화면 어디에도 남지 않는다. */
 function renderDone(title, lead, g, note){
   st.active = null;
-  app.innerHTML = shell({
-    top: head(title),
-    body: `<div class="card"><p class="lead">${lead}</p>${grewBlock(g)}
-      ${note ? `<p class="note">${note}</p>` : ``}</div>`,
-    btm: `<button class="btn" id="back">홈으로</button>`,
-  });
-  $("back").onclick = renderHome;
+  // 뒤에 홈을 먼저 세운다 — 팝업을 닫으면 이미 갱신된 홈이 있고, 오른 숫자가 그 자리에 있다.
+  // 완료 화면을 따로 두고 「홈으로」를 누르게 하면 그 사이에 한 번 더 화면이 바뀐다.
+  renderHome();
+  reward(title, lead, g, note);
 }
 
-// 도구 화면 — 홈에서 덜어낸 것들이 여기 모인다. 자주 안 쓰는 것을 매일 보는 화면에 두지 않는다.
-// 계정(로그아웃)·의견·점검은 관리성 항목이라 조용한 버튼으로 맨 아래.
+/* 보상 팝업. 구미가 말을 거는 자리다(헌법 §9 — 지시하지 않고 궁금해하고 응원한다).
+   ESC·바깥 탭·버튼 셋 다 닫힌다. 닫으면 뒤의 홈이 그대로 남는다. */
+function reward(title, lead, g, note){
+  const el = document.createElement("div");
+  el.className = "rw-back";
+  el.innerHTML = `<div class="rw" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <img class="rw-gumi" src="${gumiOf(g?.gain_type ?? diag?.want)}" alt=""
+         onerror="this.style.display='none'">
+    <h3>${esc(title)}</h3>
+    <p>${lead}</p>
+    ${grewBlock(g)}
+    ${note ? `<p class="note" style="margin-top:10px;opacity:.8">${note}</p>` : ``}
+    <button class="btn" id="rwOk">확인</button></div>`;
+  const close = () => { el.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = e => { if (e.key === "Escape") close(); };
+  el.addEventListener("click", e => { if (e.target === el) close(); });
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(el);
+  el.querySelector("#rwOk").onclick = close;
+  el.querySelector("#rwOk").focus();
+  track("reward_shown", {gain: g?.gain ?? 0, type: g?.gain_type ?? null});
+}
+
+/* 설정 화면 (2026-08-26 개편 — 대표: "재측정이라던가 이런 부분이 너무 복잡하게 꼬여있는데
+   … 별도 메뉴에 들어가서 할수있게 모으고"). 옛 이름은 「도구」였고, 서랍이 두 가지를 섞고 있었다:
+     · 기능 — 옷 색 판정·타입별 추천·영상. 이건 쓰러 들어오는 것이다.
+     · 관리 — 다시 측정·의견·로그아웃. 이건 어쩌다 한 번 만지는 것이다.
+   섞여 있으니 어느 쪽도 제자리가 아니었다. 이제 이 화면은 **관리만** 맡고,
+   기능 셋은 자기 탭으로 갔다(옷 색 판정·타입별 추천 → 인벤토리 / 영상 → 스탯).
+
+   묶음은 셋이다 — 측정 · 계정 · 앱. 비슷한 것끼리 간격을 두고 덩어리로 나누는 것이
+   모바일 게임 UI의 기본이고, 실제로 그래야 "어디서 뭘 하는지"가 읽힌다. */
 function renderTools(){
   track("tools_shown", {diagnosed: !!diag});
-  const rows = [
-    ...(diag ? [["toVid", "볼 만한 영상", "내 타입 쪽 영상 모음"]] : []),
-    ...HUB.map(h => [null, h.label, h.desc, h.href]),
-    ...(diag ? [[null, "다시 진단하기", "지금 자리를 한 번 더 확인", "../index.html?view=start"]] : []),
-  ].map(([id, label, desc, href]) => href
-    ? `<a class="q" href="${href}" style="display:block;text-decoration:none"><div class="t">${label}</div><div class="m">${desc}</div></a>`
-    : `<button class="q" id="${id}"><div class="t">${label}</div><div class="m">${desc}</div></button>`).join("");
+  const group = (label, rows) => rows.length ? `
+    <h2 style="font-size:12px;color:var(--accent);font-weight:700;margin:18px 0 8px;letter-spacing:.02em">${label}</h2>
+    ${rows.join("")}` : ``;
+  const item = (label, desc, attr) =>
+    attr.href ? `<a class="q" href="${attr.href}" style="display:block;text-decoration:none"><div class="t">${label}</div><div class="m">${desc}</div></a>`
+              : `<button class="q" id="${attr.id}"><div class="t">${label}</div><div class="m">${desc}</div></button>`;
   app.innerHTML = shell({
-    top: head("도구"),
-    body: rows + `<div style="margin-top:auto;padding-top:22px">
-        <button class="btn quiet" id="toVoc">하고 싶은 말 남기기</button>
-        ${DEV ? `<button class="btn quiet" id="selfck">엔진 자체 점검</button>` : ``}
-        <button class="btn quiet" id="out">로그아웃</button></div>`,
-    // 앱에는 하단 탭바가 홈을 갖고 있다 — 같은 자리에 버튼을 하나 더 두면 중복이다
-    btm: `<button class="btn ghost app-only-hide" id="back">홈으로</button>`,
+    top: head("설정"),
+    body: `<div>`
+      // 측정 — 재측정 진입을 여기 하나로 모은다. 전에는 이 문이 스탯 안쪽에만 있어
+      // 찾는 사람마다 다른 길로 들어왔다(전수조사: 재진단 진입 11곳).
+      + group("측정", diag ? [
+          item("내 결과 다시 보기", "지난 진단 리포트", {href:"../index.html?view=report"}),
+          /* 「처음부터 다시」 — 재측정이 아니라 **리셋**이다(대표 설계 2026-08-26).
+             최초 측정이 성장의 기준선이라 그것만 갈아끼울 수 없다. 기준선째로 새로 세운다.
+             링크가 아니라 버튼인 이유: 되돌릴 수 없는 일이라 확인을 거쳐야 한다. */
+          item("처음부터 다시", "지금까지 쌓은 것을 모두 지우고 새로 시작합니다", {id:"resetAll"}),
+        ] : [ item("진단 시작하기", "아직 measurement 전이에요", {href:"../index.html?view=start"}) ])
+      + group("계정", [ item("하고 싶은 말 남기기", "불편한 곳이나 바라는 것", {id:"toVoc"}) ])
+      + (DEV ? group("개발", [ item("엔진 자체 점검", "산식·사전 정합성", {id:"selfck"}) ]) : ``)
+      + `</div>`,
+    btm: `<button class="btn quiet" id="out">로그아웃</button>
+          <button class="btn ghost app-only-hide" id="back">홈으로</button>`,
   });
-  $("back").onclick = () => nav("home");
+  $("back") && ($("back").onclick = () => nav("home"));
+  /* 리셋 — 확인을 두 번 받는다. 첫 번째는 무엇이 사라지는지 **세어서** 보여주고,
+     두 번째는 그걸 읽었다는 확인이다. 되돌릴 수 없는 일에 확인 한 번은 부족하다.
+     ⚠ 개수를 세어 보여주는 이유: "전부 지웁니다"는 추상이라 손이 먼저 움직인다.
+       "미션 12개, 옷 8벌"이면 그제야 무게가 읽힌다. */
+  $("resetAll") && ($("resetAll").onclick = async () => {
+    const items = STATS.filter(s => s.kind === "item" && !s.removed_at).length;
+    const done  = STATS.filter(s => s.kind !== "item").length;
+    const parts = [diag ? "진단 결과" : null,
+                   done  ? `해낸 미션 ${done}개` : null,
+                   items ? `옷장 ${items}개` : null].filter(Boolean);
+    const what = parts.length ? parts.join(" · ") : "저장된 기록";
+    track("reset_asked", {items, done, has_diag: !!diag});
+    if (!confirm(`${what}이(가) 모두 사라집니다.\n되돌릴 수 없습니다. 계속할까요?`)) {
+      track("reset_cancelled", {stage: 1}); return;
+    }
+    if (!confirm("정말 지울까요? 지우고 나면 처음 측정부터 다시 하게 됩니다.")) {
+      track("reset_cancelled", {stage: 2}); return;
+    }
+    track("reset_done", {items, done}, {keepalive: true});   // 페이지를 떠나는 전송
+    const removed = SS && SS.resetAll ? SS.resetAll() : [];
+    console.log("reset:", removed.length, "keys");
+    location.href = "../index.html";
+  });
   $("toVoc").onclick = renderVoc;
-  $("toVid") && ($("toVid").onclick = renderContent);
   $("selfck") && ($("selfck").onclick = renderCheck);
   $("out").onclick = () => { signOut(); route(); };
 }
@@ -864,11 +996,29 @@ const costTag = c => {
   return `<span class="tag ${cls}">${txt}</span>`;
 };
 
+/* 미션의 종류 표시 (2026-08-26). 사전은 처음부터 kind를 갖고 있었는데(아이템 99·스킬 63,
+   지식은 퀴즈로 따로) 화면이 그걸 안 썼다. 목록을 내리읽으면 카드가 다 같은 얼굴이라
+   "무엇을 하는 미션인지"가 제목을 다 읽어야 알 수 있었다.
+   스탯 화면이 이미 아이템·스킬·지식 셋으로 세고 있으니, 같은 셋을 카드에도 세운다 —
+   여기서 고른 것이 저기 어느 칸에 쌓이는지가 눈으로 이어진다. */
+const KIND = {
+  item:      ["아이템", "M4 7h16v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM8 7V5a4 4 0 0 1 8 0v2"],
+  skill:     ["행동",   "M12 3.5l2.4 5.2 5.6.7-4.1 3.9 1.1 5.6L12 16.2 6.9 18.9 8 13.3 3.9 9.4l5.6-.7z"],
+  knowledge: ["지식",   "M5 4.5h11a2 2 0 0 1 2 2V21H7a2 2 0 0 1-2-2zM18 17H7a2 2 0 0 0-2 2"],
+};
+const kindTag = c => {
+  const k = KIND[c.kind]; if (!k) return ``;
+  return `<span class="kind kind-${c.kind}" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${k[1]}"></path></svg>${k[0]}</span>`;
+};
 // 미션 한 칸을 목록용 버튼으로. 홈과 목록이 같은 모양을 쓴다.
 const questBtn = (c, i) => `<button class="q" data-id="${c.id}" data-i="${i}">
     <div class="t">${esc(c.copy)}</div>
     <div class="m">
-      ${CZMStats.previewGain(c) ? `<span class="tag">${esc(tName(CZMStats.targetType(USER(), c)))} +${CZMStats.previewGain(c)}</span>` : ``}
+      ${kindTag(c)}
+      ${CZMStats.previewGain(c) && tName(CZMStats.targetType(USER(), c))
+        ? `<span class="tag">${esc(tName(CZMStats.targetType(USER(), c)))} +${CZMStats.previewGain(c)}</span>` : ``}
       ${costTag(c)}
       ${c.grade === "scale" ? `<span class="tag">확인은 대략까지만</span>` : ``}
       ${c.countable === false ? `<span class="tag">사진 확인은 준비 중</span>` : ``}
@@ -975,10 +1125,16 @@ async function palette(){
 const typeOfHex = (pal, hex) => (hex && pal.find(r => r.hex === hex)?.type) || null;
 const safeHex = h => /^#[0-9A-Fa-f]{6}$/.test(h || "") ? h : null;
 
-// 오늘 입을 후보. 태그는 저장돼 있지 않다(스키마 §2-1) — attrs.color로 표시 시점에 만든다.
+// 오늘 입을 후보. 태그는 저장돼 있지 않다(스키마 §2-1) — attrs로 표시 시점에 만든다.
+// 2026-08-26: 색 하나로만 판정하던 것을 색·소재·실루엣 3표로 바꿨다(cloth-tags.js).
+// 대표 지적 — "상의, 색깔만 등록하면 그걸로 분석을 어떻게하고 추천을 어떻게해줄래?"
+// 전에는 tag_power가 0 아니면 1이라, 같은 부위·같은 타입 옷이 여럿이면 추천이 id 순으로
+// 골랐다. 이제 0~3이라 **더 잘 맞는 옷이 위로 온다.** 소재·실루엣이 없는 옛 옷은
+// 색 1표만 받아 종전과 같은 자리에 선다 — 기존 옷장이 무효가 되지 않는다.
 const closet = pal => STATS.filter(s => s.kind === "item" && !s.removed_at).map(s => {
-  const type = typeOfHex(pal, safeHex(s.attrs?.color));
-  return {...s, tag_type:type, tag_power: type ? 1 : 0};
+  const colorType = typeOfHex(pal, safeHex(s.attrs?.color));
+  const t = TAGS ? TAGS.tagOf(s.attrs, colorType) : {type:colorType, power: colorType ? 1 : 0};
+  return {...s, tag_type:t.type, tag_power:t.power};
 });
 const itemName = s => s.attrs?.name
   || (s.ref?.includes(":") ? s.ref.split(":").slice(1).join(":") : s.ref) || "이름 없는 것";
@@ -1157,9 +1313,15 @@ async function renderCloset(){
   // 부위마다 카드를 씌우면 5벌짜리 옷장도 한 화면을 넘긴다(실측 630/548) — 제목 줄 + 행으로 낸다
   const groups = `<div>` + order.map(sl =>
     `<h2 style="font-size:12px;color:var(--accent);font-weight:700;margin:14px 0 7px;letter-spacing:.02em">${esc(SLOT_LABEL[sl] ?? sl ?? "그 밖")}</h2>`
-    + items.filter(i => i.slot === sl).map(i => `<div class="q" style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
-      <span class="t" style="flex:1">${dot(safeHex(i.attrs?.color))}${esc(itemName(i))}</span>
-      <button class="btn quiet" style="margin:0;flex:none" data-del="${esc(i.id ?? "")}">버리기</button></div>`).join("")
+    + items.filter(i => i.slot === sl).map(i => {
+      // 찍어서 담은 옷은 사진으로 보여준다 — 색 점 하나보다 "그 옷"이 훨씬 빨리 읽힌다.
+      // 사진이 없으면 종전대로 색 점. 없다고 자리를 비워 두면 줄이 흔들린다.
+      const th = i.id ? LS.get(K.itemThumb + i.id, null) : null;
+      return `<div class="q" style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+      ${th ? `<img src="${th}" alt="" style="width:38px;height:38px;flex:none;object-fit:cover;border-radius:9px">` : ``}
+      <span class="t" style="flex:1">${th ? `` : dot(safeHex(i.attrs?.color))}${esc(itemName(i))}</span>
+      <button class="btn quiet" style="margin:0;flex:none" data-del="${esc(i.id ?? "")}">버리기</button></div>`;
+    }).join("")
   ).join("") + `</div>`;
 
   // 빈 자리를 보여준다. 이론 §6-2가 empty를 이미 산출하는데 화면이 안 쓰고 있었다.
@@ -1180,16 +1342,21 @@ async function renderCloset(){
       <button class="chip${mine ? "" : " on"}" data-ct="closet">옷장 ${all.filter(i => !isPouch(i.slot)).length}</button>
       <button class="chip${mine ? " on" : ""}" data-ct="pouch">파우치 ${all.filter(i => isPouch(i.slot)).length}</button>
     </div>`;
+  // 옷을 다루는 기능은 옷이 있는 화면에 둔다 — 설정 서랍에 있던 둘을 여기로 옮겼다(2026-08-26).
+  // 「옷 색 판정」은 담기 전에 쓰고 「타입별 추천」은 빈 자리를 채울 때 쓴다. 둘 다 인벤토리의 일이다.
+  const tools = `<h2 style="font-size:12px;color:var(--accent);font-weight:700;margin:20px 0 8px;letter-spacing:.02em">옷 살펴보기</h2>
+    ${HUB.map(h => `<a class="q" href="${h.href}" style="display:block;text-decoration:none">
+      <div class="t">${h.label}</div><div class="m">${h.desc}</div></a>`).join("")}`;
 
   app.innerHTML = shell({
-    top: head("가진 것", all.length ? `${all.length}개` : ""),
+    top: head("인벤토리", all.length ? `${all.length}개` : "", true),
     body: tabs + (items.length ? groups : `<div class="card ph-glass">
       <p class="lead">${mine ? "파우치에 담긴 게 아직 없어요." : "옷장에 담긴 게 아직 없어요."}</p>
       <p class="note">${mine
         ? "자주 쓰는 립이나 쿠션 하나만 있어도 그날 차림에 맞춰 같이 골라드립니다."
-        : "오늘 입은 것 한 벌만 담아도 내일 아침 추천이 나옵니다."}</p></div>`) + emptyCard,
+        : "오늘 입은 것 한 벌만 담아도 내일 아침 추천이 나옵니다."}</p></div>`) + emptyCard + tools,
     btm: `<button class="btn" id="add">담기</button>
-          <button class="btn quiet" id="back">오늘로</button>`,
+          <button class="btn quiet" id="back">미션으로</button>`,
   });
   app.querySelectorAll("[data-ct]").forEach(b => b.onclick = () => {
     closetTab = b.dataset.ct; track("closet_tab", {tab:closetTab}); renderCloset();
@@ -1207,18 +1374,219 @@ async function renderCloset(){
     if (!id || !confirm("여기서 뺄까요? 지금까지 쌓인 건 그대로 남아요.")) return;
     if (!LOCAL && removeStat) await removeStat(id);
     st.drop(id);
+    try{ localStorage.removeItem(K.itemThumb + id); }catch(e){}   // 사진도 같이 지운다 — 안 지우면 버린 옷의 사진이 기기에 남는다
     track("item_removed", {id});
     renderCloset();
   });
 }
 
-/* R5 아이템 등록 — 3탭 폴백 경로(설계도 §4-3 ③). 사진 촬영 등록은 이번 범위 밖이다.
+/* ── 친구에게 물어보기 (2026-08-26 · 대표 설계) ──────────────────────────────
+   재측정이 리셋이 되면서 **변화를 재는 일이 전부 이쪽으로 넘어왔다.**
+   "이미지변화 매력변화는 타인이 봤을때 느껴져야하는 부분이니 그걸 지인체크를 통해 하자는거지"
+
+   대표 확정 사항:
+     · 인원 문턱 없음 — 한 명씩 보내고 한 명씩 받는다. 여러 명은 권고만
+     · 익명 아님 — 내가 고른 사람에게 보내므로 **내가 이름을 적는다**(친구는 안 적는다)
+     · 보상 없음 — 부탁이다
+     · 동의는 발송 시점 — 보내기를 누르는 것이 동의다
+
+   사진은 400px로 줄여 보낸다. 친구 화면에서 얼굴이 보이면 충분하고,
+   원본을 올릴 이유가 없다(작을수록 남는 것이 적다). */
+const FRIEND_MAX = 400;
+
+/** 파일 → 정사각 400px data URI. 옷 썸네일과 같은 방식이되 크기만 다르다. */
+async function friendThumb(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await new Promise((ok, no) => {
+      const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = url; });
+    const side = Math.min(img.width, img.height);
+    const cv = document.createElement("canvas"); cv.width = cv.height = FRIEND_MAX;
+    cv.getContext("2d").drawImage(img, (img.width - side) / 2, (img.height - side) / 2,
+                                  side, side, 0, 0, FRIEND_MAX, FRIEND_MAX);
+    return cv.toDataURL("image/jpeg", 0.78);
+  } finally { URL.revokeObjectURL(url); }
+}
+
+function renderAskFriend(){
+  let photo = null, name = "";
+  const draw = () => {
+    app.innerHTML = shell({
+      top: head("친구에게 물어보기"),
+      body: `<div class="card">
+          <p class="lead">요즘 내 모습이 어떻게 보이는지, 친구에게 물어봐요.</p>
+          <p class="note">얼굴 측정용이 아니라 <b>친구가 볼 사진</b>이에요. 잘 나온 걸로 고르시면 됩니다.
+            여러 명에게 보내면 답이 모여서 더 정확해져요.</p>
+
+          <label class="btn${photo ? " quiet" : ""}" for="fPhoto"
+                 style="display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:14px">
+            ${photo ? "다른 사진으로" : "사진 고르기"}</label>
+          <input type="file" id="fPhoto" accept="image/*" style="display:none">
+          ${photo ? `<img src="${photo}" alt="" style="width:100%;max-width:220px;aspect-ratio:1;
+             object-fit:cover;border-radius:16px;margin:12px auto 0;display:block">` : ``}
+
+          <p class="note" style="margin-top:16px">누구에게 보내시나요?</p>
+          <input class="field" id="fName" placeholder="이름이나 별명 — 나만 봐요" value="${esc(name)}">
+        </div>`,
+      btm: `<button class="btn" id="fGo"${photo ? "" : " disabled"}>${photo ? "링크 만들어 보내기" : "사진을 골라주세요"}</button>
+            <button class="btn quiet" id="fBack">나중에</button>`,
+    });
+    $("fPhoto").onchange = async e => {
+      const f = e.target.files?.[0]; e.target.value = "";
+      if(!f) return;
+      try{ photo = await friendThumb(f); name = $("fName").value; draw(); }
+      catch(err){ console.warn("사진 처리 실패", err); alert("이 사진은 열지 못했어요. 다른 사진으로 해주세요."); }
+    };
+    $("fBack").onclick = () => nav("record");
+    $("fGo").onclick = async () => {
+      if(!photo) return;
+      const who = $("fName").value.trim();
+      const b = $("fGo"); b.disabled = true; b.textContent = "만드는 중…";
+      // 보내기를 누른 것이 사진 동의다(대표 2026-08-26) — 서버가 consented_at에 남긴다.
+      const id = await sbRpc("friend_survey_create", {p_user: UID, p_photo: photo, p_friend: who});
+      if(!id){ b.disabled = false; b.textContent = "다시 시도"; return alert("링크를 만들지 못했어요. 잠시 뒤 다시 해주세요."); }
+      // 링크는 친구 폰에서 열린다 — 앱 안 상대경로는 폰 내부를 가리켜 남이 못 연다.
+      const url = "https://attractioncompany.github.io/survey-beta/ask.html?s=" + id;
+      track("friend_survey_created", {has_name: !!who});
+      shareFriendLink(url, who);
+    };
+  };
+  draw();
+}
+
+/** 링크 보내기. 앱은 공유 시트, 웹은 복사로 떨어진다 — 어느 쪽이든 유저가 직접 고른 사람에게 간다. */
+async function shareFriendLink(url, who){
+  const text = `${who ? who + "님, " : ""}요즘 제 모습이 어떻게 보이는지 한 가지만 봐주실 수 있을까요? 1분이면 끝나요.`;
+  let via = "copy";
+  try{
+    if(navigator.share){ await navigator.share({title:"잠깐만 봐주실 수 있나요", text, url}); via = "share"; }
+    else { await navigator.clipboard.writeText(text + "\n" + url); }
+  }catch(e){
+    if(e && e.name === "AbortError") { $("fGo") && ($("fGo").disabled = false, $("fGo").textContent = "다시 보내기"); return; }
+    try{ await navigator.clipboard.writeText(text + "\n" + url); }catch(_){}
+  }
+  track("friend_survey_sent", {via});
+  app.innerHTML = shell({
+    top: head("보냈어요"),
+    body: `<div class="ph-glass ph-hero snap">${GUMI}
+      <div class="ph-title">답이 오면<br>여기에 쌓여요</div>
+      <div class="ph-whytxt">${via === "share" ? "친구가 답하면 기록에서 볼 수 있어요."
+        : "링크를 복사했어요. 카톡에 붙여넣어 보내주세요."}<br>
+        여러 명에게 보내면 더 정확해집니다.</div></div>`,
+    btm: `<button class="btn" id="more">한 명 더 보내기</button>
+          <button class="btn quiet" id="done">기록 보기</button>`,
+  });
+  $("more").onclick = renderAskFriend;
+  $("done").onclick = () => nav("record");
+}
+
+/* ── 여러 벌 한 번에 담기 (2026-08-26) ────────────────────────────────────────
+   대표: "옷장은 말그대로 옷장이기 때문에 내가 가지고있는 옷들을 다 등록하고
+   아이템관리하듯이 관리할수있어야함 상의 하나등록하고 끝이아님"
+
+   맞는 지적이었다. 한 벌 담는 데 최소 3탭, 색·소재·실루엣까지 고르면 6탭이 든다.
+   옷 40벌이면 240탭이고, **그건 아무도 안 한다.** 옷장이 한두 벌에서 멈춘 이유가 이것이다.
+
+   그래서 사진 여러 장을 한 번에 고르는 길을 낸다. 장마다 색과 썸네일은 자동으로 뽑고,
+   유저는 부위만 찍어 준다 — 40벌이 40탭이 된다. 부위 자동 추정은 앱에서 따로 붙인다
+   (iOS Vision). 웹에서는 못 하므로 여기서는 목록에서 고르게 한다.
+
+   담을 때는 화면을 떠나지 않는다. 담고 나면 옷장 화면으로 튕기던 종전 동작이
+   "한 벌 담고 끝"을 구조로 강제하고 있었다. */
+function renderBulkAdd(opts = {}){
+  const rows = [];        // {id, thumb, color, slot, name}
+  let busy = false;
+  const draw = () => {
+    const done = rows.filter(r => r.slot).length;
+    app.innerHTML = shell({
+      top: head("여러 벌 담기", rows.length ? `${done} / ${rows.length}` : ""),
+      body: rows.length ? `<div>${rows.map((r, i) => `
+        <div class="q" style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:10px 12px">
+          <img src="${r.thumb}" alt="" style="width:46px;height:46px;flex:none;object-fit:cover;border-radius:10px">
+          <div style="flex:1;min-width:0">
+            <select class="field" data-row="${i}" style="margin:0;width:100%;font-size:14px">
+              <option value="">어느 부위예요?</option>
+              ${SLOTS.map(s => `<option value="${s}"${r.slot === s ? " selected" : ""}>${SLOT_LABEL[s]}</option>`).join("")}
+            </select>
+          </div>
+          <button class="btn quiet" style="margin:0;flex:none;padding:8px 12px" data-drop="${i}">빼기</button>
+        </div>`).join("")}</div>`
+        : `<div class="card ph-glass">
+             <p class="lead">사진을 골라주세요.</p>
+             <p class="note">옷장을 열고 한 벌씩 찍어도 되고, 앨범에 있는 사진을 한꺼번에 골라도 돼요.
+             색은 사진에서 알아서 잡습니다.</p></div>`,
+      btm: `<label class="btn${rows.length ? " quiet" : ""}" for="bulkPick"
+               style="display:flex;align-items:center;justify-content:center;cursor:pointer">
+              ${rows.length ? "사진 더 고르기" : "사진 고르기"}</label>
+            <input type="file" id="bulkPick" accept="image/*" multiple style="display:none">
+            ${rows.length ? `<button class="btn" id="bulkSave"${done ? "" : " disabled"}>${done ? `${done}벌 담기` : "부위를 골라주세요"}</button>` : ``}
+            <button class="btn quiet" id="bulkBack">그만두기</button>`,
+    });
+    $("bulkPick").onchange = onPick;
+    $("bulkBack").onclick = () => (opts.back ?? renderCloset)();
+    app.querySelectorAll("[data-row]").forEach(sel => sel.onchange = () => {
+      rows[+sel.dataset.row].slot = sel.value || null;
+      draw();                                   // 개수 표시와 담기 버튼 상태가 같이 움직인다
+    });
+    app.querySelectorAll("[data-drop]").forEach(b => b.onclick = () => {
+      rows.splice(+b.dataset.drop, 1); draw();
+    });
+    const sv = $("bulkSave"); if (sv) sv.onclick = save;
+  };
+
+  async function onPick(e){
+    const files = [...(e.target.files ?? [])];
+    e.target.value = "";
+    if (!files.length || busy) return;
+    busy = true;
+    const DC = await mod("./dominant-color.js", "색 추출");
+    for (const f of files){
+      // 한 장씩 순서대로 — 40장을 한꺼번에 디코딩하면 폰에서 메모리가 튄다.
+      try {
+        const got = DC && await DC.colorOfFile(f, 0.25, true);
+        if (got?.thumb) rows.push({id:crypto.randomUUID(), thumb:got.thumb,
+                                   color:nearestSwatch(got.hex, await palette()) ?? got.hex, slot:null});
+      } catch (err) { console.warn("사진 한 장 실패", err); }
+    }
+    busy = false;
+    track("bulk_picked", {n:files.length, ok:rows.length});
+    draw();
+  }
+
+  async function save(){
+    const ready = rows.filter(r => r.slot);
+    if (!ready.length) return;
+    for (const r of ready){
+      const name = SLOT_LABEL[r.slot];
+      const attrs = {name, ...(r.color ? {color:r.color} : {})};
+      st.add({id:r.id, kind:"item", ref:`${r.slot}:${name}`, slot:r.slot, attrs, at:new Date().toISOString()});
+      await sbPost("stat_entries", {id:r.id, user_id:UID, kind:"item", slot:r.slot, ref:`${r.slot}:${name}`,
+                                    source_kind:"self_report", attrs, evidence:"observed"});
+      try{ LS.set(K.itemThumb + r.id, r.thumb); }catch(e){}
+    }
+    track("bulk_saved", {n:ready.length});
+    // 소재·실루엣은 여기서 안 묻는다 — 40벌을 한 번에 담는 자리에서 칸을 늘리면 그 순간 다시 안 하게 된다.
+    // 인벤토리에서 한 벌씩 열어 채우는 길을 따로 낸다(다음 회차).
+    renderCloset();
+    reward("담았어요", `${ready.length}벌이 옷장에 들어왔어요.`, null,
+           "부위만 있어도 아침 추천에 나옵니다. 소재까지 채우면 더 잘 맞아요.");
+  }
+
+  draw();
+}
+
+/* R5 아이템 등록 — 3탭 폴백 경로(설계도 §4-3 ③).
    슬롯 1탭 + 색 1탭 + 담기 1탭. 이름은 안 적어도 담긴다 — 아침에 쓰는 기능의 재료라서
    등록에 노동을 붙이면 옷장이 영영 비어 있게 된다.
    opts.quest가 있으면 미션의 '담기' 흐름이다(완료 처리까지 이어진다). */
 function renderAddItem(opts = {}){
   const q = opts.quest ?? null;
-  let slot = q?.slot ?? opts.slot ?? null, color = null;
+  /* ⚠ q.slot을 쓰면 안 된다 (2026-08-26 발견). 사전의 `slot`은 부위 키가 아니라 설명이다 —
+     item.outer의 값이 "실루엣·소재"다. 진짜 부위는 `slot_key`("outer")에 있다.
+     그동안 미션으로 담기에 들어오면 부위 칩이 하나도 안 켜졌고, 「담기」 버튼은 slot이 없어
+     계속 잠겨 있었다. 미션이 "가진 아우터 담기"라고 말해놓고 아우터를 다시 고르게 한 셈이다.
+     버튼이 안 눌리는 것으로만 보여서 원인이 안 보이던 종류다. */
+  let slot = q?.slot_key ?? opts.slot ?? null, color = null, fabric = null, shape = null, thumb = null;
   (async () => {
     const pal = await palette();
     app.innerHTML = shell({
@@ -1231,11 +1599,18 @@ function renderAddItem(opts = {}){
           `<button class="chip${s === slot ? " on" : ""}" data-s="${s}">${SLOT_LABEL[s]}</button>`).join("")}</div>
         <!-- 앞줄이 "어느 부위예요?"라 여기도 물으면 질문이 두 줄 이어진다(헌법 §6-1).
              색이 없으면 tag_power가 0이라 추천에 영영 안 나오는데, 그 이유를 아무 데서도 안 말하고 있었다. -->
+        ${TAGS ? `<p class="note" style="margin-top:14px">어떤 천이에요?</p>
+        <div class="chips">${TAGS.FABRICS.map(f =>
+          `<button class="chip" data-f="${f.key}">${f.label}</button>`).join("")}</div>
+        <p class="note" style="margin-top:14px">선은 어떤 모양이고요?</p>
+        <div class="chips">${TAGS.SHAPES.map(s =>
+          `<button class="chip" data-sh="${s.key}">${s.label}</button>`).join("")}</div>` : ``}
         <p class="note" style="margin-top:14px">색까지 잡으면 아침 추천에 올라와요. <span style="opacity:.7">(건너뛰어도 담겨요)</span></p>
         <label class="btn quiet" for="shot" style="margin:0 0 10px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer">
           사진으로 색 잡기</label>
         <input type="file" id="shot" accept="image/*" capture="environment" style="display:none">
         <p class="note" id="shotMsg" style="display:none;margin:-4px 0 10px"></p>
+        <img id="shotPv" alt="" style="display:none;width:96px;height:96px;object-fit:cover;border-radius:14px;margin:0 0 12px;box-shadow:0 3px 12px rgba(74,43,92,.14)">
         <div class="sw">${pal.map(r =>
           `<button class="swatch" data-c="${r.hex}" style="background:${r.hex}" aria-label="${r.hex}"></button>`).join("")}</div>
         </div>`,
@@ -1256,17 +1631,22 @@ function renderAddItem(opts = {}){
       msg("색을 보는 중…");
       try {
         const DC = await mod("./dominant-color.js", "색 추출");
-        const got = DC && await DC.colorOfFile(f);
+        const got = DC && await DC.colorOfFile(f, 0.25, true);   // true = 썸네일도 받는다
         if (!got) return msg("이 사진에서는 색이 잘 안 잡혀요. 아래에서 골라주세요.");
         // 팔레트에 있는 가장 가까운 칸으로 붙인다 — 이론이 아는 색은 그 104칸이고,
         // 여기서 새 색을 만들면 태그 매핑이 닿지 않는다.
         const near = nearestSwatch(got.hex, pal);
         color = near ?? got.hex;
+        thumb = got.thumb ?? null;                 // 찍은 옷을 인벤토리에서 눈으로 고를 수 있게
         app.querySelectorAll("[data-c]").forEach(x => x.classList.toggle("on", x.dataset.c === color));
         const sw = app.querySelector(`[data-c="${color}"]`);
         sw?.scrollIntoView({block:"nearest", behavior:"smooth"});
+        // 잡은 사진을 그 자리에서 보여준다 — 무엇을 담는지 눈으로 확인하고 담게 된다.
+        const pv = $("shotPv");
+        if (pv && thumb) { pv.src = thumb; pv.style.display = "block"; }
         msg("이 색으로 잡았어요. 다르면 아래에서 바꿔주세요.");
-        track("item_color_from_photo", {slot, share: Math.round((got.share ?? 0) * 100) / 100});
+        track("item_color_from_photo", {slot, share: Math.round((got.share ?? 0) * 100) / 100,
+                                        thumb: !!thumb});
       } catch (err) {
         console.warn("사진 색 추출 실패", err);
         msg("사진을 읽지 못했어요. 아래에서 골라주세요.");
@@ -1282,12 +1662,23 @@ function renderAddItem(opts = {}){
       color = b.dataset.c;
       app.querySelectorAll("[data-c]").forEach(x => x.classList.toggle("on", x.dataset.c === color));
     });
+    // 소재·실루엣 — 한 번 더 누르면 풀린다. 잘못 고른 칸을 지우는 길이 없으면 다시 담게 된다.
+    const single = (attr, get, set) => app.querySelectorAll(`[${attr}]`).forEach(b => b.onclick = () => {
+      set(get() === b.getAttribute(attr) ? null : b.getAttribute(attr));
+      app.querySelectorAll(`[${attr}]`).forEach(x =>
+        x.classList.toggle("on", x.getAttribute(attr) === get()));
+    });
+    single("data-f",  () => fabric, v => fabric = v);
+    single("data-sh", () => shape,  v => shape  = v);
     $("back").onclick = () => q ? renderHome() : (opts.back ?? renderCloset)();
     $("save").onclick = async () => {
       if (!slot) return;
       const name = $("nm").value.trim() || SLOT_LABEL[slot];
       const id = crypto.randomUUID();
-      const attrs = {name, ...(color ? {color} : {})};
+      const attrs = {name, ...(color ? {color} : {}), ...(fabric ? {fabric} : {}), ...(shape ? {shape} : {})};
+      // 썸네일은 **기기에만** 남긴다 — 서버로 보내는 attrs에는 넣지 않는다(아래 sbPost).
+      // 옷 사진에도 방·거울·사람이 같이 찍힌다. 서버에 올릴 이유가 없는 값이다.
+      if (thumb) LS.set(K.itemThumb + id, thumb);
       const ref = `${slot}:${name}`;
       // 영구 가산은 **미션으로 담았을 때만** 붙는다(§4-1 등록 = 사건). 옷장에서 그냥 담는 것은
       // 사건이 아니라 자산 정리라, 여기에 +1을 주면 50벌 담아 50점을 만드는 길이 열린다.
@@ -1295,7 +1686,8 @@ function renderAddItem(opts = {}){
       st.add({id, kind:"item", ref, slot, attrs, at:new Date().toISOString(), ...(g ?? {})});
       await sbPost("stat_entries", {id, user_id:UID, kind:"item", slot, ref,
                                     source_kind:"self_report", attrs, evidence:"observed", ...(g ?? {})});
-      track("item_added", {slot, has_color: !!color, from: q ? "quest" : "closet"});
+      track("item_added", {slot, has_color: !!color, has_fabric: !!fabric, has_shape: !!shape,
+                           from: q ? "quest" : "closet"});
       if (!q) return (opts.back ?? renderCloset)();
       track("stat_added", {kind:"item", ref, source_kind:"self_report", ...(g ?? {})});
       track("quest_completed", {offer_id:q.offer_id, quest_id:q.id, kind:"item",
@@ -1310,10 +1702,16 @@ function renderAddItem(opts = {}){
    옛 화면은 quest-dict의 한글 슬롯('립'·'실루엣·소재')을 그대로 저장했는데, 08-24 스키마의
    slot check(영문 9종)가 그 값을 거부한다 → 서버 저장이 조용히 실패하고 있었다.
    슬롯을 유저가 고르게 해서 값이 항상 정본 9종 안에 들어오게 한다. */
-const QSLOT = {"립":"lip", "액세서리":"accessory"};   // '실루엣·소재'는 슬롯이 아니라 속성(§4-3) — 유저가 고른다
+const QSLOT = {"립":"lip", "액세서리":"accessory"};   // slot_key가 없던 시절 셀을 위한 폴백
+/* 2026-08-26 — 사전이 slot_key(영문 9종)를 갖게 된 뒤로도 여기가 옛 방식 그대로였다.
+   c.slot은 부위가 아니라 속성 설명("실루엣·소재")이라 QSLOT에 걸리지 않고 null이 됐고,
+   그 결과 **미션으로 담기에 들어오면 부위가 하나도 안 골라진 채 「담기」가 잠겨 있었다.**
+   "가진 아우터 옷장에 담기"를 눌렀는데 아우터를 다시 고르라는 화면이 나오고,
+   안 고르면 버튼이 안 눌린다 — 밖에서 보면 그냥 죽은 버튼이다.
+   slot_key를 먼저 본다. 값은 이미 정본 9종이라 스키마 check도 그대로 통과한다. */
 function renderRegister(){
   const a = st.active, c = cell(a.id);
-  renderAddItem({quest:{copy:c.copy, slot:QSLOT[c.slot] ?? null, id:a.id,
+  renderAddItem({quest:{copy:c.copy, slot_key:c.slot_key ?? QSLOT[c.slot] ?? null, id:a.id,
                         offer_id:a.offer_id, target_type:a.target_type}});
 }
 
@@ -1533,7 +1931,7 @@ const CTX = {
   loadScan: () => LS.get(K.scan, null),
 };
 
-const VIEWS = {home:renderHome, tools:renderTools,
+const VIEWS = {home:renderHome, tools:renderTools, content:renderContent, askfriend:renderAskFriend,
                outfit:() => renderOutfit(true), closet:renderCloset,
                // 모듈이 못 뜨면 홈으로 돌린다 — 빈 화면을 보여주느니 갈 데가 있는 편이 낫다
                me:      () => SHEET?.renderSheet   ? SHEET.renderSheet(CTX)   : renderHome(),
@@ -1541,6 +1939,11 @@ const VIEWS = {home:renderHome, tools:renderTools,
                history: () => HIST?.renderHistory  ? HIST.renderHistory(CTX)  : renderHome()};
 // 같은 해시로는 hashchange가 오지 않는다 — 주소만 조용히 맞추고 화면은 직접 그린다
 const nav = name => { history.replaceState(null, "", `#${name}`); (VIEWS[name] ?? renderHome)(); };
+// 설정 톱니는 화면마다 다시 그려지므로 핸들러를 붙일 자리도 매번 생긴다.
+// 위임으로 한 번만 건다 — 새 화면을 만들 때 빠뜨릴 수 없게.
+app.addEventListener("click", e => {
+  if (e.target.closest("[data-gear]")) { track("settings_opened", {from: location.hash.slice(1) || "home"}); nav("tools"); }
+});
 addEventListener("hashchange", () => {
   const v = VIEWS[location.hash.slice(1)];
   if (v) v();

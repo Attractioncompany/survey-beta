@@ -61,13 +61,15 @@ export function renderSheet(ctx) {
   const row = (k, val, g) => `<div class="trow"><i style="background:${TCOLOR[k] || "var(--prism-purple)"}"></i>
     <span>${nm(k)}</span>${val === null ? `` : `<b>${val}</b>`}${g ? `<em>+${g}</em>` : ``}</div>`;
 
-  // 아래로 가는 문 둘. 리포트가 주(主)고, 해체된 도구의 잔여는 조용한 줄로 받는다.
+  // 아래로 가는 문. 2026-08-26: 「재진단·의견·계정」 줄은 뺐다 — 설정이 우측 상단 톱니로
+  // 올라갔고, 같은 문을 두 자리에 두면 어느 쪽이 진짜인지 헷갈린다.
+  // 대신 「볼 만한 영상」이 여기로 왔다(설정 서랍에 있던 것). 내 타입을 아는 화면의 일이다.
   const doors = `<a class="btn ghost" href="../index.html?view=report">진단 리포트 다시 보기</a>
-    <button class="btn quiet" id="toTools">재진단 · 의견 · 계정</button>`;
+    ${diag ? `<button class="btn quiet" id="toVid">내 타입 쪽 영상 보기</button>` : ``}`;
   const draw = (body, btm = doors) => {
-    app.innerHTML = shell({ top: head("나"), body, btm });
-    const b = document.getElementById("toTools");
-    if (b) b.onclick = () => nav("tools");
+    app.innerHTML = shell({ top: head("스탯", "", true), body, btm });
+    const v = document.getElementById("toVid");
+    if (v) v.onclick = () => nav("content");
   };
 
   if (!diag) {

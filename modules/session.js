@@ -197,3 +197,68 @@ export async function fetchStats(){
 export async function removeStat(id){
   return await sbFetch("rpc/stat_remove", {method:"POST", body:JSON.stringify({p_entry:id})}) !== null;
 }
+
+/** RPC 호출 — 반환값을 그대로 돌려준다. 실패하면 null.
+ *
+ *  ⚠ sbFetch를 쓰지 않는다. 그쪽은 **로그인 세션이 없으면 조용히 null을 돌려준다**(L130).
+ *    친구 설문은 로그인 전에도 돌아야 하고(진단만 하고 계정을 안 만든 유저가 다수다),
+ *    친구 쪽은 아예 계정이 없다. 그래서 익명 키로 직접 친다.
+ *    보안은 여기가 아니라 서버가 맡는다 — 테이블 RLS 정책이 0건이라 직접 접근은 전부 막혀 있고,
+ *    RPC 셋(SECURITY DEFINER)만이 통로다. 익명 키로 열 수 있는 것은 그 셋뿐이다.
+ *  로그인한 유저는 토큰을 얹어 보낸다 — 서버가 누가 불렀는지 알 수 있으면 아는 편이 낫다. */
+/** 배열을 통째로 받는 RPC. friend_results처럼 여러 행이 오는 것은 이쪽을 쓴다.
+ *  sbRpc는 첫 행만 돌려주므로 응답 목록에는 못 쓴다. */
+export async function sbRpcAll(fn, body){
+  const j = await sbRpcRaw(fn, body);
+  return Array.isArray(j) ? j : (j == null ? [] : [j]);
+}
+
+export async function sbRpc(fn, body){
+  const j = await sbRpcRaw(fn, body);
+  return Array.isArray(j) ? (j.length ? j[0] : null) : j;
+}
+
+async function sbRpcRaw(fn, body){
+  let auth = KEY;
+  try{ const s = await getSession(); if(s?.token) auth = s.token; }catch(e){}
+  try{
+    const r = await fetch(`${URL_}/rest/v1/rpc/${fn}`, {
+      method:"POST",
+      headers:{"Content-Type":"application/json", apikey:KEY, Authorization:`Bearer ${auth}`},
+      body: JSON.stringify(body)});
+    if(!r.ok){ console.warn("sbRpc", fn, r.status, await r.text()); return null; }
+    return await r.json().catch(() => null);
+  }catch(e){ console.warn("sbRpc 실패", fn, e); return null; }
+}
+
+/* ── 처음부터 다시 하기 (2026-08-26 · 대표 설계) ────────────────────────────
+   "우리 최초측정이 바뀌면 안되기때문에 최초측정을 다시하는 재측정은 아예 리셋을 하고
+    다시 하는 개념이야 캐릭터삭제하고 다시만드는 개념. 그래서 설정에 재측정이 들어간거고."
+
+   왜 부분 갱신이 아니라 리셋인가 — **최초 측정이 성장의 기준선이기 때문이다.**
+   기준선이 움직이면 "얼마나 자랐나"가 말이 안 된다. 그래서 다시 재고 싶으면
+   기준선째로 새로 세운다. 게임에서 캐릭터를 지우고 새로 만드는 것과 같다.
+
+   ⚠ 그럼 변화는 무엇이 재는가 — **친구 설문이다**(대표 확정).
+     "이미지변화 매력변화는 타인이 봤을때 느껴져야하는 부분이니 그걸 지인체크를 통해 하자는거지."
+     재측정은 변화 측정 수단이 아니다. 그 역할이 친구 설문으로 넘어갔다.
+
+   범위: **옷장까지 전부**(대표 확정). 로컬 키를 통째로 비운다.
+   남기는 것은 czm_uid 하나뿐 — 같은 사람이라는 사실까지 지우면 서버에 고아 데이터가 쌓이고,
+   무엇보다 우리가 "이 사람이 다시 시작했다"를 셀 수 없게 된다(그게 중요한 계측이다).
+   서버 데이터는 지우지 않는다 — 분석 자산이고, 새 진단이 그 위에 쌓인다.
+   유저 화면은 전부 로컬을 보므로 화면상으로는 완전한 초기화다. */
+export function resetAll(){
+  const keep = new Set(["czm_uid"]);
+  const removed = [];
+  try{
+    // 우리 키만 지운다. 다른 앱·확장이 같은 오리진에 둔 것을 건드리지 않는다.
+    for(const k of Object.keys(localStorage)){
+      if(keep.has(k)) continue;
+      if(/^(chugu_|czm_|aim_logs)/.test(k)){ localStorage.removeItem(k); removed.push(k); }
+    }
+    // 세션 저장소도 비운다 — 강의 흐름 마커(czm_lec_*)가 남으면 다음 진단이 그 상태를 물려받는다.
+    sessionStorage.clear();
+  }catch(e){ /* 저장소가 막힌 환경에서도 아래 이동은 해야 한다 */ }
+  return removed;
+}
