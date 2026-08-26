@@ -243,22 +243,39 @@ async function sbRpcRaw(fn, body){
      "이미지변화 매력변화는 타인이 봤을때 느껴져야하는 부분이니 그걸 지인체크를 통해 하자는거지."
      재측정은 변화 측정 수단이 아니다. 그 역할이 친구 설문으로 넘어갔다.
 
-   범위: **옷장까지 전부**(대표 확정). 로컬 키를 통째로 비운다.
-   남기는 것은 czm_uid 하나뿐 — 같은 사람이라는 사실까지 지우면 서버에 고아 데이터가 쌓이고,
-   무엇보다 우리가 "이 사람이 다시 시작했다"를 셀 수 없게 된다(그게 중요한 계측이다).
-   서버 데이터는 지우지 않는다 — 분석 자산이고, 새 진단이 그 위에 쌓인다.
-   유저 화면은 전부 로컬을 보므로 화면상으로는 완전한 초기화다. */
+   범위: **최초 설치 상태**(대표 2026-08-26). 로컬 키를 하나도 남기지 않는다 —
+   czm_uid도, 로그인 토큰도, 소개 화면을 봤다는 표시도 함께 지운다.
+   전에는 czm_uid를 남겼다. 계측(누가 다시 시작했나)을 얻는 대신 유저에게 "처음"을
+   못 준 셈이었다 — 소개도 안 뜨고 로그인도 그대로였다. 대표 지시가 이 저울을 정했다.
+   서버 데이터는 지우지 않는다. 그것까지 지우는 것은 회원탈퇴(deleteAccount)의 일이고,
+   둘을 나눠 둔 이유는 "다시 하고 싶다"와 "그만두겠다"가 다른 뜻이기 때문이다. */
+/* 기기를 최초 설치 상태로 되돌린다 (대표 지시 2026-08-26: "완전히 앱 최초설치상태로").
+   전에는 czm_uid를 남겼다 — 서버에 쌓인 것과 이어두려던 것인데, 그러면 소개 화면도
+   안 뜨고 로그인도 그대로라 "처음"이 아니었다. 신분증째로 버린다: 다음 실행은 새 사람이다.
+   ⚠ 서버 기록은 그대로 남는다. 그것까지 지우는 것은 회원탈퇴(deleteAccount)다. */
 export function resetAll(){
-  const keep = new Set(["czm_uid"]);
   const removed = [];
   try{
     // 우리 키만 지운다. 다른 앱·확장이 같은 오리진에 둔 것을 건드리지 않는다.
     for(const k of Object.keys(localStorage)){
-      if(keep.has(k)) continue;
       if(/^(chugu_|czm_|aim_logs)/.test(k)){ localStorage.removeItem(k); removed.push(k); }
     }
     // 세션 저장소도 비운다 — 강의 흐름 마커(czm_lec_*)가 남으면 다음 진단이 그 상태를 물려받는다.
     sessionStorage.clear();
   }catch(e){ /* 저장소가 막힌 환경에서도 아래 이동은 해야 한다 */ }
   return removed;
+}
+
+/* 회원탈퇴 (대표 지시 2026-08-26). 초기화와 다른 점은 하나 — **서버 기록까지 지운다.**
+   events만 남기되 user_id를 지워 익명 행으로 만든다: 퍼널·리텐션 집계의 분모라
+   행이 사라지면 지난 코호트 수치가 흔들린다. 익명 행은 더는 그 사람을 가리키지 않는다.
+   서버가 실패하면 기기를 지우지 않는다 — 화면에서만 사라지고 서버엔 남는 상태가
+   유저에게는 "지웠다고 했는데 안 지워진 것"이라, 그 조합이 가장 나쁘다. */
+export async function deleteAccount(){
+  const uid = localStorage.getItem("czm_uid");
+  if(!uid) return {ok:true, skipped:"no_uid"};   // 서버에 아무것도 없다
+  const r = await sbRpc("account_delete", {p_user: uid});
+  if(!r || r.ok !== true) return {ok:false};
+  resetAll();
+  return {ok:true, ...r};
 }

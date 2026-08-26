@@ -240,6 +240,17 @@ button{font:inherit;cursor:pointer}
 .home-picks{gap:var(--sp-2);flex:none;}
 .home-picks .q{background:rgba(255,255,255,.74);border-color:rgba(255,255,255,.85);}
 .home-picks .q:active{background:rgba(255,255,255,.94);border-color:var(--accent);}
+/* 퀘스트 로그 탭 — 진행 가능 · 진행 중 · 완료 (대표 설계 2026-08-26).
+   세그먼트로 둔 이유: 세 목록을 세로로 쌓으면 한 화면에 다 안 들어오고,
+   스크롤 밑으로 내려간 「완료」는 아무도 안 연다. 앱은 숏폼이다. */
+.qseg{display:flex;gap:4px;background:rgba(255,255,255,.5);border-radius:12px;
+  padding:3px;margin-bottom:12px;flex:none;}
+.qseg button{flex:1;border:0;background:transparent;border-radius:9px;padding:8px 4px;
+  font:inherit;font-size:13px;font-weight:600;color:var(--sub);cursor:pointer;
+  min-height:38px;transition:background .12s,color .12s;}
+.qseg button.on{background:#fff;color:var(--deep);box-shadow:0 1px 4px rgba(74,43,92,.1);}
+.qseg button b{font-weight:700;font-size:12px;opacity:.75;}
+.home-hero .ph-whytxt+.q{margin-top:2px;}
 /* 기능 그리드 — 앱에서는 탭바가 기록·내 결과·도구를 이미 갖고 있어 그 셋이 빠지고 한 줄이 된다 */
 .ph-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);}
 .ph-entry{flex:1;display:flex;align-items:center;justify-content:center;gap:var(--sp-2);min-height:48px;border:1px solid rgba(255,255,255,.7);border-radius:var(--radius-btn);background:rgba(255,255,255,.44);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);color:var(--ink);font-size:13.5px;font-weight:600;text-decoration:none;cursor:pointer;}
@@ -312,9 +323,27 @@ const track = (event, props={}, extra={}) => sbPost("events", {user_id:UID, even
 // ── 상태 ─────────────────────────────────────────────────────
 // 서버가 원천이다. 로컬은 조회가 실패했을 때만 쓰는 사본 — 두 벌을 동시에 진실로 삼지 않는다.
 let STATS = LS.get(K.stats, []);          // [{id, kind, ref, slot, attrs, at}]
+/* 지금 열어 놓은 미션 id. 화면을 떠났다 돌아오는 흐름(재촬영 → photo.html → 복귀)이
+   있어서 기기에 남긴다 — 모듈 변수로 두면 그 왕복에서 어느 미션이었는지를 잃는다. */
+let CUR = LS.get("czm_quest_cur", null);
+const setCur = v => { CUR = v; LS.set("czm_quest_cur", v); };
+
 const st = {
-  get active(){ return LS.get(K.activeQuest, null); },
-  set active(v){ LS.set(K.activeQuest, v); },
+  /* 안고 있는 미션들. 2026-08-26까지는 한 건짜리 객체였다(대표 지시로 여럿이 됐다) —
+     그때 쌓인 한 건을 잃지 않도록 읽을 때 배열로 감싼다. */
+  get actives(){
+    const v = LS.get(K.activeQuest, null);
+    return Array.isArray(v) ? v : v ? [v] : [];
+  },
+  set actives(v){ LS.set(K.activeQuest, v); },
+  /* 지금 다루는 한 건. 이 두 줄 덕에 등록·퀴즈·재촬영 화면은 예전 그대로 돌아간다.
+     null 대입은 "이 미션을 목록에서 뺀다"는 뜻이다 — 완료도 포기도 여기로 온다. */
+  get active(){ return st.actives.find(a => a.id === CUR) ?? null; },
+  set active(v){
+    const rest = st.actives.filter(a => a.id !== CUR);
+    st.actives = v ? [...rest, v] : rest;
+    setCur(v ? v.id : null);
+  },
   add(e){ STATS = [...STATS, e]; LS.set(K.stats, STATS); },
   drop(id){ STATS = STATS.filter(s => s.id !== id); LS.set(K.stats, STATS); },
   get skipped(){ return LS.get(K.skipped, []); },
@@ -657,8 +686,7 @@ function renderHome(){
   // 프리즘·미션·진행도가 뜬다. 이 화면의 할 일은 하나뿐이다 — 갈 곳 정하기.
   if (!diag.want) return renderNoWant();
   track("hub_shown", {diagnosed:true});
-  const a = st.active;
-  const ho = homeOffer();      // 진행 중인 게 없으면 고를 목록을 편다 (대표 확정 2026-08-24)
+  const ho = homeOffer();      // 수락할 수 있는 미션 목록
   // ── 프리즘 홈 상단 (시안 Home.dc.html = 스펙) ──────────────────────
   const N = DICT?.type_names ?? {};
   const wName = esc(N[diag.want] ?? diag.want), hName = esc(N[diag.have] ?? diag.have);
@@ -693,107 +721,169 @@ function renderHome(){
         : `첫 미션을 마치면 ${wName}부터 오릅니다`}</p>
       ${statsRow(true)}
     </div>`;
-  // ② 오늘 할 것 — 미션 카드. **설명과 그 설명의 실행 버튼이 한 카드 안에 있다**(대표 2026-08-24).
-  // 하단 고정 CTA로 빼두니 위 설명과 한 덩어리로 안 읽혔다. 구미는 제목 옆 84px로 줄여 버튼 자리를 비운다.
-  // "구미가 이걸 고른 이유" 접힘은 없앴다 — 탭 한 번을 아끼려고 두 줄을 감추고 있었다.
+  // ② 퀘스트 로그 — 진행 가능 · 진행 중 · 완료 (아래 questLog)
+  // §3-5 복귀 — 경과 일수를 적지 않고, 밀린 처방을 쌓아두지 않고, 구미는 실망하지 않는다
+  const away = LS.get(K.lastSeen, null);
+  const gapD = away ? (Date.now() - new Date(away)) / 864e5 : 0;
+  const back = gapD >= RETURN_GAP_DAYS && STATS.length > 0;
+  const doing = st.actives;
+  track("home_shown", {returning: back, n_doing: doing.length});
+  LS.set(K.lastSeen, new Date().toISOString());
+
+  // 홈은 허브다 — 상태 · 퀘스트 로그 · 갈 수 있는 곳, 셋뿐이다.
+  app.innerHTML = shell({
+    top: greet,
+    body: downBanner()
+        + (back ? `<div class="banner">쌓아둔 건 그대로 있어요.</div>` : ``)
+        + prism + questLog(ho, doing, wName) + tileGrid(),
+    btm: ``,
+  });
+  wireLog(ho);
+}
+
+/* ── 퀘스트 로그 (대표 설계 2026-08-26) ───────────────────────────────
+   > "게임도 진행가능 퀘스트가 있고 진행중 퀘스트가있고 진행완료 퀘스트가있잖아.
+   >  본인이 이번주에 시도해보고싶은 것들은 진행가능목록에서 수락하고 (…)
+   >  완료하면 나중에 완료목록을 보면서 내가 어떤것들을 나의 발전을 위해 썼는지 알수있고"
+
+   직전까지는 안고 있는 미션이 하나라도 있으면 새 미션을 아예 안 냈다(homeOffer의 게이트).
+   한 주에 하나 — **속도를 우리가 정하고 있었다.** 대표 지시는 그 반대다: 몇 개를 동시에
+   안고 갈지는 그 사람이 정한다. 그래서 게이트를 걷고 화면을 셋으로 갈랐다.
+
+   완료 칸을 따로 두는 이유는 목록 관리가 아니다 — 몇 주 뒤에 열어보고 "내가 나를 위해
+   이만큼 했구나"가 보이는 자리다. 그게 이 앱이 파는 것이다. */
+let QTAB = null;    // 세션 동안만 산다. 첫 진입은 안고 있는 게 있으면 진행 중부터 편다.
+
+const doneList = () => STATS.filter(s => s.ref && cell(s.ref))
+                            .sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+
+// 수락한 지 며칠 됐나. 며칠째인지는 재촉이 아니라 사실이라 그대로 적는다.
+function dayTag(a){
+  const d = a.started ? Math.floor((Date.now() - new Date(a.started)) / 864e5) : 0;
+  return d >= 1 ? `<span class="tag">${d}일째</span>` : ``;
+}
+
+function questLog(ho, doing, wName){
+  const done = doneList();
+  const tab = QTAB ?? (doing.length ? "doing" : "open");
+  const seg = [["open", "진행 가능", ho ? ho.r.cells.length : 0],
+               ["doing", "진행 중", doing.length],
+               ["done", "완료", done.length]];
+  const bar = `<div class="qseg">${seg.map(([k, label, n]) =>
+    `<button class="${k === tab ? "on" : ""}" data-seg="${k}">${label}${n ? ` <b>${n}</b>` : ``}</button>`).join("")}</div>`;
+
+  let inner;
+  if (tab === "doing") {
+    inner = doing.length
+      ? doing.map(a => { const c = cell(a.id); return c ? `
+          <button class="q" data-open="${a.id}">
+            <div class="t">${esc(c.copy)}</div>
+            <div class="m">${kindTag(c)}${costTag(c)}${dayTag(a)}</div></button>` : ``; }).join("")
+      : `<p class="ph-whytxt">아직 수락한 미션이 없어요. 진행 가능에서 골라보세요.</p>`;
+  } else if (tab === "done") {
+    // 최근 것이 위. 스무 개만 편다 — 나머지는 기록 탭이 받는다.
+    inner = done.length
+      ? done.slice(0, 20).map(s => { const c = cell(s.ref), d = s.at ? new Date(s.at) : null;
+          return `<div class="q" style="cursor:default">
+            <div class="t">${esc(c.copy)}</div>
+            <div class="m">${d ? `<span class="tag">${d.getMonth() + 1}월 ${d.getDate()}일</span>` : ``}${
+              s.gain && s.gain_type ? `<span class="tag">${esc(tName(s.gain_type))} +${s.gain}</span>` : ``}</div></div>`;
+        }).join("")
+      : `<p class="ph-whytxt">해낸 미션이 여기 쌓입니다. 하나만 마쳐도 첫 줄이 생겨요.</p>`;
+  } else if (!QE) {
+    inner = `<p class="ph-whytxt">미션을 지금 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.</p>
+             <button class="btn ghost" onclick="location.reload()">새로고침</button>`;
+  } else if (ho) {
+    const more = ho.r.cells.length - ho.picks.length;
+    inner = `<p class="ph-whytxt">${wName} 쪽으로 움직이는 미션이에요. 하고 싶은 만큼 수락하세요.</p>
+      ${ho.picks.map(questBtn).join("")}
+      ${more > 0 ? `<div class="btm-quiet"><button class="btn quiet" id="toList">${more}개 더 보기</button></div>` : ``}`;
+  } else {
+    inner = `<p class="ph-whytxt">${wName} 쪽 미션을 다 보셨네요. 목록에서 지나친 것을 다시 볼 수 있어요.</p>
+             <button class="btn" id="toList">미션 목록 열기</button>`;
+  }
+  return `<div class="ph-glass ph-hero snap home-hero home-picks">
+    <div class="ph-title" style="margin-bottom:12px">미션</div>${bar}${inner}</div>`;
+}
+
+function wireLog(ho){
+  app.querySelectorAll("[data-seg]").forEach(b =>
+    b.onclick = () => { QTAB = b.dataset.seg; track("quest_tab", {tab: QTAB}); renderHome(); });
+  app.querySelectorAll("[data-open]").forEach(b =>
+    b.onclick = () => renderQuest(b.dataset.open));
+  $("toList")?.addEventListener("click", renderList);
+  // 수락은 목록을 닫지 않는다 — 여러 개를 이어서 고를 수 있어야 한다
+  if (ho) app.querySelectorAll(".home-picks .q[data-id]").forEach(b =>
+    b.onclick = () => acceptQuest(b.dataset.id, ho.offerId, +b.dataset.i, "home"));
+}
+
+/* 미션 한 건의 상세. 옛 홈 히어로 카드가 그대로 이 자리에 왔다 —
+   여럿을 안고 갈 수 있게 되면서 홈은 목록이 되고, 실행 버튼은 각자의 화면으로 내려왔다. */
+function renderQuest(id){
+  const a = st.actives.find(x => x.id === id);
+  if (!a) return renderHome();
+  setCur(id);            // 기기에 남긴다 — 재촬영은 photo.html을 다녀오는 왕복이다
+  const c = cell(id);
+  if (!c) { st.active = null; return renderHome(); }
+  const N = DICT?.type_names ?? {};
+  const wName = esc(N[diag.want] ?? diag.want);
   const gumiEl = `<div class="ph-gumi"><div class="pad"></div><img src="../bg/gumi_base.png" alt="" onerror="this.parentNode.style.display='none'"></div>`;
-  // 문구는 오늘 검수 통과한 기존 문장을 그대로 쓴다(신규 창작 금지).
-  const whyTxt = `오늘 당장 해볼 수 있는 것 중 ${wName} 쪽으로 가장 크게 움직입니다.`;
-  let today;
-  if (!QE) {
-    today = `<div class="ph-glass ph-hero snap home-hero">${gumiEl}
-      <div class="ph-title">미션을 지금 불러오지 못했어요</div>
-      <div class="ph-whytxt">잠시 뒤 새로고침해 주세요. 쌓인 건 그대로 있어요.</div>
-      <button class="btn ghost" onclick="location.reload()">새로고침</button></div>`;
-  } else if (a) {
-    const c = cell(a.id);
-    const primary = c.kind === "knowledge" ? `<button class="btn" id="toQuiz">풀어보기</button>`
-      : c.kind === "item" ? `<button class="btn" id="toReg">담았어요</button>`
-      : c.countable && c.field
-        ? (a.before ? `<button class="btn" id="toShot">해봤어요</button>`
-                    : `<button class="btn" id="toShot">지금 얼굴 찍어두기</button>`)
-        : `<button class="btn" id="tryDone">해봤어요</button>`;
-    // 기준 사진이 없으면 왜 먼저 찍는지가 이유 자리에 온다 — 이유는 한 줄만 둔다
-    // 지식 칸은 좌표를 움직이지 않는다 — "가장 크게 움직입니다"를 그대로 얹으면 거짓말이 된다.
-    // 홈이 미션을 정해주기 시작하면서 이 칸이 카드 자리에 직접 서게 됐다.
-    const why = c.kind === "knowledge"
-      ? "방향은 이미 잡혀 있어요. 왜 그런지 알아두면 다음 미션이 빨라집니다."
-      : (c.countable && c.field && !a.before)
-      ? "지금 얼굴부터 한 장 찍어둬요. 나중에 지금 모습이랑 비교해봐요." : whyTxt;
-    // 방향만 있고 크기가 없던 카드에 "얼마나"를 적는다(§3-2). 최소 등급만 약속하고
-    // 승급(+2)은 재촬영 결과 화면에서 처음 등장한다 — 조건부 약속은 미달을 박탈로 만든다.
-    const pv = CZMStats.previewGain(c);
-    const hint = pv ? `<span class="gain-hint">해내면 ${esc(tName(a.target_type
-                        || CZMStats.targetType(USER(), c)))} +${pv}</span>` : ``;
-    today = `<div class="ph-glass ph-hero snap home-hero">${gumiEl}
+
+  const primary = c.kind === "knowledge" ? `<button class="btn" id="toQuiz">풀어보기</button>`
+    : c.kind === "item" ? `<button class="btn" id="toReg">담았어요</button>`
+    : c.countable && c.field
+      ? (a.before ? `<button class="btn" id="toShot">해봤어요</button>`
+                  : `<button class="btn" id="toShot">지금 얼굴 찍어두기</button>`)
+      : `<button class="btn" id="tryDone">해봤어요</button>`;
+  // 지식 칸은 좌표를 움직이지 않는다 — "가장 크게 움직입니다"를 얹으면 거짓말이 된다.
+  const why = c.kind === "knowledge"
+    ? "방향은 이미 잡혀 있어요. 왜 그런지 알아두면 다음 미션이 빨라집니다."
+    : (c.countable && c.field && !a.before)
+    ? "지금 얼굴부터 한 장 찍어둬요. 나중에 지금 모습이랑 비교해봐요."
+    : `오늘 당장 해볼 수 있는 것 중 ${wName} 쪽으로 가장 크게 움직입니다.`;
+  // 최소 등급만 약속한다. 승급(+2)은 재촬영 결과 화면에서 처음 등장한다 —
+  // 조건부 약속은 미달을 박탈로 만든다.
+  const pv = CZMStats.previewGain(c);
+  const hint = pv ? `<span class="gain-hint">해내면 ${esc(tName(a.target_type
+                      || CZMStats.targetType(USER(), c)))} +${pv}</span>` : ``;
+
+  app.innerHTML = shell({
+    top: head("미션"),
+    body: `<div class="ph-glass ph-hero snap home-hero">${gumiEl}
       <div class="ph-title">${esc(c.copy)}</div>
       <div class="ph-whytxt">${why}</div>
       ${hint}
       ${primary}
       <div class="btm-quiet">
-        <button class="btn quiet" id="laterBtn">내일 할게요</button><i>·</i>
-        <button class="btn quiet" id="drop">다른 미션으로</button></div></div>`;
-  } else if (ho) {
-    // 고를 목록. 위 세 칸만 편다 — 나머지는 「더 보기」가 받는다.
-    // [게이트 통과 2026-08-25] 제목은 명사, 안내는 두 문장(~이에요 / ~주세요).
-    // 카드 제목이 전부 명사라 이 줄만 어미를 갖는다 — 목록 위에 문장을 겹쳐 쌓지 않는다.
-    const more = ho.r.cells.length - ho.picks.length;
-    today = `<div class="ph-glass ph-hero snap home-hero home-picks">${gumiEl}
-      <div class="ph-title">오늘 해볼 것</div>
-      <div class="ph-whytxt">${wName} 쪽으로 움직이는 미션이에요. 하나만 골라주세요.</div>
-      ${ho.picks.map(questBtn).join("")}
-      ${more > 0 ? `<div class="btm-quiet"><button class="btn quiet" id="toList">${more}개 더 보기</button></div>` : ``}</div>`;
-  } else {
-    // 낼 것을 못 찾았을 때만 여기 온다 — 스킵으로 후보를 다 비웠거나 사전이 비었다.
-    today = `<div class="ph-glass ph-hero snap home-hero">${gumiEl}
-      <div class="ph-title">지금 드릴 미션이<br>남아 있지 않아요</div>
-      <div class="ph-whytxt">${wName} 쪽 미션을 다 보셨네요. 목록에서 지나친 것을 다시 볼 수 있어요.</div>
-      <button class="btn" id="toList">미션 목록 열기</button></div>`;
-  }
-
-  // §3-5 복귀 — 경과 일수를 적지 않고, 밀린 처방을 쌓아두지 않고, 구미는 실망하지 않는다
-  const away = LS.get(K.lastSeen, null);
-  const gapD = away ? (Date.now() - new Date(away)) / 864e5 : 0;
-  const back = gapD >= RETURN_GAP_DAYS && STATS.length > 0;
-  track("home_shown", {returning: back, has_active: !!a});
-  LS.set(K.lastSeen, new Date().toISOString());
-
-  // 홈은 허브다 — 상태 · 오늘 할 것 · 갈 수 있는 곳, 셋뿐이다(대표 2026-08-24).
-  // 카드 수를 늘리지 않고 각 카드를 자기 완결로 만든다: 카드마다 자기 버튼을 갖는다.
-  // 그래서 홈에만 하단 고정 CTA가 없다 — 주 행동이 미션 카드 안에 있다.
-  app.innerHTML = shell({
-    top: greet,
-    body: downBanner()
-        + (back ? `<div class="banner">쌓아둔 건 그대로 있어요.</div>` : ``)
-        + prism + today + tileGrid(),
-    btm: ``,
+        <button class="btn quiet" id="drop">그만두기</button></div></div>`,
+    btm: `<button class="btn ghost app-only-hide" id="back">미션 목록으로</button>`,
   });
-
-  $("toList")?.addEventListener("click", renderList);
-  // 홈에 편 목록에서 바로 고른다 — 고르는 화면을 한 번 더 거치지 않는다
-  if (ho) app.querySelectorAll(".home-picks .q").forEach(b =>
-    b.onclick = () => pickQuest(b.dataset.id, ho.offerId, +b.dataset.i, "home"));
-  $("laterBtn")?.addEventListener("click", () => {
-    track("onestep_later", {quest_id: a?.id});
-    const b=$("laterBtn"); b.textContent="내일 할게요 ✓"; b.disabled=true; b.style.opacity=".55";
-  });
-  // onestep_done — 완료 의도를 탭 시점에 센다(요청서 §3). 검증 성공 여부는 quest_completed가 따로 잰다.
-  for (const id of ["toQuiz","toReg","toShot","tryDone"])
-    $(id)?.addEventListener("click", () => track("onestep_done", {quest_id: a?.id, via:id}), {once:true});
-  // 지나친 것은 excluded로 보낸다 — 안 그러면 autoIssue가 같은 걸 다시 세운다.
-  // 큐가 한 칸씩 밀리는 것도 이 한 줄이 만든다(§5-2, 추가 로직 없음).
+  $("back")?.addEventListener("click", () => { QTAB = "doing"; renderHome(); });
+  // onestep_done — 완료 의도를 탭 시점에 센다. 검증 성공 여부는 quest_completed가 따로 잰다.
+  for (const k of ["toQuiz","toReg","toShot","tryDone"])
+    $(k)?.addEventListener("click", () => track("onestep_done", {quest_id: id, via: k}), {once:true});
+  // 그만둔 것은 excluded로 보낸다 — 안 그러면 진행 가능 칸에 같은 게 다시 선다.
   $("drop")?.addEventListener("click", () => {
-    if (a) st.skipped = [...new Set([...st.skipped, a.id])];
-    st.active = null; renderList();
+    track("quest_dropped", {quest_id: id});
+    st.skipped = [...new Set([...st.skipped, id])];
+    remindOff([id]);
+    st.active = null; QTAB = "doing"; renderHome();
   });
   $("toReg")?.addEventListener("click", renderRegister);
   $("toQuiz")?.addEventListener("click", renderQuiz);
   $("toShot")?.addEventListener("click", () => location.href = "../photo.html?flow=verify");
   $("tryDone")?.addEventListener("click", () => {
     // 세지 않는 칸이다(§3-5). 기록만 남기고 스탯은 올리지 않는다.
-    track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"skill",
+    track("quest_completed", {offer_id:a.offer_id, quest_id:id, kind:"skill",
                              field:null, sign_match:null, countable:false});
-    st.active = null; renderHome();
+    // 스탯은 올리지 않는다(§3-5 세지 않는 칸). 다만 **해냈다는 사실은 남긴다** —
+    // 완료 목록이 비면 "내가 뭘 했는지"를 볼 자리가 없어진다(대표 2026-08-26).
+    st.add({kind:"skill", ref:id, slot:null, at:new Date().toISOString()});
+    // 서버 칸 이름이 다르다 — 기기의 at은 서버의 acquired_at이 기본값으로 채운다.
+    // 기기 행을 그대로 펴 보내면 없는 칸(at)이라 400이 난다.
+    sbPost("stat_entries", {user_id:UID, kind:"skill", ref:id, source_kind:"self_report"});
+    remindOff([id]);
+    st.active = null; QTAB = "done"; renderHome();
   });
 }
 
@@ -801,6 +891,7 @@ function renderHome(){
    카운터 0→1로 끝나던 자리다. 숫자가 실제로 움직이는 것을 보지 못하면
    "해냈다"가 화면 어디에도 남지 않는다. */
 function renderDone(title, lead, g, note){
+  if (CUR) remindOff([CUR]);
   st.active = null;
   // 뒤에 홈을 먼저 세운다 — 팝업을 닫으면 이미 갱신된 홈이 있고, 오른 숫자가 그 자리에 있다.
   // 완료 화면을 따로 두고 「홈으로」를 누르게 하면 그 사이에 한 번 더 화면이 바뀐다.
@@ -858,9 +949,10 @@ function renderTools(){
           /* 「처음부터 다시」 — 재측정이 아니라 **리셋**이다(대표 설계 2026-08-26).
              최초 측정이 성장의 기준선이라 그것만 갈아끼울 수 없다. 기준선째로 새로 세운다.
              링크가 아니라 버튼인 이유: 되돌릴 수 없는 일이라 확인을 거쳐야 한다. */
-          item("처음부터 다시", "지금까지 쌓은 것을 모두 지우고 새로 시작합니다", {id:"resetAll"}),
+          item("처음부터 다시", "이 기기의 기록을 모두 지우고 처음 상태로 되돌립니다", {id:"resetAll"}),
         ] : [ item("진단 시작하기", "아직 measurement 전이에요", {href:"../index.html?view=start"}) ])
-      + group("계정", [ item("하고 싶은 말 남기기", "불편한 곳이나 바라는 것", {id:"toVoc"}) ])
+      + group("계정", [ item("하고 싶은 말 남기기", "불편한 곳이나 바라는 것", {id:"toVoc"}),
+                        item("회원탈퇴", "서버에 저장된 기록까지 모두 삭제합니다", {id:"quitAll"}) ])
       + (DEV ? group("개발", [ item("엔진 자체 점검", "산식·사전 정합성", {id:"selfck"}) ]) : ``)
       + `</div>`,
     btm: `<button class="btn quiet" id="out">로그아웃</button>
@@ -882,12 +974,35 @@ function renderTools(){
     if (!confirm(`${what}이(가) 모두 사라집니다.\n되돌릴 수 없습니다. 계속할까요?`)) {
       track("reset_cancelled", {stage: 1}); return;
     }
-    if (!confirm("정말 지울까요? 지우고 나면 처음 측정부터 다시 하게 됩니다.")) {
+    if (!confirm("정말 지울까요? 지우고 나면 처음 측정부터 다시 하게 됩니다.\n계정을 없애는 것이 아니라 이 기기를 처음 상태로 되돌리는 것입니다.")) {
       track("reset_cancelled", {stage: 2}); return;
     }
     track("reset_done", {items, done}, {keepalive: true});   // 페이지를 떠나는 전송
+    remindOff([]);            // 빈 목록 = 예약 전부 취소. 지운 미션을 계속 물으면 유령이 된다
     const removed = SS && SS.resetAll ? SS.resetAll() : [];
     console.log("reset:", removed.length, "keys");
+    location.href = "../index.html";
+  });
+  /* 회원탈퇴 — 초기화와 다른 문이다. 초기화는 다시 시작하는 사람이 누르고,
+     여기는 그만두는 사람이 누른다. 그래서 확인도 다르게 받는다:
+     개수를 세어 보여주는 대신 **무엇이 서버에서 사라지는지**를 말하고,
+     마지막에 글자를 직접 치게 한다. 손이 미끄러져 누를 수 있는 자리가 아니다. */
+  $("quitAll") && ($("quitAll").onclick = async () => {
+    track("quit_asked", {});
+    if (!confirm("회원탈퇴를 하면 서버에 저장된 진단 결과·미션 기록·옷장·친구 설문이 모두 삭제됩니다.\n삭제된 자료는 복구할 수 없습니다. 계속하시겠습니까?")) {
+      track("quit_cancelled", {stage: 1}); return;
+    }
+    const typed = prompt("탈퇴하시려면 아래 칸에 «탈퇴»라고 입력해 주십시오.");
+    if ((typed || "").trim() !== "탈퇴") { track("quit_cancelled", {stage: 2}); return; }
+    const b = $("quitAll"); b.disabled = true; b.style.opacity = ".55";
+    track("quit_done", {}, {keepalive: true});          // 페이지를 떠나는 전송
+    remindOff([]);
+    const r = SS && SS.deleteAccount ? await SS.deleteAccount() : {ok:false};
+    if (!r.ok) {
+      b.disabled = false; b.style.opacity = "";
+      return alert("삭제하지 못했습니다. 통신 상태를 확인한 뒤 다시 시도해 주십시오.");
+    }
+    alert("탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다.");
     location.href = "../index.html";
   });
   $("toVoc").onclick = renderVoc;
@@ -899,7 +1014,8 @@ function renderTools(){
 // 이미 해낸 칸도 excluded로 보낸다 — 안 그러면 방금 마친 미션이 홈에 그대로 다시 선다.
 // (후보 풀은 pack()이 통째로 남기므로 거부율 분모는 그대로다)
 const offerNow = () => issueOffer(DICT, diag.gap_axis, {
-  excluded: [...new Set([...st.skipped, ...STATS.map(s => s.ref)])],
+  // 이미 수락한 것도 뺀다 — 안 그러면 진행 가능 칸에 안고 있는 미션이 다시 선다
+  excluded: [...new Set([...st.skipped, ...STATS.map(s => s.ref), ...st.actives.map(a => a.id)])],
   sameType: diag.want === diag.have,
   // 사전이 82칸 늘면서 목표 타입 필터가 필수가 됐다(미션사전 v2 §5).
   // 이게 없으면 우아한을 목표로 한 유저에게 카리스마 칸이 통째로 보인다.
@@ -962,7 +1078,8 @@ function ensureFree(picks, all, n){
 }
 
 function homeOffer(){
-  if (!QE || st.active) return null;
+  // 안고 있는 미션이 있어도 목록을 닫지 않는다(대표 2026-08-26) — 속도는 유저가 정한다.
+  if (!QE) return null;
   const r = offerNow();
   if (!r.cells.length) return null;       // 낼 것이 없으면 지어내지 않는다 — 빈 상태 카드가 받는다
   const key = r.offered_quests.join(",");
@@ -1024,16 +1141,35 @@ const questBtn = (c, i) => `<button class="q" data-id="${c.id}" data-i="${i}">
       ${c.countable === false ? `<span class="tag">사진 확인은 준비 중</span>` : ``}
     </div></button>`;
 
-// 고른 순간 걸음이 시작된다. 대상 타입은 여기서 굳는다(§1-2) —
-// 나중에 추구미가 바뀌어도 이 걸음의 가산은 안 움직인다.
-function pickQuest(id, offerId, position, via){
+/* 수락 — 진행 가능에서 진행 중으로 옮긴다. 대상 타입은 여기서 굳는다(§1-2):
+   나중에 추구미가 바뀌어도 이 미션의 가산은 안 움직인다.
+   수락이 곧 시작은 아니다. 실행 화면으로 끌고 가지 않고 목록에 남긴다 —
+   이번 주에 할 것 여럿을 이어서 담을 수 있어야 한다(대표 2026-08-26). */
+function acceptQuest(id, offerId, position, via){
+  if (st.actives.some(a => a.id === id)) return;
   track("quest_selected", {offer_id:offerId, quest_id:id, position, via});
-  st.active = {id, offer_id:offerId, started:new Date().toISOString(),
-               before: photo || null,
-               target_type: CZMStats.targetType(USER(), cell(id))};
+  st.actives = [...st.actives, {id, offer_id:offerId, started:new Date().toISOString(),
+                                before: photo || null,
+                                target_type: CZMStats.targetType(USER(), cell(id))}];
   st.homeOffer = null;                    // 다음에 다시 펼 때는 새 집합이다
+  remind(id);
+  QTAB = "doing";
   renderHome();
 }
+
+/* 수락해 놓고 안 끝난 미션을 사흘마다 한 번 확인해 준다 (대표 지시 2026-08-26).
+   앱 안에서만 산다 — 웹에는 예약할 곳이 없고, 있어도 브라우저를 닫으면 사라진다.
+
+   ⚠ 며칠 밀렸는지 세지 않는다. 재촉하지 않는다(헌법 §9 — 죄책감 유발형 넛지 금지).
+     구미는 확인하는 것이지 다그치는 것이 아니다.
+   실패는 삼키다 — 알림 권한을 거절해도 미션은 그대로 돌아야 한다. */
+function remind(id){
+  const c = cell(id); if (!c || !HIST?.native) return;
+  HIST.native("remind", {key:id, afterDays:3,
+    title:"구미가 궁금해해요",
+    body:`「${c.copy}」 어떻게 됐는지 알려주세요.`}).catch(() => {});
+}
+const remindOff = ids => HIST?.native && HIST.native("remindCancel", {keys: ids}).catch(() => {});
 
 function renderList(){
   const r = offerNow();
@@ -1072,13 +1208,13 @@ function renderList(){
     top: head("미션 고르기"),
     // 옛 문안은 "하나만" 다음 줄에 "하나씩"이 또 서서 같은 말이 두 번 읽혔다.
     body: `<div class="card"><p class="lead">마음 가는 걸로 골라보세요.</p>
-      <p class="note">한 번에 하나씩 해야 뭐가 달라졌는지 보입니다.</p></div>` + cards,
+      <p class="note">여러 개를 수락해도 됩니다. 수락한 미션은 진행 중에 쌓여요.</p></div>` + cards,
     btm: `<div class="btm-quiet"><button class="btn quiet" id="reroll">다른 미션 보기</button>
           <i>·</i><button class="btn quiet" id="back">홈으로</button></div>`,
   });
 
   app.querySelectorAll(".q").forEach(b =>
-    b.onclick = () => pickQuest(b.dataset.id, offerId, +b.dataset.i, "list"));
+    b.onclick = () => acceptQuest(b.dataset.id, offerId, +b.dataset.i, "list"));
   $("reroll").onclick = () => {
     // 사유를 묻지 않는다 — 사유 선택지는 우리가 만든 범주라 그 자체가 창작이다(§4-3)
     track("quest_rerolled", {offer_id:offerId});

@@ -103,7 +103,7 @@ export const albumStats = shots => ({ n_shots: shots.length, span_days: spanDays
 const nativeCbs = new Map(); let nativeSeq = 1e6;
 export const inApp = () => !!(window.webkit && window.webkit.messageHandlers
                               && window.webkit.messageHandlers.chugumism);
-function native(method, params) {
+export function native(method, params) {
   return new Promise((res, rej) => {
     if (!inApp()) return rej(new Error("no-native"));
     const prev = window.__nativeReply;
