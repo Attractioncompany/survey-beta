@@ -70,7 +70,25 @@ h1{font-size:var(--fs-title);line-height:1.3;} h2{font-size:var(--fs-h);line-hei
 .swatch{display:inline-block;width:56px;height:34px;border-radius:8px;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,.06);}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-.mood-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+/* 사진 8칸 문항은 화면을 넘겼다 (대표 지적 2026-08-27):
+   "스크롤 내리면 위쪽 질문이 계속 안보여".
+   실측 — 375×812에서 184px 넘침. 정사각 타일 4줄이 남은 높이보다 컸다.
+   타일을 정사각으로 못 박는 대신 **남은 높이를 4줄이 나눠 갖게** 한다.
+   그러면 어떤 폰에서도 8칸이 한 화면에 들어오고, 질문이 위로 밀려나지 않는다.
+   minmax 아래끝(76px)은 아주 작은 화면의 안전선이다 — 그보다 좁으면 스크롤이 다시 생기지만,
+   글자를 못 읽을 만큼 납작한 타일을 내놓는 것보다 그 편이 낫다. */
+.mood-grid{grid-template-columns:repeat(2,1fr);gap:10px;
+  flex:1 1 auto;min-height:0;grid-auto-rows:minmax(76px,1fr);}
+.mood-grid .mood{aspect-ratio:auto;height:100%;min-height:0;}
+/* 화면이 짧은 폰(360×640 같은 구형)에서는 보기 8개짜리 문항이 아직 58px 남았다.
+   여백만 줄인다 — 최소 탭 크기 48px은 건드리지 않는다(그건 접근성 하한이고,
+   손가락이 못 누르는 버튼은 스크롤보다 나쁘다). */
+@media (max-height: 720px){
+  .opt{margin-bottom:4px;}
+  .screen-body{padding-top:6px;padding-bottom:6px;}
+  .screen-btm{padding-top:10px;}
+  .screen-body h2{margin-bottom:6px;}
+}
 .mood-grid .mood{font-size:12px;}
 .chipgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
 .chip-item{background:var(--bg);border:2px solid transparent;border-radius:10px;padding:13px 12px;min-height:48px;display:flex;align-items:center;justify-content:center;font-size:var(--fs-sub);line-height:1.35;cursor:pointer;text-align:center;color:var(--ink);}
@@ -356,12 +374,12 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=c84c099"></script>
+<script src="modules/czm-core.js?v=25da68d"></script>
 <!-- 스탯 산식 정본(theory/산식_RPG스탯성장_v1_2026-08-24.md). 표시 층 전용 — 좌표·판정은 손대지 않는다. -->
-<script src="modules/czm-stats.js?v=c84c099"></script>
+<script src="modules/czm-stats.js?v=25da68d"></script>
 <!-- 리포트 해설(theory/리포트해설_확충_v1_2026-08-24.md). czm-core의 판정기를 유저 문장으로 인출한다.
      일반 스크립트인 이유: 캐릭터 시트 해설은 사진이 없어도 나오므로 첫 페인트에 동기로 있어야 한다. -->
-<script src="modules/report-explain.js?v=c84c099"></script>
+<script src="modules/report-explain.js?v=25da68d"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -429,7 +447,7 @@ const FLOW_WANT = new URLSearchParams(location.search).get("flow")==="want";
 const WANT_PARAM = new URLSearchParams(location.search).get("want");
 let WANT_PICK = null, WANT_SRC = null;   // 문항 점수 없이 물려받은 추구미(타입만)와 그 출처
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.35+c84c099"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.35+25da68d"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -3044,12 +3062,12 @@ if(FLOW_LECTURE){
 <script type="module">
   try{
     const [AS, PR, SE, PM, snapRes, shapeRes] = await Promise.all([
-      import("./modules/asset-score.js?v=c84c099"),
-      import("./modules/part-report.js?v=c84c099"),
-      import("./modules/step-engine.js?v=c84c099"),
+      import("./modules/asset-score.js?v=25da68d"),
+      import("./modules/part-report.js?v=25da68d"),
+      import("./modules/step-engine.js?v=25da68d"),
       // 「어떻게 쟀나」·「이런 기준으로 봤어요」 — VLAS 양식 반영(2026-08-26 대표 지시).
       // 못 뜨면 그 두 블록만 빠지고 부위 장의 나머지는 그대로 선다.
-      import("./modules/part-method.js?v=c84c099").catch(()=>null),
+      import("./modules/part-method.js?v=25da68d").catch(()=>null),
       fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
       // 관측 분포 — 「선과 좌우」의 밴드 라벨이 여기서 나온다. 없으면 그 장을 안 만든다.
       // 현 밴드 상수(jaw 7/19 등)는 14명 전원을 같은 칸에 넣어 표시용으로 못 쓴다.
@@ -3063,14 +3081,14 @@ if(FLOW_LECTURE){
     // import를 못 쓰므로 여기서 window에 얹는다(czm-core·PART와 같은 방식).
     // ⚠ 여기서 buildFriendPage를 부르지 않는다. 앵커는 renderResult가 그린 뒤에야 생긴다 —
     //   부위 장과 같은 이유로 __onPartEngineReady 쪽에서 부른다.
-    try{ window.__SESSION = await import("./modules/session.js?v=c84c099"); }
+    try{ window.__SESSION = await import("./modules/session.js?v=25da68d"); }
     catch(e){ console.warn("session 모듈 로드 실패", e); }
     if (typeof window.__onPartEngineReady === "function") window.__onPartEngineReady();
     // 「나의 4주」 — 홈과 같은 엔진·같은 사전을 쓴다. 여기서 목록을 따로 만들면
     // 결과지가 약속한 것과 홈이 내는 것이 갈린다(이론 §5-2 "미리보기가 곧 대기열").
     try{
       const [QE, dict, quiz] = await Promise.all([
-        import("./modules/quest-engine.js?v=c84c099"),
+        import("./modules/quest-engine.js?v=25da68d"),
         fetch("./modules/quest-dict.json").then(r=>r.json()),
         fetch("./modules/quest-quiz.json").then(r=>r.ok?r.json():null).catch(()=>null),
       ]);
