@@ -478,9 +478,9 @@ body.cam-open{overflow:hidden;}
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="modules/czm-core.js?v=dd2ede0"></script>
-<script src="modules/measure-color.js?v=dd2ede0"></script>
-<script src="modules/measure-structure.js?v=dd2ede0"></script>
+<script src="modules/czm-core.js?v=52df0ad"></script>
+<script src="modules/measure-color.js?v=52df0ad"></script>
+<script src="modules/measure-structure.js?v=52df0ad"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -529,8 +529,8 @@ window.__pm={ analyze:img=>analyze(img), get state(){ return STATE; } };
 // 개발/검수 모드: 주소 뒤에 ?dev=1 — 출력 JSON·랜드마크 오버레이·엔진 버전 표기 등 순수 개발용만.
 // 지표(수치+해설)는 기본 화면에 항상 표시한다 (대표 2회 확정 07-11·07-20, REQUEST_dev_ux_restore §1).
 // 과거의 "수치는 내부·검증·B2B 전용" 근거는 폐기됨 — 지표를 다시 숨기려면 대표 승인 필요.
-const DEV = new URLSearchParams(location.search).get("dd2ede0")==="1";
-if(DEV) document.body.classList.add("dd2ede0");
+const DEV = new URLSearchParams(location.search).get("52df0ad")==="1";
+if(DEV) document.body.classList.add("52df0ad");
 // 성별 전달 경로 (이론 이목구비앵커 §3, 2026-07-30) — index GENDER를 ?gender=f/m 로 수신. 여성한정 앵커(eye_len F1)·성별밴드(U30) 검증용.
 // ⚠ photo_measurements payload에는 넣지 않음(성별은 app_users.gender 조인, backend 결정 2026-07-30). 현재는 경로만 확보, 실사용은 통합/eye_len 카드 구현 시.
 const GENDER_PM = new URLSearchParams(location.search).get("gender")||null;
@@ -933,6 +933,12 @@ function analyze(img){
     quality:{pass:true, cam_lock:LIVE_LOCK, light:+(lum/255).toFixed(2), tilt_deg:+tilt.toFixed(1), light_ref:refType, L_corrected, L_gain:+L_gain.toFixed(3), L_shift:+L_shift.toFixed(1), bg_blown:bgBlown, bg_dim:bgDim, forehead_used:browDelta<=18, hairline_detected:hairTop.detected,
       gaze_h:+gazeH(lm,W,H).toFixed(3),   // 시선 수평 이탈 — 로깅 전용(촬영 후 게이트 미투입). 실사용 분포로 문턱 확정 예정
       dev_tilt:DEV_TILT,                  // 기기 기울기(자이로) — 로깅 전용. 데스크톱은 supported:false
+      /* 각도 게이트가 **실제로 돌았는가**. 자이로가 없거나 권한을 거부하면 게이트가
+         통째로 건너뛰어진다(이론 회신 2026-08-27 별건: 45행 중 6행).
+         pitch는 형태 왜곡의 최대 원인으로 확인됐다 — 같은 사람이 6°→44°에서
+         face_HW 1.39→1.18로 움직였다. 검사 여부를 안 남기면 그 값이 얼굴인지
+         고개 각도인지 사후에 가를 수 없다. */
+      pitch_checked: !!(DEV_TILT && DEV_TILT.supported && DEV_TILT.pitch_off != null),
       sclera_L:+sclera.L.toFixed(1), sclera_a:+sclera.a.toFixed(1), sclera_b:+sclera.b.toFixed(1), bg_a:bgPick?+bgPick.a.toFixed(1):null, bg_b:bgPick?+bgPick.b.toFixed(1):null, ref_a:+ref.a.toFixed(1), ref_b:+ref.b.toFixed(1), skin_clip:+skinClipMax.toFixed(2), skinL_A:+skinL_A.toFixed(1), skinL_pre:+skinL.toFixed(1), global_sat:+globalSat.toFixed(1), hazy, device:DEVICE, ua:(/Mobi/i.test(navigator.userAgent)?"mobile":"desktop")},
     axes_partial:{soft_deep:+soft_deep.toFixed(2), line_score:+lineScore.toFixed(2)},
     color:{ // ── 5기준 체계: 웜쿨 / 명도 / 채도 / 탁기 / 대비 ──
