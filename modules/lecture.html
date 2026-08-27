@@ -102,6 +102,8 @@ button{font:inherit;cursor:pointer}
 .dots i{flex:1;height:3px;border-radius:99px;background:rgba(74,43,92,.14)}
 .dots i.on{background:var(--accent)}
 .ptitle{font-size:25px;font-weight:800;letter-spacing:-.03em;margin:0 0 var(--sp-3);color:var(--deep)}
+/* 첫 장 리드 — 제목보다 조용해야 제목을 안 밀어낸다 */
+.plead{font-size:13px;color:var(--sub);line-height:1.6;margin-top:6px;word-break:keep-all;}
 .nav{display:flex;gap:10px;align-items:center;margin-top:var(--sp-5)}
 .nav .btn{margin-top:0}
 .nav span{flex:0 0 0}
@@ -178,7 +180,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=dbe9388"></script>
+<script src="czm-core.js?v=c84c099"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -207,12 +209,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "dbe9388";
+const BUILD = "c84c099";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=dbe9388";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=c84c099";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -1008,11 +1010,18 @@ function renderReport(){
 
 function paint(CARD){
   const p=PAGES[PAGE], last=PAGE===PAGES.length-1;
+  /* 첫 장에만 서는 한 줄 — 이 문서가 무엇이고 몇 장인지 (앱 리포트 2026-08-27과 같은 이유).
+     강의 리포트는 판정 둘로 시작해서 "이게 나에게 무슨 뜻인지"가 없었다.
+     몇 장인지 미리 알리는 것은 마케팅 확정본이 PIPELINE 제목에 쓴 논리 그대로다 —
+     끝이 보이면 사람은 끝까지 읽는다. 강의 리포트는 11장이라 더 그렇다. */
+  const lead = PAGE === 0
+    ? `<p class="plead">오늘 잰 것을 ${PAGES.length}장으로 풀었습니다. 넘기면서 봐주세요.</p>` : ``;
   app.innerHTML = `<div class="shell">
     <div class="shell-top">
       <div class="hd"><h1>추구미즘</h1><small>${PAGE+1} / ${PAGES.length}</small></div>
       <div class="dots">${PAGES.map((_,i)=>`<i class="${i===PAGE?"on":""}"></i>`).join("")}</div>
       <p class="ptitle">${esc(p.t)}</p>
+      ${lead}
     </div>
     <div class="shell-body" id="pbody">${p.html}</div>
     <div class="shell-btm">
@@ -1024,6 +1033,17 @@ function paint(CARD){
       ${last?`<button class="btn quiet" id="back">처음부터 다시</button>`:``}
     </div>
   </div>`;
+  /* 몇 장까지 보는가 (2026-08-27 신설). 여태 첫 렌더(lecture_report)만 셌고
+     **어디서 덮는지를 몰랐다.** 11장 중 3장에서 끊기는지 끝까지 보는지에 따라
+     리포트를 줄일지 순서를 바꿀지가 갈리는데, 그 판단의 근거가 없었다.
+     ⚠ 강의는 하루뿐이라 그날 못 받은 값은 영원히 없다(헌법 §6-1). 내일이 그날이다. */
+  if(!paint._seen) paint._seen = new Set();
+  if(!paint._seen.has(PAGE)){
+    paint._seen.add(PAGE);
+    lecTrack("lecture_page_view", {page: PAGE + 1, total: PAGES.length, title: p.t, src: SRC || null});
+    // 마지막 장 도달 = 완주. 페이지를 떠나는 흐름이 아니라 keepalive는 필요 없다.
+    if(last) lecTrack("lecture_report_end", {total: PAGES.length, src: SRC || null});
+  }
   const go=d=>{ PAGE=Math.max(0,Math.min(PAGES.length-1,PAGE+d)); paint(CARD); window.scrollTo({top:0,behavior:"instant"}); };
   $("next")&&($("next").onclick=()=>go(1));
   $("prev")&&($("prev").onclick=()=>go(-1));
@@ -1040,7 +1060,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=dbe9388"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=c84c099"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
