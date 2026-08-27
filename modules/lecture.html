@@ -151,6 +151,8 @@ button{font:inherit;cursor:pointer}
 .vs2-name{font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--deep);margin:2px 0 0}
 .vs2-arrow{font-size:22px;color:var(--accent);font-weight:700;padding:0 2px}
 .vs{font-size:12.5px;color:var(--sub);margin-top:var(--sp-1);line-height:1.65;word-break:keep-all}
+/* 두 번째 줄(견준 기준)은 첫 줄(내 판정)보다 한 톤 물러선다 — 층이 다르다는 걸 자리로도 보인다 */
+.vs>div+div{margin-top:2px;opacity:.82}
 .vk,.vv{word-break:keep-all}
 
 /* 인트로 — 8타입 구미가 둘러싼 풀스크린. 모바일에서 위아래 여백 없이 꽉 찬다. */
@@ -180,7 +182,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=d55b0e7"></script>
+<script src="czm-core.js?v=cc7bb08"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -209,12 +211,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "d55b0e7";
+const BUILD = "cc7bb08";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=d55b0e7";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=cc7bb08";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -661,7 +663,17 @@ function partSection(face, surveyHaveKey){
     const m={...face.ratio, ...face.line};   // 강의 흐름은 색을 재지 않는다 → 색 지표는 결측으로 간다
     const {ref,dist}=P.SNAP;
     const one=P.AS.scoreOne(m, ref, dist);
-    const rows=P.PR.buildPartRows(one, {n:dist.n});
+    /* 한 필드는 리포트 전체에서 **한 번만** 말한다.
+       앱이 2026-08-25에 고친 「정반대 말」 버그가 강의에는 안 옮겨져 있었다
+       (대표 실기기 2026-08-27):
+         황금비 행 "가로가 넉넉한 편"(황금비 1.62 대비) ↔ 인상 문장 "얼굴에 길이감이 있어요"(또래 대비)
+         밴드 행   "수평에 가까운 눈매"(분포 대비)      ↔ 인상 문장 "눈꼬리가 부드럽게 내려오고"
+       둘 다 각자의 기준으로는 맞는 말인데 나란히 놓으면 읽는 사람에게는 모순이다.
+       기준이 다르다고 설명하는 대신 **먼저 말한 줄에 양보한다** — 앱과 같은 처리.
+       아래 목록은 이 리포트가 행으로 이미 내는 필드다(golds 4종 + band push 3종). */
+    const SHOWN = {face_HW:1, mouth_w:1, nose_w:1, lip_ul_ratio:1, interocular:1,
+                   chin_angle_deg:1, eye_angle:1, mouth_corner:1};
+    const rows=P.PR.buildPartRows(one, {n:dist.n, skip:SHOWN});
     const overall=one.overallType && one.overallType.type;
     // 채널 수렴 — 강의 흐름은 **색을 재지 않는다.** 형태(사진) + 설문 = 최대 2채널이라
     // 확신 화법("같은 방향을 가리켜서 ~로 모였어요")이 성립하지 않는다.
@@ -802,8 +814,13 @@ function renderReport(){
                             SHAPE&&SHAPE.labels&&SHAPE.labels.asym_score);
   const asymCare = !!(_av && _av.care);
   const byGroup=g2=>vs.filter(x=>x.group===g2);
+  /* 부제에 " · "로 이어 붙인 두 조각은 줄을 갈라 쓴다 (대표 지적 2026-08-27).
+     "중안부가 긴 편이에요 · 이상적 비율은 1 : 1 : 1이에요"가 한 줄에 붙어 있다가
+     화면 폭에서 "1 : 1 :" / "1이에요"로 접혔다. 가운뎃점은 같은 층위를 잇는 기호인데
+     여기는 **내 판정 / 견준 기준**으로 층이 다르다. 층이 다르면 줄도 다르다. */
+  const vSub=t=>String(t).split(" · ").map(x=>`<div>${esc(x)}</div>`).join("");
   const vRow=x=>`<div class="vrow"><div class="vk">${x.k}</div>
-      <div><div class="vv">${esc(x.v)}</div>${x.s?`<div class="vs">${esc(x.s)}</div>`:``}</div></div>`;
+      <div><div class="vv">${esc(x.v)}</div>${x.s?`<div class="vs">${vSub(x.s)}</div>`:``}</div></div>`;
 
   PAGES=[];
   // ① 오늘의 진단 — 지금 나의 매력과 추구미를 **구미 둘로 나란히** 보여준다.
@@ -1077,7 +1094,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=d55b0e7"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=cc7bb08"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))

@@ -100,7 +100,7 @@ function gatedOnly(score, part) {
   return rows.every(x => x.gated);
 }
 
-export function partRow({ part, type, second, adjacent, obs, n, missing, flagged, gated }) {
+export function partRow({ part, type, second, adjacent, obs, n, missing, flagged, gated, axis }) {
   const g = gauge({ part, n, missing, flagged });
   const row = { part, type, gauge: g };
 
@@ -147,7 +147,24 @@ export function partRow({ part, type, second, adjacent, obs, n, missing, flagged
   // "~가까워요"로 두면 부위 장마다 세로로 "~요 / ~요"가 붙었다(실측: 눈·피부톤·눈썹).
   // 뒤에 붙을 말이 있을 때만 앞을 ~니다로 받는다. 한 줄로 끝나는 부위는 ~요 그대로 — 혼자 선
   // 문장까지 합니다체로 바꾸면 판정 통보처럼 읽힌다.
-  row.line = `${eun(part)} ${type} 매력에 ${tail ? "가깝습니다" : "가까워요"}.${tail}`;
+  /* 왜 그 타입인지 (대표 지적 2026-08-27: "윤곽이 세련된 매력에 가까우면
+     왜 세련된 매력인지를 알려줘야되는거아닌가?").
+     앞의 관찰은 **무엇이 보이는지**만 말하고, 그것이 왜 그 타입으로 읽히는지는 비어 있었다.
+     부위 좌표에서 가장 크게 기운 축 하나를 그 말로 옮긴다 —
+     새 이론이 아니라 이미 계산해 둔 값이고, 축 이름도 「벌어진 곳」 장이 쓰는 그대로다. */
+  const AXW = {T:["따뜻한 쪽","시원한 쪽"], D:["부드러운 쪽","또렷한 쪽"], M:["어려 보이는 쪽","성숙한 쪽"]};
+  let why = "";
+  if (axis && tail) {
+    let k = null, best = 0;
+    for (const a of ["T","D","M"]) {
+      const v = axis[a];
+      if (typeof v === "number" && Math.abs(v) > Math.abs(best)) { best = v; k = a; }
+    }
+    // 기운 정도가 미미하면 말하지 않는다 — 없는 이유를 지어내지 않는다.
+    if (k && Math.abs(best) >= 0.15)
+      why = ` 이 선들이 ${AXW[k][best >= 0 ? 1 : 0]}으로 기울어 ${type}으로 읽혀요.`;
+  }
+  row.line = `${eun(part)} ${type} 매력에 ${tail ? "가깝습니다" : "가까워요"}.${tail}${why}`;
   // 저신뢰 병기("사진 한 장으론 확신이 낮은 부위예요")는 삭제했다 — 대표 지시 2026-08-25.
   // 유저가 그 문장을 읽고 할 수 있는 게 없고, 신뢰만 깎인다. 결측 고지(위 강등 ①)는 남는다.
   return row;
@@ -221,7 +238,7 @@ export function buildPartRows(score, { n = 0, expressionType = null, skip = null
       if (!c || !c.n) return partRow({ part, n, missing: true });
       const t = nearestType({T:c.T, D:c.D, M:c.M});
       return partRow({ part, type: t.type, second: t.second, adjacent: t.adjacent,
-                       obs: obsOf("색"), n });
+                       obs: obsOf("색"), n, axis: {T:c.T, D:c.D, M:c.M} });
     }
     // 표현 — 설문에서 온다. 없으면 결측(사진만 한 경우)
     if (part === "표현")
@@ -234,6 +251,7 @@ export function buildPartRows(score, { n = 0, expressionType = null, skip = null
 
     const key = part === "볼·입체" ? "볼입체" : part;   // 엔진 부위명과의 표기 차이
     const t = score.partTypes && score.partTypes[key];
+    const ax = score.parts && score.parts[key];   // 이 부위가 어느 축으로 기울었나 → "왜 그 타입인지"
     /* 판정이 없는 이유가 둘인데 한 문장으로 뭉쳐 있었다 (2026-08-26 · 대표 지적
        "그럼 측정이 잘못된거 아니냐고 내가 몇 번을 얘기하지?").
          ① 사진에서 그 부위를 못 잡았다 — 재촬영이 답이다
@@ -245,7 +263,7 @@ export function buildPartRows(score, { n = 0, expressionType = null, skip = null
        → gated 사유를 구분해 넘긴다. 문구는 partRow가 고른다. */
     if (!t) return partRow({ part, n, missing: true, gated: gatedOnly(score, key) });
     return partRow({ part, type: t.type, second: t.second, adjacent: t.adjacent,
-                     obs: obsOf(key), n });
+                     obs: obsOf(key), n, axis: ax });
   });
 }
 
