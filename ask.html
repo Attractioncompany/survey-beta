@@ -57,6 +57,26 @@ const ID = new URLSearchParams(location.search).get("s") || "";
 const app = document.getElementById("app");
 const esc = s => String(s ?? "").replace(/[<&"]/g, c => ({"<":"&lt;","&":"&amp;",'"':"&quot;"}[c]));
 
+/* 계측 — 이 화면은 여태 아무것도 안 남겼다. 발송 수는 알아도 **몇 명이 열었고
+   몇 명이 답했는지**를 몰랐다. 친구 설문의 성패가 바로 그 두 수인데.
+   user_id는 비운다. 답한 사람은 우리 유저가 아니고, 누구인지 알 이유도 없다 —
+   설문 id만 남기면 퍼널(발송→열람→응답)이 이어진다. */
+// 로컬 계측 오염 방지 — index.html·home.html과 같은 규율. 이게 없으면 개발 중
+// 테스트가 운영 DB에 그대로 쌓인다. 서버 왕복을 확인해야 할 때만 ?live=1로 연다.
+const LOCAL = /^(localhost|127\.|$)/.test(location.hostname)
+              && !new URLSearchParams(location.search).has("live");
+function track(event, props){
+  if(LOCAL) return;
+  try{
+    const body = JSON.stringify([{event, props: {...(props||{}), survey: ID || null}}]);
+    // 페이지를 떠나는 흐름이 섞여 있다 — keepalive 없이는 답을 보내고 나가는 순간 유실된다
+    fetch(`${SB_URL}/rest/v1/events`, {method:"POST", keepalive:true,
+      headers:{"Content-Type":"application/json", apikey:SB_KEY,
+               Authorization:`Bearer ${SB_KEY}`, Prefer:"return=minimal"},
+      body}).catch(()=>{});
+  }catch(e){}
+}
+
 async function rpc(fn, body){
   try{
     const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
@@ -154,18 +174,31 @@ function render(sv){
     const ok = await rpc("friend_response_add", {
       p_survey: ID, p_type8: pick.type8, p_reasons: pick.reasons,
       p_changed: pick.changed || "", p_comment: document.getElementById("cm").value });
-    if(ok === true) return screenMsg("고맙습니다", "답을 전했어요.<br>친구가 오늘 이걸 보고 웃을 겁니다.");
+    if(ok === true){
+      // 값이 아니라 '무엇을 골랐나'까지 남긴다 — 타인이 보는 타입이 본인 판정과 얼마나
+      // 갈리는지가 이 기능의 이론적 값이다(다시 얻을 수 없다).
+      track("friend_answered", {type8: pick.type8, n_reasons: pick.reasons.length,
+                                changed: pick.changed || null,
+                                has_comment: !!document.getElementById("cm").value.trim(), two});
+      return screenMsg("고맙습니다", "답을 전했어요.<br>친구가 오늘 이걸 보고 웃을 겁니다.");
+    }
+    track("friend_answer_failed", {});
     b.disabled = false; b.textContent = "다시 보내기";
     alert("보내지 못했어요. 잠시 뒤 다시 눌러주세요.");
   };
 }
 
 (async () => {
-  if(!ID) return screenMsg("주소가 완전하지 않아요", "친구가 보낸 링크를 그대로 열어주세요.");
+  if(!ID){ track("friend_open", {result:"no_id"});
+           return screenMsg("주소가 완전하지 않아요", "친구가 보낸 링크를 그대로 열어주세요."); }
   const rows = await rpc("friend_survey_get", {p_id: ID});
   const sv = Array.isArray(rows) ? rows[0] : null;
-  if(!sv)         return screenMsg("찾을 수 없는 부탁이에요", "링크가 잘못되었거나 이미 지워졌습니다.");
-  if(sv.expired)  return screenMsg("기간이 지났어요", "친구에게 새로 보내 달라고 해주세요.");
+  if(!sv){ track("friend_open", {result:"not_found"});
+           return screenMsg("찾을 수 없는 부탁이에요", "링크가 잘못되었거나 이미 지워졌습니다."); }
+  if(sv.expired){ track("friend_open", {result:"expired"});
+                  return screenMsg("기간이 지났어요", "친구에게 새로 보내 달라고 해주세요."); }
+  // 2회차부터 이전 사진이 온다 — 회차에 따라 묻는 것이 달라지므로 같이 남긴다
+  track("friend_open", {result:"ok", two: !!sv.prev_photo});
   render(sv);
 })();
 </script>

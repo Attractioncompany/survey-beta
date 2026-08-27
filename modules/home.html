@@ -352,6 +352,13 @@ const st = {
   // 같은 목록을 다시 그릴 때 offer 행이 겹쳐 쌓이는 것만 막는다(§4-5 거부율 분모 보호).
   homeOffer: null,
 };
+/* 수락 → 완료가 며칠 걸렸나. 미션을 여럿 안고 갈 수 있게 되면서(대표 2026-08-26)
+   "고른 것 중 무엇이 실제로 끝나는가"가 이 앱의 핵심 지표가 됐다.
+   quest_selected와 quest_completed의 시각 차로도 구할 수 있지만, 그러려면 두 이벤트를
+   조인해야 하고 재설치·리셋을 건너면 짝이 깨진다. 완료 쪽에 직접 싣는다. */
+const heldDays = a => a?.started
+  ? Math.max(0, Math.round((Date.now() - new Date(a.started)) / 864e5)) : null;
+
 const diag  = LS.get(K.diag, null);
 // 타입 색 — 프리즘 진행 바 전용. 정본은 index.html TYPES(이론 소유 아님, 표시 토큰).
 // 값이 바뀌면 index와 같이 바꾼다.
@@ -864,7 +871,8 @@ function renderQuest(id){
     $(k)?.addEventListener("click", () => track("onestep_done", {quest_id: id, via: k}), {once:true});
   // 그만둔 것은 excluded로 보낸다 — 안 그러면 진행 가능 칸에 같은 게 다시 선다.
   $("drop")?.addEventListener("click", () => {
-    track("quest_dropped", {quest_id: id});
+    track("quest_dropped", {quest_id: id, held_days: heldDays(a),
+                            kind: c.kind, n_active: st.actives.length});
     st.skipped = [...new Set([...st.skipped, id])];
     remindOff([id]);
     st.active = null; QTAB = "doing"; renderHome();
@@ -875,7 +883,8 @@ function renderQuest(id){
   $("tryDone")?.addEventListener("click", () => {
     // 세지 않는 칸이다(§3-5). 기록만 남기고 스탯은 올리지 않는다.
     track("quest_completed", {offer_id:a.offer_id, quest_id:id, kind:"skill",
-                             field:null, sign_match:null, countable:false});
+                             field:null, sign_match:null, countable:false,
+                             held_days: heldDays(a)});
     // 스탯은 올리지 않는다(§3-5 세지 않는 칸). 다만 **해냈다는 사실은 남긴다** —
     // 완료 목록이 비면 "내가 뭘 했는지"를 볼 자리가 없어진다(대표 2026-08-26).
     st.add({kind:"skill", ref:id, slot:null, at:new Date().toISOString()});
@@ -1147,7 +1156,12 @@ const questBtn = (c, i) => `<button class="q" data-id="${c.id}" data-i="${i}">
    이번 주에 할 것 여럿을 이어서 담을 수 있어야 한다(대표 2026-08-26). */
 function acceptQuest(id, offerId, position, via){
   if (st.actives.some(a => a.id === id)) return;
-  track("quest_selected", {offer_id:offerId, quest_id:id, position, via});
+  // n_active — 수락하는 순간 이미 몇 개를 안고 있었나. 상한을 두지 않기로 한 결정
+  // (대표 2026-08-26)이 실제로 어떻게 쓰이는지는 이 수의 분포로만 알 수 있다.
+  const c0 = cell(id);
+  track("quest_selected", {offer_id:offerId, quest_id:id, position, via,
+                           n_active: st.actives.length, kind: c0?.kind ?? null,
+                           axis: c0?.field ? c0.field + (c0.field_dir || "") : null});
   st.actives = [...st.actives, {id, offer_id:offerId, started:new Date().toISOString(),
                                 before: photo || null,
                                 target_type: CZMStats.targetType(USER(), cell(id))}];
@@ -1167,7 +1181,11 @@ function remind(id){
   const c = cell(id); if (!c || !HIST?.native) return;
   HIST.native("remind", {key:id, afterDays:3,
     title:"구미가 궁금해해요",
-    body:`「${c.copy}」 어떻게 됐는지 알려주세요.`}).catch(() => {});
+    body:`「${c.copy}」 어떻게 됐는지 알려주세요.`})
+    .then(() => track("remind_set", {quest_id:id, days:3}))
+    // 거절이 잦으면 이 기능은 다시 설계해야 한다. 사유를 나눠 남긴다 —
+    // 권한 거절과 예약 실패는 대응이 완전히 다르다.
+    .catch(e => track("remind_failed", {quest_id:id, reason:String(e?.message || e).slice(0,40)}));
 }
 const remindOff = ids => HIST?.native && HIST.native("remindCancel", {keys: ids}).catch(() => {});
 
@@ -1826,7 +1844,8 @@ function renderAddItem(opts = {}){
                            from: q ? "quest" : "closet"});
       if (!q) return (opts.back ?? renderCloset)();
       track("stat_added", {kind:"item", ref, source_kind:"self_report", ...(g ?? {})});
-      track("quest_completed", {offer_id:q.offer_id, quest_id:q.id, kind:"item",
+      track("quest_completed", {held_days: heldDays(st.actives.find(x => x.id === q.id)),
+                                offer_id:q.offer_id, quest_id:q.id, kind:"item",
                                 field:null, sign_match:null, countable:true});
       // 제목과 같은 말을 본문에 다시 쓰지 않는다. 파우치 아이템도 지나는 자리라 '옷장'은 뺐다.
       renderDone("담았어요", "이제 아침에 고를 때 같이 나와요.", g, "담아둔 건 그대로 남습니다.");
@@ -1856,15 +1875,51 @@ function renderRegister(){
 // 카탈로그는 개인정보가 없어 읽기가 열려 있다(공개키로 조회). 재생은 유튜브 공식 페이지로 보낸다(약관).
 async function renderContent(){
   app.innerHTML = shell({ top: head("영상"), body: `<div class="card"><p class="lead">불러오는 중이에요.</p></div>` });
+  /* 무엇을 보여주나 — **지금 옮기는 중인 축**이 먼저다 (대표 2026-08-26).
+     > "얘가 방향이 동안형 방향으로 축이동이 필요하면 중안부 짧아보이는 메이크업이나
+     >  경락 콘텐츠 이런걸 끌어다줄수도있어야하는거지"
+     타입(정체성)으로만 걸면 "우아한 사람이 보는 영상"이 나오는데, 그건 연출법이 아니다.
+     지금 안고 있는 미션의 축·방향(field_dir)에 걸린 것을 위에 세운다 —
+     이번 주에 실제로 하는 일과 화면이 붙는다.
+     타입 영상은 그 아래에 남긴다. 퍼스널컬러는 여전히 알아야 하는 정보라 지우지 않는다. */
+  const H = {apikey:PUBLIC.key, Authorization:`Bearer ${PUBLIC.key}`};
+  const SEL = "video_id,title,channel,thumb_url";
+  const get = async q => {
+    try { const r = await fetch(`${PUBLIC.url}/rest/v1/content_items?${q}`, {headers:H});
+          return r.ok ? await r.json() : []; }
+    catch(e){ console.warn("content", e); return []; }
+  };
+  /* 키가 두 단이다 (이론 회신 2026-08-27 §1-3).
+     1단 `field+field_dir` — 계측 필드에 직결된 연출. 미션 완료 판정이 되는 칸.
+     2단 `axis+dir`        — 계측 필드가 없는 연출. 대표 예시(중안부)가 여기로 열린다.
+       미션으로는 못 연다: 컨투어 음영은 랜드마크를 안 옮겨서 완료를 판정할 채널이 없다.
+       그래도 **볼 가치는 있다** — 사전 §3-8이 "⛔이라도 학습 짝 칸은 발행된다"고 이미 정해 두었다.
+     처음에 1단만 걸었더니 대표 예시가 들어올 자리가 없었다. 계측 필드는 완료 판정용 키이고,
+     콘텐츠가 알아야 하는 것은 방향 하나뿐이다. 그 방향은 셀의 axis·dir에 이미 들어 있다. */
+  const cs = st.actives.map(a => cell(a.id)).filter(Boolean);
+  const dirs = [...new Set(cs.filter(c => c.field).map(c => c.field + (c.field_dir || "")))];
+  // 2단은 M±만 연다. T±·D± 2단을 열면 어휘가 "부드러운 인상" 같은 정체성 형용사로
+  // 되돌아가고, 그게 애초에 연출 콘텐츠를 0편으로 만든 원인이다(이론 조건).
+  const axes = [...new Set(cs.filter(c => c.axis === "M" && c.dir).map(c => c.axis + c.dir))];
   const types = [...new Set([diag.want, diag.have].filter(Boolean))].join(",");
-  const url = `${PUBLIC.url}/rest/v1/content_items`
-    + `?select=video_id,title,channel,thumb_url,content_keywords!inner(type_code)`
-    + `&content_keywords.type_code=in.(${types})&limit=24`;
-  let rows = [];
-  try {
-    const r = await fetch(url, {headers:{apikey:PUBLIC.key, Authorization:`Bearer ${PUBLIC.key}`}});
-    if (r.ok) rows = await r.json();
-  } catch(e){ console.warn("content", e); }
+
+  const inList = xs => xs.map(encodeURIComponent).join(",");
+  const byDir = dirs.length ? await get(
+    `select=${SEL},content_keywords!inner(field_dir)`
+    + `&content_keywords.field_dir=in.(${inList(dirs)})&limit=18`) : [];
+  const byAxis = axes.length ? await get(
+    `select=${SEL},content_keywords!inner(axis_dir)`
+    + `&content_keywords.axis_dir=in.(${inList(axes)})&limit=9`) : [];
+  const byType = await get(
+    `select=${SEL},content_keywords!inner(type_code)`
+    + `&content_keywords.type_code=in.(${types})&limit=24`);
+  // 순서는 1단 → 2단 → 타입. 같은 영상이 겹치면 앞쪽을 남긴다.
+  const seenV = new Set();
+  const rows = [...byDir, ...byAxis, ...byType]
+    .filter(v => !seenV.has(v.video_id) && seenV.add(v.video_id)).slice(0, 24);
+  // 1단이 0편이면 그 축에 어휘가 없다는 뜻이다 — 사전 공백이 여기서 드러난다.
+  track("content_shown", {n_dir: byDir.length, n_axis: byAxis.length, n_type: byType.length,
+                          dirs: dirs.length, axes: axes.join("|") || null});
 
   app.innerHTML = shell({ top: head("영상"), body: (rows.length
     ? rows.map(v => `<div class="q" style="cursor:default">
@@ -1880,9 +1935,20 @@ async function renderContent(){
     : `<div class="card"><p class="lead">아직 모아둔 영상이 없어요.</p></div>`),
     btm: `<button class="btn ghost" id="back">도구로</button>` });
   $("back").onclick = renderTools;
+  // 어느 줄이 축 영상이고 어느 줄이 타입 영상인지 표시해 둔다 — 투표에 실어 보낸다.
+  // 이게 없으면 "축에 건 영상이 타입 영상보다 실제로 도움이 되는가"를 영영 못 가른다.
+  // 오늘 콘텐츠를 타입에서 축으로 옮겼는데, 그 판단이 옳았는지 잴 값이 이것뿐이다.
+  // 1단·2단·타입 중 어느 줄이었나를 투표에 싣는다 (이론 회신 §⑤-5 — 반증 지점).
+  // 2단 👍율이 타입 👍율을 못 넘으면 2단은 철회하기로 이론팀과 약속했다.
+  // 이 값이 없으면 그 약속을 지킬 방법이 없다.
+  const dirSet = new Set(byDir.map(v => v.video_id));
+  const axisSet = new Set(byAxis.map(v => v.video_id));
   app.querySelectorAll("[data-v]").forEach(b => b.onclick = async () => {
-    await sbPost("content_feedback", {user_id:UID, video_id:b.dataset.v, vote:+b.dataset.k});
-    track("content_voted", {video_id:b.dataset.v, vote:+b.dataset.k, type_code:diag.want});
+    const v = b.dataset.v;
+    const src = dirSet.has(v) ? "field_dir" : axisSet.has(v) ? "axis_dir" : "type";
+    await sbPost("content_feedback", {user_id:UID, video_id:v, vote:+b.dataset.k});
+    track("content_voted", {video_id:v, vote:+b.dataset.k, type_code:diag.want,
+                            src, dirs: dirs.length, axes: axes.length});
     b.parentElement.innerHTML = `<span class="tag">고마워요</span>`;
   });
 }
@@ -1917,7 +1983,8 @@ function renderQuiz(){
       await sbPost("stat_entries", {user_id:UID, kind:"knowledge", ref:c.id,
                                     source_kind:"auto_detect", attrs:{qid:q.qid}, ...(g ?? {})});
       track("stat_added", {kind:"knowledge", ref:c.id, source_kind:"auto_detect", ...(g ?? {})});
-      track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"knowledge",
+      track("quest_completed", {held_days: heldDays(a),
+                                offer_id:a.offer_id, quest_id:a.id, kind:"knowledge",
                                 field:null, sign_match:null, countable:true});
       renderDone("알아보기", "맞았어요.", g, "알아본 건 기록에 남습니다.");
     });
@@ -1946,7 +2013,8 @@ function tryJudge(){
   if (JSON.stringify(now) === JSON.stringify(a.before)) return false;   // 아직 다시 찍지 않았다
 
   const v = judgeSkill(c, a.before, now);
-  track("quest_completed", {offer_id:a.offer_id, quest_id:a.id, kind:"skill",
+  track("quest_completed", {held_days: heldDays(a),
+                            offer_id:a.offer_id, quest_id:a.id, kind:"skill",
                             field:v.field ?? null, sign_match:v.sign_match, countable:!!c.countable});
   // 결과 시점 과금(헌법 §1)의 훅 — **변화가 확인된 바로 이 순간**이다.
   // countable 밖에 둔다: countable은 스탯을 적립할지의 문제고, 여기는 "실제로 변했나"라
