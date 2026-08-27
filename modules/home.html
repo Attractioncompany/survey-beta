@@ -336,6 +336,7 @@ let STATS = LS.get(K.stats, []);          // [{id, kind, ref, slot, attrs, at}]
 /* 지금 열어 놓은 미션 id. 화면을 떠났다 돌아오는 흐름(재촬영 → photo.html → 복귀)이
    있어서 기기에 남긴다 — 모듈 변수로 두면 그 왕복에서 어느 미션이었는지를 잃는다. */
 let CUR = LS.get("czm_quest_cur", null);
+let ASK_FROM = "record";   // 친구 설문에 어느 문으로 들어왔나
 const setCur = v => { CUR = v; LS.set("czm_quest_cur", v); };
 
 const st = {
@@ -1629,7 +1630,9 @@ function renderAskFriend(){
       if(!id){ b.disabled = false; b.textContent = "다시 시도"; return alert("링크를 만들지 못했어요. 잠시 뒤 다시 해주세요."); }
       // 링크는 친구 폰에서 열린다 — 앱 안 상대경로는 폰 내부를 가리켜 남이 못 연다.
       const url = "https://attractioncompany.github.io/survey-beta/ask.html?s=" + id;
-      track("friend_survey_created", {has_name: !!who});
+      // from — 리포트에서 온 것과 기록 탭에서 온 것을 가른다(마케팅 요청 2026-08-27).
+      // 어느 문이 실제로 응답을 만드는지 모르면 문을 늘릴지 줄일지 판단할 수 없다.
+      track("friend_survey_created", {has_name: !!who, from: ASK_FROM});
       shareFriendLink(url, who);
     };
   };
@@ -2183,10 +2186,15 @@ addEventListener("hashchange", () => {
 
 async function route(){
   if (new URLSearchParams(location.search).has("selfcheck")) return renderCheck();
+  // 리포트 마지막 장의 「친구에게 물어보기」가 여기로 온다 (마케팅 확정 2026-08-27 C11).
+  // 기록 탭 안쪽까지 찾아 들어가게 두면 결과를 막 본 그 순간을 놓친다.
+  const ASK = new URLSearchParams(location.search).has("ask");
+  if (ASK) ASK_FROM = "report";
   if (GATED && SS && !isSignedIn())
     return LS.get(K.previewDone, false) ? renderSignup("up") : renderPreview();
   await bootSession();
   if (tryJudge()) return;
+  if (ASK && diag) { track("ask_friend_opened", {from: "report"}); return renderAskFriend(); }
   const v = VIEWS[location.hash.slice(1)];
   (v ?? renderHome)();
 }
