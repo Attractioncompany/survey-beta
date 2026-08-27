@@ -45,10 +45,20 @@
 
     var topPt = { x: P(10).x, y: c.hairTopY };
     var faceH = dist(topPt, P(152));
-    var browY = (P(105).y + P(334).y) / 2;
+    var browY = (P(105).y + P(334).y) / 2;        // 눈썹선 — brow_eye_gap 등 다른 계측이 쓴다
     var subnasale = P(2);
-    var upper = (browY - c.hairTopY);
-    var midf = (subnasale.y - browY);
+    /* 3분할의 위 분할점은 **미간(nasion, 168)**이다 (대표 지시 2026-08-27로 교정).
+       2026-08-17에 규준 대조를 하면서 "우리 분할점은 눈썹인데 계측 규준은 미간을 쓴다,
+       그대로 견주면 중안부가 체계적으로 부풀어 틀린 판정이 나온다"를 이미 확인해 두고도
+       새 필드(n_mid_pct)만 더하고 이 3분할은 눈썹 기준으로 남겨 두었다.
+       그 사이 유저는 **미간을 전제한 황금비 1:1:1 기준에 눈썹 기준 값을 대본 결과**를 받았다.
+       눈썹은 표정과 화장으로 움직이고 사람마다 위치가 다르다 — 골격 지점이 아니다.
+       계측의 분할점이 될 수 없다.
+       ⚠ 소급 없음 — 이 값은 서버 컬럼이 아니라 매 측정마다 다시 계산된다.
+         기기에 남은 옛 결과는 옛 기준이고, 다시 측정하면 새 기준으로 바뀐다. */
+    var splitY = P(168).y;
+    var upper = (splitY - c.hairTopY);
+    var midf = (subnasale.y - splitY);
     var lower = (P(152).y - subnasale.y);
     var triSum = upper + midf + lower;
     var f_upper = upper / triSum, f_mid = midf / triSum, f_lower = lower / triSum;
@@ -161,7 +171,7 @@
                         + clamp((25 - browArch) / 20, 0, 1) * 0.30, 0, 1);
 
     return {
-      faceH: faceH, browY: browY, f_upper: f_upper, f_mid: f_mid, f_lower: f_lower,
+      faceH: faceH, browY: browY, splitY: splitY, f_upper: f_upper, f_mid: f_mid, f_lower: f_lower,
       lineScore: lineScore,
       ratio: {
         face_HW: +faceRatio.toFixed(2), upper: +f_upper.toFixed(3), mid: +f_mid.toFixed(3), lower: +f_lower.toFixed(3),
