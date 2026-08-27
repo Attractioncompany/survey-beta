@@ -25,7 +25,7 @@ pre{background:#2B2233;color:#E9E2F0;padding:12px;border-radius:8px;font-size:11
 <hr style="margin:26px 0;border:none;border-top:1px solid #E4DCE9">
 <h2>동일인 반복촬영 안정성 — 측정 흔들림(재현성)</h2>
 <p style="font-size:13px;color:#6E6478;line-height:1.7">
-같은 사람을 <b>여러 장</b>(조명·각도 바꿔) 올리면, 측정값이 촬영마다 얼마나 흔들리는지 잽니다 — 명도 복권 판정(동일인 Δ)·형태 재현성(체크리스트 M1)의 근거 데이터.<br>
+같은 사람을 <b>여러 장</b>(조명·각도 바꿔) 올리면, 측정값이 촬영마다 얼마나 흔들리는지 측정합니다 — 명도 복권 판정(동일인 Δ)·형태 재현성(체크리스트 M1)의 근거 데이터.<br>
 <b>그룹 규칙:</b> 파일명 <code>사람키__설명.jpg</code> 처럼 <code>__</code>(밑줄 2개) 앞이 같으면 같은 사람으로 묶여요. (예: <code>민수__창가.jpg</code>, <code>민수__형광등.jpg</code>) · <code>__</code> 없으면 개별 취급.<br>
 모든 분석은 이 브라우저 안에서만 — 사진은 어디로도 전송·저장되지 않아요.</p>
 <input type="file" id="stabFiles" accept="image/*" multiple>
@@ -537,7 +537,7 @@ const load=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);
   const n=rows.length;
   const metrics=[["A_base","A 명도 baseline"],["A_m5","A 명도 방안5"],["B_conH","B 대비 conH"]];
   const ys=rows.map(r=>r.bp);
-  let html=`<h3 style="margin-top:20px;font-size:15px">판별 상관 r — 잰 값 vs 라벨 밝기순위 (n=${n})</h3>`;
+  let html=`<h3 style="margin-top:20px;font-size:15px">판별 상관 r — 측정값 vs 라벨 밝기순위 (n=${n})</h3>`;
   html+=`<table><tr><th>지표</th><th>r</th><th>95% CI</th><th>게이트①(r≥.40·CI하한&gt;0·n≥30)</th></tr>`;
   for(const [k,lab] of metrics){
     const xs=rows.map(r=>r[k]);
@@ -604,7 +604,7 @@ $("stabFiles").addEventListener("change", async ev=>{
     const shots=measured[k];
     const okShots=shots.filter(s=>s.m);
     html+=`<div style="margin-top:18px"><b style="font-size:14px">${k}</b> <span style="color:#6E6478;font-size:12px">(${okShots.length}장${shots.length!==okShots.length?` · 실패 ${shots.length-okShots.length}`:""})</span>`;
-    if(okShots.length<2){ html+=`<div style="color:#8A6A00;font-size:12.5px;margin-top:4px">2장 이상이어야 흔들림을 잽니다 (${okShots.map(s=>s.file).join(", ")})</div></div>`; continue; }
+    if(okShots.length<2){ html+=`<div style="color:#8A6A00;font-size:12.5px;margin-top:4px">2장 이상이어야 흔들림을 측정합니다 (${okShots.map(s=>s.file).join(", ")})</div></div>`; continue; }
     html+=`<table style="margin-top:6px"><tr><th>지표</th><th>평균</th><th>최소</th><th>최대</th><th>변동폭</th><th>밴드폭 대비</th></tr>`;
     for(const met of STAB_METRICS){
       const st=stabStats(okShots.map(s=>s.m[met.k]));

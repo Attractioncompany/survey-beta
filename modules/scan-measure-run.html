@@ -24,7 +24,7 @@
 </style></head><body>
 
 <div class="dot" id="dot"></div>
-<h1 id="t">구미가 얼굴을 재고 있어요</h1>
+<h1 id="t">구미가 얼굴을 측정하고 있어요</h1>
 <p id="s">방금 찍은 3방향 사진을 이 기기 안에서만 계산해요.</p>
 <div id="err"></div>
 <button class="btn" id="next" style="display:none">결과 보러 가기</button>
@@ -59,7 +59,7 @@ $("next").onclick = goSurvey;
  *  실패는 조용히 넘기지 않고 화면에 적는다. */
 function fail(msg) {
   $("dot").style.animation = "none"; $("dot").style.opacity = ".15";
-  $("t").textContent = "이번엔 못 쟀어요";
+  $("t").textContent = "이번엔 측정하지 못했어요";
   $("s").textContent = "설문 결과는 그대로 나와요. 다음에 다시 찍어볼 수 있어요.";
   $("err").style.display = "block"; $("err").textContent = msg;
   $("next").style.display = "block"; $("next").textContent = "설문으로";
@@ -335,7 +335,7 @@ window.__smr = { runPhotoPipe, retakeAsk };
 
     // 스캔 지표(scanOk)는 보조라 결측이어도 진행한다 — 색·구조는 이미 손에 있다.
     $("dot").style.animation = "none"; $("dot").style.opacity = ".55";
-    $("t").textContent = "다 쟀어요";
+    $("t").textContent = "측정이 끝났어요";
     $("s").textContent = "이제 몇 가지만 물어볼게요.";
     $("next").style.display = "block";
     // 사용자가 버튼을 누르기 전에 넘어가면 "뭐가 지나간 거지"가 된다. 잠깐 보여주고 자동 진행.

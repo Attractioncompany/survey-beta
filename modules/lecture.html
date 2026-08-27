@@ -180,7 +180,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=9c6841a"></script>
+<script src="czm-core.js?v=0c3cfd6"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -209,12 +209,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "9c6841a";
+const BUILD = "0c3cfd6";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=9c6841a";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=0c3cfd6";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -823,7 +823,7 @@ function renderReport(){
   const pcType=pcKey?N[pcKey]:null, pcTd=pcKey?(TDESC&&TDESC.types||{})[pcKey]:null;
   PAGES.push({t:"내 퍼스널컬러",
     draw:{title:"내 퍼스널컬러", big:pcLabel,
-          cap:pcType?pcLabel+"은 "+pcType+" 매력의 색이에요":"",
+          cap:pcType?pcLabel+(jong(pcLabel)?"은 ":"는 ")+pcType+" 매력의 색이에요":"",
           chips:col&&col.mineHex?col.mineHex:[],
           paras:[col&&col.mine?col.mine.best:null,
                  pcTd?gsubLater(pcTd.one):null].filter(Boolean)},
@@ -834,7 +834,7 @@ function renderReport(){
       ${col&&col.mineChips?col.mineChips:""}
       ${col&&col.mine?`<p class="note">${esc(col.mine.best)}</p>`:``}
     </div>
-    ${pcType?`<div class="card"><h2>${esc(pcLabel)}은 어떤 매력인가요</h2>
+    ${pcType?`<div class="card"><h2>${esc(pcLabel)}${jong(pcLabel)?"은":"는"} 어떤 매력인가요</h2>
       <p class="lead" style="font-size:24px;margin-bottom:var(--sp-2)">${esc(pcType)}</p>
       ${pcTd?`<p style="font-size:var(--fs-body);line-height:1.8">${esc(gsubLater(pcTd.one))}</p>
       <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8;margin-top:var(--sp-3)">${esc(gsubLater(pcTd.desc))}</p>`:``}
@@ -900,8 +900,8 @@ function renderReport(){
   let SHOT=null;
   try{ const _src=sessionStorage.getItem("chugu_lecture_shot");
        if(_src){ SHOT=new Image(); SHOT.src=_src;
-         PAGES.push({t:"이렇게 쟀어요",
-           draw:{title:"이렇게 쟀어요", img:SHOT,
+         PAGES.push({t:"이렇게 측정했어요",
+           draw:{title:"이렇게 측정했어요", img:SHOT,
                  paras:["사진에 선을 그어 얼굴을 상·중·하로 나눴어요. 다음 쪽부터 나오는 수치는 전부 이 선에서 나온 값이에요."]},
            html:`
            <div class="card" style="text-align:center">
@@ -984,9 +984,13 @@ function renderReport(){
       · 한쪽으로만 씹거나, 턱을 괴거나, 늘 같은 쪽으로 자는 습관이 있는지 한번 살펴보세요.<br>
       · 정면으로 한 번 더 찍어보면 더 정확해요.<br>
       · 좌우가 완전히 같은 얼굴은 없어요.</p></div>`:``}
-    <div class="card"><h2>다만 이건 주의하세요</h2>
-      <p class="note" style="font-size:14px;line-height:1.8">
-      · 배경, 조명 등 촬영환경에 따라 측정결과가 달라질 수 있습니다. 더 정확한 결과를 원하신다면 전문컨설턴트를 통한 대면진단을 권장합니다.</p></div>`});
+    `});
+  /* 「다만 이건 주의하세요」(촬영환경 고지) 카드는 뺐다 — 대표 지시 2026-08-27.
+     이유 둘. ① 강의는 퍼스널컬러를 현장 상호진단으로 받고 사진 색 판정을 쓰지 않는다
+     (photo.html FLOW_LECTURE가 드레이핑·색 판정을 건너뛴다). 촬영환경 고지가 겨냥하는
+     그 판정이 여기에는 없다. ② 자리가 틀렸다 — 마지막 장은 「오늘 해볼 것」이고,
+     행동을 건네는 자리 끝에 한계 고지를 붙이면 방금 준 처방을 스스로 깎는다.
+     ⚠ 앱 리포트(index.html)에는 그대로 둔다. 거기는 사진으로 색을 판정하므로 고지가 필요하다. */
 
   const CARD={pc:pcLabel, have:haveName, want:wantName, gapLine,
     mineChips:col&&col.mineHex?col.mineHex:[], mineBest:col&&col.mine?col.mine.best:"",
@@ -999,7 +1003,7 @@ function renderReport(){
 
   // 대표 확정 순서(2026-08-18): 오늘의 진단 → 퍼스널컬러 → 얼굴·이목구비 → 추구미 → 비교 → 오늘 해볼 것
   // ⚠ 새 페이지를 만들면 여기에도 제목을 넣어야 한다. 없으면 조용히 맨 뒤로 밀린다.
-  const ORDER=["지금 나의 매력과 추구미","내 퍼스널컬러","이렇게 쟀어요","얼굴형","눈","코","입","부위별로 보면",
+  const ORDER=["지금 나의 매력과 추구미","내 퍼스널컬러","이렇게 측정했어요","얼굴형","눈","코","입","부위별로 보면",
                "내 추구미","지금과 추구미, 벌어진 곳","색 이야기","오늘 해볼 것","오늘 해볼 것 2","오늘 해볼 것 3","색은 이렇게"];
   PAGES.sort((a,b)=>{ const i=ORDER.indexOf(a.t), j=ORDER.indexOf(b.t);
     return (i<0?99:i)-(j<0?99:j); });
@@ -1015,7 +1019,7 @@ function paint(CARD){
      몇 장인지 미리 알리는 것은 마케팅 확정본이 PIPELINE 제목에 쓴 논리 그대로다 —
      끝이 보이면 사람은 끝까지 읽는다. 강의 리포트는 11장이라 더 그렇다. */
   const lead = PAGE === 0
-    ? `<p class="plead">오늘 잰 것을 ${PAGES.length}장으로 풀었습니다. 넘기면서 봐주세요.</p>` : ``;
+    ? `<p class="plead">오늘 측정한 것을 ${PAGES.length}장으로 풀었습니다. 넘기면서 봐주세요.</p>` : ``;
   app.innerHTML = `<div class="shell">
     <div class="shell-top">
       <div class="hd"><h1>추구미즘</h1><small>${PAGE+1} / ${PAGES.length}</small></div>
@@ -1060,7 +1064,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=9c6841a"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=0c3cfd6"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))

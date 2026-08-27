@@ -73,7 +73,7 @@ export function renderSheet(ctx) {
   };
 
   if (!diag) {
-    return draw(`<div class="card ph-glass"><p class="lead">아직 잴 게 없어요.</p>
+    return draw(`<div class="card ph-glass"><p class="lead">아직 측정한 것이 없어요.</p>
       <p class="note">진단을 마치면 여기에 여덟 칸짜리 그림이 생깁니다. 미션을 해낼 때마다 그 칸이 밖으로 나가요.</p></div>`,
       `<a class="btn" href="../index.html?view=start">진단 시작하기</a>`);
   }
