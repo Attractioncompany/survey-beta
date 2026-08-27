@@ -128,6 +128,33 @@
   }
 
   // stat_entries 사본 → {타입: 합}. gain_type이 없는 옛 행은 세지 않는다 — 타입을 지어내지 않는다.
+  /* ── 레벨 (이론 확정 2026-08-25 · theory/이론설계_해설개편4건_v1_2026-08-25.md §1) ──
+     대표 요청("스탯을 레벨로")에 이론팀이 **조건부 채택**으로 답한 규격이다.
+
+     레벨이 세는 것은 **그 타입에 쌓인 성장 가산의 누계**뿐이다. 초기 스탯은 안 들어간다 —
+     들어가면 그게 곧 "타고난 등급"이 되어 절대 매력 점수 금지를 정면으로 위반한다.
+     산식 §1의 "출발선에서 총량 차이가 존재하지 않는다"가 그 자리에서 깨진다.
+
+     경계는 삼각수다: LV n → n+1 에 n점, LV n 도달 누적 n(n−1)/2.
+     임의로 고른 곡선이 아니라 "매 레벨 요구량이 최소 가산 1칸씩 늘어난다"에서
+     기계적으로 나온다. 그 1칸 = RUNG.observed = 1이라 **새 상수가 없다.**
+     누진인 이유: 상한을 두지 않고도 숫자가 완만해진다(2년 매주 검증해도 LV20).
+
+     퍼센트는 다음 레벨까지의 진척이다. 낮은 레벨에서 값이 듬성듬성한 것은 결함이 아니라
+     가산이 사건 단위라는 사실의 표면화다 — LV3에서는 0·33·67%만 나온다.
+     ⚠ 레벨은 어떤 경우에도 내려가지 않는다. 목표를 바꾸면 새 타입이 LV1에서 시작하고
+       이전 목표의 레벨은 이력에 남는다(감소·회수 없음). */
+  function levelOf(gain) {
+    var g = Math.max(0, Math.floor(gain || 0));
+    // n(n−1)/2 ≤ g 를 만족하는 최대 n. 제곱근의 부동소수 오차는 아래 보정이 잡는다.
+    var n = Math.floor((1 + Math.sqrt(1 + 8 * g)) / 2);
+    while (n > 1 && n * (n - 1) / 2 > g) n--;
+    while ((n + 1) * n / 2 <= g) n++;
+    var base = n * (n - 1) / 2;
+    return { lv: n, gain: g, into: g - base, need: n,
+             pct: Math.round((g - base) / n * 100) };
+  }
+
   function gainsOf(entries) {
     var g = {};
     (entries || []).forEach(function (e) {
@@ -177,6 +204,15 @@
                  { gain: 1 }]).chic !== 3)
       errs.push("가산 합산이 틀렸다(타입 없는 행은 세지 않는다)");
 
+    // 레벨 — 이론 §1-3 페르소나 3건을 그대로 검산한다. 곡선을 손대면 여기서 터진다.
+    [[0, 1, 0], [1, 2, 0], [3, 3, 0], [4, 3, 33], [6, 4, 0], [8, 4, 50], [16, 6, 17]]
+      .forEach(function (t) {
+        var r = levelOf(t[0]);
+        if (r.lv !== t[1] || r.pct !== t[2])
+          errs.push("레벨 산식: 가산 " + t[0] + " → LV" + r.lv + " " + r.pct +
+                    "% (기대 LV" + t[1] + " " + t[2] + "%)");
+      });
+
     if (errs.length) console.error("[czm-stats] 자체 점검 실패:", errs);
     return errs;
   }
@@ -188,7 +224,7 @@
     equipEffect: equipEffect, finalStats: finalStats,
     recommendOutfit: recommendOutfit, selfCheck: selfCheck, sum: sum,
     targetType: targetType, evidenceOf: evidenceOf,
-    previewGain: previewGain, gainsOf: gainsOf,
+    previewGain: previewGain, gainsOf: gainsOf, levelOf: levelOf,
     version: "stats_v1"
   };
 })(typeof window !== "undefined" ? window : globalThis);
