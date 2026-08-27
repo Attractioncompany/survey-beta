@@ -397,12 +397,12 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=cc7bb08"></script>
+<script src="modules/czm-core.js?v=a3fd6f3"></script>
 <!-- 스탯 산식 정본(theory/산식_RPG스탯성장_v1_2026-08-24.md). 표시 층 전용 — 좌표·판정은 손대지 않는다. -->
-<script src="modules/czm-stats.js?v=cc7bb08"></script>
+<script src="modules/czm-stats.js?v=a3fd6f3"></script>
 <!-- 리포트 해설(theory/리포트해설_확충_v1_2026-08-24.md). czm-core의 판정기를 유저 문장으로 인출한다.
      일반 스크립트인 이유: 캐릭터 시트 해설은 사진이 없어도 나오므로 첫 페인트에 동기로 있어야 한다. -->
-<script src="modules/report-explain.js?v=cc7bb08"></script>
+<script src="modules/report-explain.js?v=a3fd6f3"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -470,7 +470,7 @@ const FLOW_WANT = new URLSearchParams(location.search).get("flow")==="want";
 const WANT_PARAM = new URLSearchParams(location.search).get("want");
 let WANT_PICK = null, WANT_SRC = null;   // 문항 점수 없이 물려받은 추구미(타입만)와 그 출처
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.35+cc7bb08"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.35+a3fd6f3"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -3124,12 +3124,12 @@ if(FLOW_LECTURE){
 <script type="module">
   try{
     const [AS, PR, SE, PM, snapRes, shapeRes] = await Promise.all([
-      import("./modules/asset-score.js?v=cc7bb08"),
-      import("./modules/part-report.js?v=cc7bb08"),
-      import("./modules/step-engine.js?v=cc7bb08"),
+      import("./modules/asset-score.js?v=a3fd6f3"),
+      import("./modules/part-report.js?v=a3fd6f3"),
+      import("./modules/step-engine.js?v=a3fd6f3"),
       // 「어떻게 쟀나」·「이런 기준으로 봤어요」 — VLAS 양식 반영(2026-08-26 대표 지시).
       // 못 뜨면 그 두 블록만 빠지고 부위 장의 나머지는 그대로 선다.
-      import("./modules/part-method.js?v=cc7bb08").catch(()=>null),
+      import("./modules/part-method.js?v=a3fd6f3").catch(()=>null),
       fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
       // 관측 분포 — 「선과 좌우」의 밴드 라벨이 여기서 나온다. 없으면 그 장을 안 만든다.
       // 현 밴드 상수(jaw 7/19 등)는 14명 전원을 같은 칸에 넣어 표시용으로 못 쓴다.
@@ -3143,14 +3143,14 @@ if(FLOW_LECTURE){
     // import를 못 쓰므로 여기서 window에 얹는다(czm-core·PART와 같은 방식).
     // ⚠ 여기서 buildFriendPage를 부르지 않는다. 앵커는 renderResult가 그린 뒤에야 생긴다 —
     //   부위 장과 같은 이유로 __onPartEngineReady 쪽에서 부른다.
-    try{ window.__SESSION = await import("./modules/session.js?v=cc7bb08"); }
+    try{ window.__SESSION = await import("./modules/session.js?v=a3fd6f3"); }
     catch(e){ console.warn("session 모듈 로드 실패", e); }
     if (typeof window.__onPartEngineReady === "function") window.__onPartEngineReady();
     // 「나의 4주」 — 홈과 같은 엔진·같은 사전을 쓴다. 여기서 목록을 따로 만들면
     // 결과지가 약속한 것과 홈이 내는 것이 갈린다(이론 §5-2 "미리보기가 곧 대기열").
     try{
       const [QE, dict, quiz] = await Promise.all([
-        import("./modules/quest-engine.js?v=cc7bb08"),
+        import("./modules/quest-engine.js?v=a3fd6f3"),
         fetch("./modules/quest-dict.json").then(r=>r.json()),
         fetch("./modules/quest-quiz.json").then(r=>r.ok?r.json():null).catch(()=>null),
       ]);
