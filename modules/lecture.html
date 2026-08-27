@@ -180,7 +180,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=6326ff8"></script>
+<script src="czm-core.js?v=4afd418"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -209,12 +209,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "6326ff8";
+const BUILD = "4afd418";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=6326ff8";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=4afd418";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -714,20 +714,25 @@ function verdicts(r, l, q){
   for(const g of golds) out.push({group:"황금비율", k:g.name, v:g.label,
     s:`${g.a} 1 : ${g.b} ${g.value}  ·  황금비율은 1 : ${+g.ideal.toFixed(2)}`});
 
-  /* 「상 : 중 : 하」 행은 뺐다 — 이론 판정 2026-08-27
-     (theory/회신_상중하안부_분할점_판정_2026-08-27.md).
-     한 행이 세 겹으로 틀린 말을 하고 있었다:
-       ① 황금비는 1:1.618이지 1:1:1이 아니다
-       ② 1:1:1은 우리 인구의 이상이 아니다 — 사내 규준 조사(08-17)에서
-          한국 여성 n=40 중안부:하안부 = 41.6:58.4, 홍콩 n=103 3등분 충족률 0%
-       ③ 대는 자와 재는 자가 달랐다(오늘 미간으로 교정하기 전까지)
-     ③은 오늘 고쳤지만 ①②는 분할점을 옮겨도 남는다. 그래서 행 자체를 내린다.
-     값만 남기고 문장만 지우는 절충은 하지 않는다 — relLine이 담은 정보가 곧 label이 하는 말이다.
-     사진 오버레이의 상/중/하 % 라벨은 남긴다: 규준 주장이 안 붙은 "어디를 측정했는지" 그림이다.
-     ⚠ 08-17 규준 문서가 이미 "지금 상태로는 숫자 대조 금지"라고 적어 뒀는데
-       08-18 충북 강의가 그대로 나갔다. 새로 생긴 문제가 아니라 전달이 끊겼던 문제다.
-     복원 여부(중:하 규준 대조 부활 / 자기 안 서술만)는 대표 결정 대기. */
-  // 중·하안부 또래 평균 대조도 없다(2026-08-18 대표 판단: 평균 비교는 곧 타인 비교다).
+  /* 「상 : 중 : 하」 — 대표 판정 2026-08-27로 유지한다.
+     이론 회신이 "황금비는 1:1.618이라 1:1:1은 틀렸다"고 기각했는데, 대표가 정정했다:
+     **안면 3분할의 1:1:1은 φ와 별개의 기준이다.** 신고전 안면 규범(neoclassical canon)이
+     얼굴을 세 칸으로 등분하는 것을 이상으로 삼는 것이고, φ는 다른 비례에 쓰는 다른 상수다.
+     둘을 같은 말로 묶어 쓴 우리 문구가 문제였지 기준이 문제였던 게 아니다.
+     → 문구에서 '황금비율'을 떼고 **'이상적 비율'**로 쓴다. 아래 골든 3종(1:1.618)은 그대로 둔다.
+
+     ⚠ 이론이 든 다른 근거(한국 여성 n=40에서 중:하 = 41.6:58.4)는 **인구 평균**이지
+       이상이 아니다. 이상에서 얼마나 떨어졌는지를 말하는 것과 평균과 견주는 것은 다른 말이고,
+       평균 대조는 08-18 대표 판단으로 이미 빼 두었다(평균 비교는 곧 타인 비교다).
+
+     헤어라인 검출이 실패하면 상안부가 이마 중간 기준으로 잡혀 **체계적으로 짧게 나온다**
+     (조사 2026-08-18: 검출O 0.173~0.314 vs 검출X 0.141~0.161 — 구간이 겹치지도 않는다).
+     그 상태로 "하안부가 가장 길어요"를 내면 틀린 말이다. 측정 못 한 건 말하지 않는다. */
+  const hairOK = !q || q.hairline_detected !== false;
+  const th = hairOK ? CZM.thirdsGolden(r.upper, r.mid, r.lower) : null;
+  if(th) out.push({group:"얼굴형", k:"상 : 중 : 하", v:th.relLine,
+                   s:`${th.label} · 이상적 비율은 1 : 1 : 1이에요`});
+  // 중·하안부 또래 평균 대조는 없다(2026-08-18 대표 판단: 평균 비교는 곧 타인 비교다).
   // 좌우 대칭 (대표 지시 2026-08-18). 사람 구분력 확인됨(사람간SD/사람안SD = 3.0).
   const D2=SHAPE&&SHAPE.dist, L2=SHAPE&&SHAPE.labels;
   const av=CZM.asymVerdict(r.asym_score, D2&&D2.asym_score, L2&&L2.asym_score);
@@ -1069,7 +1074,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=6326ff8"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=4afd418"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
