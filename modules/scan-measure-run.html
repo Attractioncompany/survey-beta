@@ -81,9 +81,9 @@ function fail(msg) {
 function retakeAsk(hint, reason) {
   track("unified_gate_fail", { reason });
   $("dot").style.animation = "none"; $("dot").style.opacity = ".15";
-  $("t").textContent = "이번 사진은 잘 안 잡혔어요";
+  $("t").textContent = "이번 사진은 측정하지 못했습니다";
   $("s").innerHTML = hint ||
-    "빛이나 각도 탓일 수 있습니다. 밝은 곳에서 화면을 정면으로 보고 한 번만 더 찍어주세요.";
+    "조명이나 각도의 영향일 수 있습니다. 밝은 곳에서 화면을 정면으로 보고 다시 촬영해 주십시오.";
 
   let done = false;
   const pick = choice => { if (done) return; done = true; track("unified_retake_pick", { choice }); };

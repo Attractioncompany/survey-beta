@@ -1618,7 +1618,7 @@ function renderAskFriend(){
       const f = e.target.files?.[0]; e.target.value = "";
       if(!f) return;
       try{ photo = await friendThumb(f); name = $("fName").value; draw(); }
-      catch(err){ console.warn("사진 처리 실패", err); alert("이 사진은 열지 못했어요. 다른 사진으로 해주세요."); }
+      catch(err){ console.warn("사진 처리 실패", err); alert("이 파일은 열 수 없습니다. 다른 사진으로 다시 시도해 주십시오."); }
     };
     $("fBack").onclick = () => nav("record");
     $("fGo").onclick = async () => {
@@ -1627,7 +1627,7 @@ function renderAskFriend(){
       const b = $("fGo"); b.disabled = true; b.textContent = "만드는 중…";
       // 보내기를 누른 것이 사진 동의다(대표 2026-08-26) — 서버가 consented_at에 남긴다.
       const id = await sbRpc("friend_survey_create", {p_user: UID, p_photo: photo, p_friend: who});
-      if(!id){ b.disabled = false; b.textContent = "다시 시도"; return alert("링크를 만들지 못했어요. 잠시 뒤 다시 해주세요."); }
+      if(!id){ b.disabled = false; b.textContent = "다시 시도"; return alert("링크를 만들지 못했습니다. 통신 상태를 확인한 뒤 다시 시도해 주십시오."); }
       // 링크는 친구 폰에서 열린다 — 앱 안 상대경로는 폰 내부를 가리켜 남이 못 연다.
       const url = "https://attractioncompany.github.io/survey-beta/ask.html?s=" + id;
       // from — 리포트에서 온 것과 기록 탭에서 온 것을 가른다(마케팅 요청 2026-08-27).
