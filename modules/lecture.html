@@ -180,7 +180,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=4afd418"></script>
+<script src="czm-core.js?v=bfceaeb"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -209,12 +209,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "4afd418";
+const BUILD = "bfceaeb";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=4afd418";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=bfceaeb";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -780,9 +780,12 @@ function renderReport(){
   const gp=AX.filter(a=>Number.isFinite(a[0])&&a[0]!==0)
     .sort((a,b)=>Math.abs(b[0])-Math.abs(a[0])).slice(0,2)
     .map(a=>a[0]>0?a[1]:a[2]);
+  /* 벌어진 축이 없다 = 추구미와 지금이 같은 방향이다.
+     예전에는 빈 문자열이라 이 자리가 그냥 비었고, 유저에게는 "할 게 없다"로 읽혔다.
+     대표 지시 2026-08-27: 방향이 같으면 바꿀 게 없는 것이 아니라 **더 또렷하게 드러낼 차례**다. */
   const gapLine = gp.length
     ? `${wantName} 매력과 비교하면 지금은 ${gp.map((w,i)=>w[i===gp.length-1?1:0]).join(" ")} 쪽이에요.`
-    : "";
+    : `${wantName} 쪽에 이미 서 있어요. 방향을 바꾸는 게 아니라 ${wantName}가 더 또렷하게 드러나게 하면 됩니다.`;
 
   const gender=s.diag.gender||null;
   // 한 사람의 결과를 한 줄로 묶어 남긴다 — 퍼스널컬러·성별·추구미·현재 매력·얼굴 측정 유무.
@@ -1074,7 +1077,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=4afd418"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=bfceaeb"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
