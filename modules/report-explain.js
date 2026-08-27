@@ -136,6 +136,8 @@
     var golds = [
       CZM.goldenOf("face_HW", ratio.face_HW),
       CZM.goldenOf("mouth_nose", mouthNose),
+      CZM.goldenOf("lip_ul", ratio.lip_ul_ratio),
+      CZM.goldenOf("lower_balance", ratio.lower_balance),
       CZM.goldenOf("interocular", ratio.interocular)
     ].filter(Boolean);
     // p = 부위 페이지 배속(대표 지시 2026-08-25 부위 단위 분리). 값·산식 불변, 꼬리표만 붙인다.

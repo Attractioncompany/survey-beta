@@ -94,6 +94,14 @@
     var browEyeGap = eyeOpen0 > 0.22 ? +(_browEyeRaw / faceW).toFixed(3) : null;
     var browEyeGapX = (eyeOpen0 > 0.22 && _eyeVertH > 0) ? +(_browEyeRaw / _eyeVertH).toFixed(2) : null;
 
+    /* 하안부 균형 — 코밑 → 입술틈 → 턱끝 (참고 레퍼런스 2026-08-27 대표 제공:
+       mindvideo 얼굴 황금비 계산기 6항목 중 우리에게 없던 하나).
+       이상값 1.618 = (입술틈~턱끝) / (코밑~입술틈).
+       새 랜드마크가 필요 없다 — 코밑(2)·입술틈(13·14 중간)·턱끝(152)은 이미 쓰고 있다. */
+    var stomion = (P(13).y + P(14).y) / 2;
+    var lowUp   = stomion - subnasale.y;          // 코밑 → 입술
+    var lowDn   = P(152).y - stomion;             // 입술 → 턱끝
+    var lowerBalance = (lowUp > 0 && lowDn > 0) ? +(lowDn / lowUp).toFixed(3) : null;
     var lipUpper = +(dist(P(0), P(13)) / faceH).toFixed(3);
     var lipLower = +(dist(P(14), P(17)) / faceH).toFixed(3);
     var lipUlRatio = lipUpper > 0 ? +(lipLower / lipUpper).toFixed(2) : null;
@@ -189,7 +197,8 @@
         asym_score: asymScore, asym_max: +asymMax.toFixed(2),
         asym_parts: asymParts, asym_tilt: asymTilt,
         // 미간 기준 — 규준(41.6:58.4)과 직접 견줄 수 있는 유일한 비율
-        n_mid_pct: midPct, n_low_pct: midPct == null ? null : +(100 - midPct).toFixed(1)
+        n_mid_pct: midPct, n_low_pct: midPct == null ? null : +(100 - midPct).toFixed(1),
+        lower_balance: lowerBalance          // 하안부 균형 — 이상값 1.618
       },
       line: {
         jaw_angular_deg: +jawAngular.toFixed(1), chin_angle_deg: +chinAngle.toFixed(1),
