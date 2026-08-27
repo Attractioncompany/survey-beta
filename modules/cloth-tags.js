@@ -31,15 +31,23 @@
 export const FABRICS = [
   { key:"chiffon",  label:"쉬폰·시스루", types:["romantic"] },
   { key:"knit_big", label:"도톰한 니트", types:["romantic"] },
+  // 신설 (이론 2026-08-27) — 이 칸이 없어서 **모든 니트가 로맨틱으로 갔다.**
+  // 마스터 2-1-2가 굵은 게이지와 얇고 단정한 니트를 직접 갈라 적고 있다.
+  { key:"knit_fine",label:"얇고 단정한 니트·가디건", types:["classic","elegant"] },
   { key:"cotton",   label:"면·코튼",     types:["pure","energetic"] },
   { key:"shirt",    label:"셔츠천",      types:["pure","chic"] },
   { key:"silky",    label:"실키·흐르는", types:["elegant"] },
   { key:"denim",    label:"데님·청",     types:["energetic"] },
   { key:"jersey",   label:"저지·트레이닝", types:["energetic"] },
   { key:"satin",    label:"새틴·벨벳",   types:["gorgeous"] },
-  { key:"leather",  label:"가죽",        types:["gorgeous","charisma"] },
+  // 광택으로 가른다 (이론 2026-08-27). 겹침으로 두면 실루엣 미기입 시 무광 가죽이
+  // **항상** 화려함으로 갔다. 마스터가 카리스마 소재로 적은 것은 무광 가죽뿐이다.
+  { key:"leather",  label:"가죽(광택)",  types:["gorgeous"] },
+  { key:"leather_mat", label:"무광 가죽", types:["charisma"] },
   { key:"wool",     label:"울·트위드",   types:["classic"] },
-  { key:"suit",     label:"정장지",      types:["chic","charisma"] },
+  // 카리스마 제거 (이론 2026-08-27) — 마스터가 카리스마 소재로 적은 것은 무광 가죽뿐이고,
+  // "더블브레스트"는 소재가 아니라 재단이라 실루엣 칸(sharp)이 맡는다.
+  { key:"suit",     label:"정장지",      types:["chic"] },
 ];
 
 // 실루엣 — 몸에 닿는 선의 모양. 소재가 겹칠 때 타입을 실제로 가르는 칸이다.
@@ -60,8 +68,12 @@ export const shapeOf  = k => byKey(SHAPES, k);
 
 /** 옷 한 벌 → {type, power}. 색·소재·실루엣 세 표의 다수결이다.
  *  colorType은 기존 팔레트 판정 결과(없으면 null)를 그대로 받는다 — 색 규칙은 손대지 않았다.
- *  동점이면 색 → 소재 → 실루엣 순으로 앞선 쪽이 이긴다. 색이 우선인 이유는 그것만이
- *  촬영으로 실측되는 값이고 나머지 둘은 신고이기 때문이다(마스터 §4-2와 같은 이유). */
+ *  동점이면 **실루엣 → 소재 → 색** 순으로 앞선 쪽이 이긴다 (이론 역전 2026-08-27).
+ *  개발팀이 처음 건 순서는 색 우선이었고 근거로 §4-2를 들었는데, 이론팀이 그 조항을
+ *  다시 읽고 반대라고 판정했다 — §4-2의 원칙은 "실측이 이긴다"가 아니라
+ *  **"재현되는 것이 이긴다"**이다(웜쿨은 드레이핑 0.8 + 색채 측정 0.2).
+ *  그리고 옷 색은 조명으로 뒤집힌다(같은 회신 ②: 조명 노이즈가 1·2위 차보다 크다).
+ *  실루엣과 소재는 유저 신고라 조명을 안 탄다 — 흔들리지 않는 값이 먼저 선다. */
 export function tagOf(attrs, colorType) {
   const vote = new Map();
   const add = (types, w) => (types || []).forEach(t => vote.set(t, (vote.get(t) || 0) + w));
@@ -71,7 +83,7 @@ export function tagOf(attrs, colorType) {
   if (!vote.size) return { type:null, power:0 };
   // 한 칸이 두 타입을 가리키면 두 타입 다 표를 받는다. 그래서 최고점이 곧 이 옷의 성격이다.
   let best = null, hi = 0;
-  const order = [colorType, fabricOf(attrs?.fabric)?.types?.[0], shapeOf(attrs?.shape)?.types?.[0]];
+  const order = [shapeOf(attrs?.shape)?.types?.[0], fabricOf(attrs?.fabric)?.types?.[0], colorType];
   for (const [t, n] of vote) {
     if (n > hi || (n === hi && order.indexOf(t) >= 0 &&
         (best === null || order.indexOf(t) < order.indexOf(best)))) { hi = n; best = t; }
@@ -89,7 +101,11 @@ export function selfCheck() {
   eq(tagOf({fabric:"leather"}, null).type, "gorgeous", "색 없이 소재만");
   // 아무것도 없으면 0 (종전 동작 유지)
   eq(tagOf({}, null).power, 0, "빈 옷");
-  // 가죽(화려함·카리스마)이 각진 실루엣을 만나면 카리스마가 이긴다
-  eq(tagOf({fabric:"leather", shape:"sharp"}, null).type, "charisma", "가죽+각진=카리스마");
+  // 무광 가죽은 실루엣이 없어도 카리스마다 (겹침이던 시절엔 항상 화려함으로 갔다)
+  eq(tagOf({fabric:"leather_mat"}, null).type, "charisma", "무광 가죽=카리스마");
+  // 얇은 니트가 로맨틱으로 새지 않는다
+  eq(tagOf({fabric:"knit_fine"}, null).type !== "romantic", true, "얇은 니트≠로맨틱");
+  // 동점 역전 — 색(로맨틱)과 실루엣(카리스마)이 1:1이면 실루엣이 이긴다
+  eq(tagOf({shape:"sharp"}, "romantic").type, "charisma", "동점이면 실루엣이 이긴다");
   return t;
 }
