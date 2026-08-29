@@ -61,7 +61,12 @@
     for (var i = 0; i < top.length; i++)
       for (var j = i + 1; j < top.length; j++) {
         var a = C[top[i]], b = C[top[j]];
-        if (a && b && a[axIdx] * b[axIdx] < 0) return [top[i], top[j]];
+        /* 부호만 보면 인접 타입을 상쇄로 오판한다 — 실사례(대표 2026-08-29): 세련(D+0.6)과
+           우아(D−0.1)는 인접 계열인데 "두 방향이 부딪힌다"로 나갔다. D−0.1은 반대쪽이
+           아니라 사실상 중립이다. 양쪽 모두 그 축에서 뚜렷이 기울었을 때(각 |c|≥0.3)만
+           상쇄다 — 0.3은 COORD에서 중립대(±0.1대)와 기운 값(±0.4↑)을 가르는 자연 틈. */
+        if (a && b && a[axIdx] * b[axIdx] < 0
+            && Math.abs(a[axIdx]) >= 0.3 && Math.abs(b[axIdx]) >= 0.3) return [top[i], top[j]];
       }
     return null;
   }
@@ -103,21 +108,21 @@
           ? "서로 반대쪽에 있는 " + B(pair[0]) + (jong(NAMES[pair[0]]) ? "과 " : "와 ")
             + B(pair[1]) + (jong(NAMES[pair[1]]) ? "이" : "가") + " 나란히 높게 나왔습니다."
           : "서로 반대쪽 매력 둘이 나란히 높게 나왔습니다.",
-          "두 방향이 부딪히면서 각각이 덜 선명하게 읽힐 수 있어요.",
+          "두 방향이 부딪히면서 각각이 덜 선명하게 읽힐 수 있습니다.",
           "부딪히는 자리를 한쪽으로 정리하면 인상이 또렷해집니다."];
       }
     }
     // ② 집중형
     if (spread >= 6)
       return ["한쪽으로 몰린 배합 — 그만큼 인상이 또렷하게 잡힙니다.",
-              "이 방향을 더 깊게 밀고 가는 편이 잘 맞아요."];
+              "이 방향을 더 깊게 밀고 가는 편이 잘 맞습니다."];
     // ③ 고른형
     if (spread < 3)
       return ["여덟 갈래가 거의 고르게 퍼졌습니다.",
-              "자리에 따라 다르게 읽히니, 그날 쓰고 싶은 쪽을 골라 쓰면 돼요."];
+              "자리에 따라 다르게 읽히니, 그날 쓰고 싶은 쪽을 골라 쓰면 됩니다."];
     // ④ 혼합형
     return ["몇 갈래가 나란히 섞인 배합입니다.",
-            "위쪽 몇 개를 하나로 묶어 세우면 인상이 선명해져요."];
+            "위쪽 몇 개를 하나로 묶어 세우면 인상이 선명해집니다."];
   }
 
   // ── R1·R2 얼굴 비율 / 선·좌우 ──────────────────────────────
@@ -143,11 +148,15 @@
     // p = 부위 페이지 배속(대표 지시 2026-08-25 부위 단위 분리). 값·산식 불변, 꼬리표만 붙인다.
     // face_HW는 「얼굴 비율」로 보낸다 — 가로:세로는 윤곽이 아니라 비율 이야기이고,
     // 같은 값에서 나온 폭 서술이 그 장에 있어 나란히 놓여야 서로 어긋나지 않는다.
-    var GPART = { face_HW: "비율", mouth_nose: "입", interocular: "눈" };
+    /* face_HW는 「얼굴형」 장으로 옮겼다(대표 D 2026-08-29 — 얼굴형 장에 face_HW 수치).
+       lip_ul은 「입」 장으로(같은 지시 — 윗입술:아랫입술 행 이동). */
+    var GPART = { face_HW: "얼굴형", mouth_nose: "입", lip_ul: "입", interocular: "눈" };
     for (var i = 0; i < golds.length; i++) {
       var g = golds[i];
+      // n = 큰 타이포로 서는 값 / v = 값 밑 한 줄 해설 / s = 기준 각주 (대표 C 2026-08-29)
       out.push({ k: g.name, v: g.label, p: GPART[g.key] || "비율", key: g.key,
-                 s: g.a + " 1 : " + g.b + " " + g.value + "  ·  황금비율은 1 : " + (+g.ideal.toFixed(2)) });
+                 n: "1 : " + g.value,
+                 s: g.a + " 1 : " + g.b + " 기준 · 황금비율은 1 : " + (+g.ideal.toFixed(2)) });
     }
     /* 「상 : 중 : 하」 — 대표 판정 2026-08-27로 유지한다(강의 리포트와 같은 판단).
        안면 3분할의 1:1:1은 φ(1:1.618)와 별개의 기준이다 — 신고전 안면 규범이
@@ -160,8 +169,8 @@
        ⚠ 옛 저장분에는 이 플래그가 없어 undefined다. !==false라 통과시킨다. */
     var hairOK = !quality || quality.hairline_detected !== false;
     var th = hairOK ? CZM.thirdsGolden(ratio.upper, ratio.mid, ratio.lower) : null;
-    if (th) out.push({ k: "상 : 중 : 하", v: th.relLine, p: "비율",
-                       s: th.label + " · 이상적 비율은 1 : 1 : 1" });
+    if (th) out.push({ k: "상 : 중 : 하", n: th.relLine, v: th.label, p: "비율",
+                       s: "이상적 비율은 1 : 1 : 1" });
     return out;
   }
 
@@ -180,14 +189,14 @@
                  mouth_corner:"입꼬리", jaw:"턱선", temple:"관자놀이" };
       // 이 밑줄들은 값에 붙는 캡션이라 전부 명사로 끝낸다. 문장으로 쓰면 여섯 줄이
       // 세로로 "~예요 ~예요 ~예요"가 되는데, 그건 대구가 아니라 그냥 같은 말이 여섯 번이다.
-      out.push({ k: "좌우 균형", v: av.label, p: "좌우",
-                 s: (worst && KO[worst]) ? "가장 차이가 큰 곳은 " + KO[worst]
+      out.push({ k: "좌우 균형", n: av.score + "%", v: av.label, p: "좌우",
+                 s: (worst && KO[worst]) ? "얼굴 중앙선 대비 평균 어긋남 · 가장 차이가 큰 곳은 " + KO[worst]
                                          : "얼굴 중앙선을 놓고 좌우를 견준 값" });
     }
-    function push(k, v, key, part, tail) {
+    function push(k, v, key, part, tail, num) {
       if (v == null || !D[key] || !L[key]) return;
       var b = CZM.bandOf(D[key], v, L[key]);
-      if (b) out.push({ k: k, v: b.label, p: part, s: tail });
+      if (b) out.push({ k: k, n: num, v: b.label, p: part, s: tail });
     }
     /* ⚠ 턱선(jaw_angular_deg) 서술을 내렸다 (2026-08-25, 오류대장 §045 · 이론 재판정).
        이 필드는 **인물 간 차이(SD_b 0.7533)보다 한 사람의 촬영 간 변동(SD_w 1.4679)이 2배 크다.**
@@ -196,8 +205,22 @@
        재현성 게이트 통과를 기다릴 이유가 없어서 게이트 이전에 실격 처리한다.
        판정 기여(asset-score)는 별건이다 — 폐기·재설계·유지는 이론 판단 대기.
     push("턱선", l.jaw_angular_deg, "jaw_angular_deg", "얼굴형", …); */
-    push("턱끝",      l.chin_angle_deg,  "chin_angle_deg",  "얼굴형", l.chin_angle_deg + "° — 턱 끝이 모이는 각도");
-    push("눈매",      l.eye_angle,       "eye_angle",       "눈",     "눈머리보다 눈꼬리가 얼마나 올라갔는지 본 값");
+    push("턱끝",      l.chin_angle_deg,  "chin_angle_deg",  "얼굴형", "턱 끝이 모이는 각도",
+         l.chin_angle_deg + "°");
+    /* 눈매 라벨은 분포 3분위(bandOf)를 쓰지 않는다 — 그 라벨 사전에는 "내려온" 계열이
+       없어서, 눈꼬리가 실제로 내려간 사람도 올라간 계열 라벨을 받았다. 부위 해설과
+       기준이 갈리면 "해설은 내려와 있다는데 눈매는 올라갔다"는 모순이 화면에 선다
+       (실사례 · 대표 2026-08-29). 부위 해설과 같은 기준으로 가른다 —
+       자연 영점 0 + 표본 중앙값 2.305·SD_w 0.4288 (이론 v3 ref, part-report와 동일). */
+    (function(){
+      var v = l.eye_angle;
+      if (typeof v !== "number" || !isFinite(v)) return;
+      var label = v < 0 ? "내려온 눈매"
+                : Math.abs(v - 2.305) < 0.4288 ? "수평에 가까운 눈매"
+                : v >= 2.305 ? "뚜렷하게 올라간 눈매" : "조금 올라간 눈매";
+      out.push({ k: "눈매", n: (v > 0 ? "+" : "") + v, v: label, p: "눈", key: "eye_angle",
+                 s: "눈머리보다 눈꼬리가 얼마나 올라갔는지 본 값 (얼굴폭 대비 %)" });
+    })();
     /* ⚠ 눈썹 모양(brow_arch_deg) 값 행도 뺐다 (2026-08-25 재현성 검증, r=0.57).
        이 필드는 OBS 사전·폭 서술에서 이미 빠졌는데 **여기 세 번째 자리에 남아 있었다** —
        같은 실격 값을 다른 계층에서 계속 말하고 있었다. 턱선을 두 곳 다 뺀 것과 같은 기준이다.
@@ -206,7 +229,50 @@
          실격 값으로 장을 채우는 쪽이 나쁘다. 눈썹에 쓸 수 있는 측정이 생기면 그때 다시 연다
          (이론 측정확충 v1의 눈썹 진하기 contrast_brow가 후보 — 통로는 오늘 열렸다).
     push("눈썹 모양", l.brow_arch_deg, "brow_arch_deg", "눈썹", …); */
-    push("입꼬리",    l.mouth_corner,    "mouth_corner",    "입",     "입꼬리가 향하는 쪽");
+    push("입꼬리",    l.mouth_corner,    "mouth_corner",    "입",     "입꼬리가 향하는 쪽 (양수면 위)",
+         typeof l.mouth_corner === "number" ? (l.mouth_corner > 0 ? "+" : "") + l.mouth_corner : null);
+    return out;
+  }
+
+  // ── 신설 측정값 행 (대표 D 2026-08-29) ─────────────────────
+  /* photo.html이 2026-08-29 신설한 측정 19종 중 리포트 노출분.
+     ⚠ 경계·밴드·분포가 아직 없다 — **숫자 + 중립 캡션만** 낸다. 방향 단정 문장은
+       이론 게이트 통과 전 금지(어느 쪽이 어떤 인상인지는 이론팀이 경계를 정한 뒤의 일).
+     값이 없으면(옛 측정·검출 실패) 그 행을 조용히 생략한다 — 없는 값을 지어내지 않는다. */
+  function rawRows(d) {
+    if (!d) return [];
+    var r = d.ratio || {}, q = d.quality || {}, out = [];
+    var num = function (v) { return typeof v === "number" && isFinite(v); };
+    var one = function (part, k, v, cap, unit) {
+      if (num(v)) out.push({ k: k, n: v + (unit || ""), s: cap, p: part });
+    };
+    var pair = function (part, k, a, b, la, lb, cap) {
+      if (num(a) && num(b)) out.push({ k: k, n: la + " " + a + " · " + lb + " " + b, s: cap, p: part });
+    };
+    one("얼굴형", "측면 직선성", r.side_straight, "이마 폭 대비 하악 폭 — 1에 가까울수록 옆선이 일자");
+    one("얼굴형", "하악 꺾임", r.gonial_ang, "광대 → 하악각 → 턱끝이 이루는 각도", "°");
+    one("얼굴형", "턱 하강", r.jaw_drop, "하악각에서 턱끝까지 내려오는 깊이 (얼굴폭 대비)");
+    // VLAS 대조표(2026-08-29)의 '재는데 침묵' 2종 — 옆광대·하관 비율
+    one("얼굴형", "옆광대", r.cheek_out, "이마 폭 대비 광대 폭 — 1을 넘으면 광대가 옆으로 도드라지는 형태");
+    one("얼굴형", "하관 비율", r.jaw_cheek, "광대 폭 대비 하악 폭");
+    one("눈", "위 눈꺼풀 곡률", q.eye_curve_up, "눈 양끝을 이은 직선에서 가운데가 벗어난 정도 (눈 길이 대비)");
+    one("눈", "아래 눈꺼풀 곡률", q.eye_curve_dn, "아래 눈꺼풀을 같은 방식으로 측정한 값");
+    pair("눈", "흰자 노출", q.sclera_up, q.sclera_dn, "위", "아래",
+         "홍채 반지름 대비 눈꺼풀까지 거리 — 1을 넘으면 그쪽 흰자가 드러납니다");
+    one("눈", "눈 바깥 여백", q.eye_gap_out, "눈꼬리에서 얼굴 윤곽까지 (얼굴폭 대비)");
+    one("눈썹", "눈썹 길이", q.brow_len, "안쪽 끝에서 바깥 끝까지 (얼굴폭 대비)");
+    one("눈썹", "눈썹 두께", q.brow_thick, "위선과 아래선의 세로 간격 (얼굴높이 대비)");
+    one("눈썹", "산 위치", q.brow_peak, "눈썹 길이에서 산이 놓인 지점 — 0.5가 가운데, 클수록 바깥쪽");
+    one("눈썹", "미간 너비", q.glabella_w, "눈썹 안쪽 끝 사이 (얼굴폭 대비)");
+    // 코·입은 한 장이라 배속(p)이 같다 — 코 행이 먼저 서고 입 행이 뒤따른다.
+    one("입", "코 길이", q.nose_len, "코뿌리에서 코밑까지 (얼굴높이 대비)");
+    one("입", "코 너비", r.nose_w, "콧방울 폭 (얼굴폭 대비)");
+    one("입", "콧볼 두께", q.ala_thick, "콧볼 바깥 폭 대비 안쪽 폭");
+    one("입", "콧구멍 노출", q.nostril_show, "코끝이 콧볼 아래선보다 위에 있는 정도 (얼굴높이 대비)");
+    one("입", "인중 길이", q.philtrum, "코밑에서 윗입술 위까지 (얼굴높이 대비)");
+    one("입", "입 너비", r.mouth_w, "입꼬리 사이 (얼굴폭 대비)");
+    pair("입", "입술 두께", r.lip_upper, r.lip_lower, "윗", "아랫",
+         "얼굴높이 대비 — 윗입술 : 아랫입술 비율 행의 원자료");
     return out;
   }
 
@@ -246,9 +312,12 @@
   var WIDTH = {
     chin_len: {
       hi: ["턱이 길게 떨어져 옆에서 볼 때 윤곽이 살아납니다.",
-           "턱이 길게 떨어져 얼굴 아래쪽이 시원하게 뻗고, 옆선이 또렷하게 잡혀요."],
-      lo: ["입술 아래에서 턱 끝까지가 짧아 얼굴 아래쪽이 좁습니다. 눈코입이 가운데로 당겨 보이는 배치예요.",
-           "입술 아래에서 턱 끝까지가 짧아 얼굴 아래쪽이 좁아요. 그만큼 눈코입이 가운데로 당겨 보입니다."]
+           "턱이 길게 떨어져 얼굴 아래쪽이 시원하게 뻗고, 옆선이 또렷하게 잡힙니다."],
+      /* "눈코입이 가운데로 당겨 보이는 배치예요"를 걷었다(대표 2026-08-29 "뜻이 안 통함").
+         이 행이 측정한 것은 턱 길이 하나다 — 눈코입 위치는 parts_vpos의 몫이라 여기서
+         섞어 말하면 무엇을 측정해 하는 말인지 알 수 없게 된다. 측정한 것만 말한다. */
+      lo: ["입술 아래에서 턱 끝까지가 짧은 편입니다. 얼굴에서 턱이 차지하는 몫이 작은 만큼 시선이 눈코입에 먼저 갑니다.",
+           "입술 아래에서 턱 끝까지가 짧은 편입니다. 얼굴에서 턱 몫이 작은 만큼 시선이 눈코입으로 먼저 향합니다."]
     },
     parts_vpos: {
       /* ⚠ "이마가 넓게 열린다"는 말을 걷었다 (2026-08-25 실측). 같은 장 아래에 3분할 행이
@@ -258,9 +327,9 @@
          문장에서 이마 서술을 빼고 **잰 것(이목구비 위치)만** 말한다.
          근본 해결은 widthDirs가 parts_vpos도 3분할 기준으로 다시 잡는 것 — 개발·이론 회부. */
       hi: ["이목구비가 아래쪽에 모여 얼굴 무게가 아래로 내려앉고, 인상이 차분하게 읽힙니다.",
-           "이목구비가 아래쪽에 자리를 잡았어요. 눈매에 힘을 주면 위아래 무게가 고르게 맞습니다."],
+           "이목구비가 아래쪽에 자리를 잡았습니다. 눈매에 힘을 주면 위아래 무게가 고르게 맞는 배치입니다."],
       lo: ["이목구비가 위쪽에 자리해 얼굴 중심이 위로 당겨집니다. 정면에서 또랑또랑한 인상이 먼저 잡힙니다.",
-           "이목구비가 위쪽에 자리해 인상이 또랑또랑하게 잡혀요."]
+           "이목구비가 위쪽에 자리해 인상이 또랑또랑하게 잡힙니다."]
     }
   };
   // 부위 페이지 배속. 한 장에 두 줄까지만 — 세 줄부터는 카드 안에 스크롤이 생긴다.
@@ -309,28 +378,48 @@
    * @return string[] — 기존 desc 뒤에 그대로 붙인다
    */
   /** @param skip {필드:1} — 부위 장의 폭 서술이 이미 가져간 필드. 여기서 또 말하면
-   *    두 장이 다른 기준으로 같은 값을 말해 정반대로 읽힌다(2026-08-25 실측). */
-  function whyThisType(score, OBS, skip) {
+   *    두 장이 다른 기준으로 같은 값을 말해 정반대로 읽힌다(2026-08-25 실측).
+   *  @param surveyName 설문이 정한 타입명. 이 장의 판정("~에 가깝습니다")이 설문 결과인데,
+   *    측정 근거를 출처 없이 붙이면 측정이 그 판정을 만든 것처럼 읽힌다 — 사진 종합이
+   *    설문과 다를 때 "왜 이게 나왔는지 이해가 안 간다"가 되는 원인(대표 2026-08-29).
+   *    사진이 읽은 타입을 먼저 밝히고, 관찰은 그 타입의 근거로 붙인다. */
+  function whyThisType(score, OBS, skip, surveyName) {
     if (!score || !OBS) return [];
     var det = score.detail || [], out = [];
     var byS = function (a, b) { return Math.abs(b.s) - Math.abs(a.s); };
+    var photoType = score.overallType && score.overallType.type;
 
-    // 형태 근거 3개 — 부위 무관 전역 |s| 상위. 정본 템플릿("[관찰1]하고, [관찰2]해서요")을 셋으로 늘린 것뿐,
-    // 새 어휘가 없다. 연결형 c로 잇고 마지막만 이유형 e로 닫는다.
+    // 출처 문장 — 설문(스타일 응답)과 사진(형태 측정)은 재는 것이 다르다. 다르면 다르다고 말한다.
+    if (photoType && surveyName) {
+      out.push(photoType === surveyName
+        ? "사진으로 측정한 결과도 같은 방향입니다."
+        : "사진으로 측정한 얼굴은 " + (jong(photoType) ? photoType + "이" : photoType + "가")
+          + " 조금 더 강하게 잡혔습니다. 설문은 지금 하고 있는 스타일을, 사진은 타고난"
+          + " 형태를 읽기 때문에 둘이 다를 수 있습니다.");
+    }
+
+    /* 형태 근거 3개 — 부위 무관 전역 |s| 상위.
+       ⚠ 방향 사전은 buildPartRows와 같은 규칙으로 고른다(mid → 균형 · below → 단정형).
+         hi/lo만 보면 중간대 얼굴에 방향을 단정하고, 실제로 내려간 눈에 "올라가 있다"가 나간다.
+       ⚠ 이유형(-서요)으로 문장을 끝내지 않는다(대표 2026-08-29 "~해서요로 끝내는 경우가
+         도대체 어디 있는지"). 마지막 관찰은 평서 종결형 d로 닫는다 — part-report와 같은 처리다. */
     var shape = det.filter(function (d) { return d.part !== "색" && d.s !== null && OBS[d.key] && !(skip && skip[d.key]); })
                    .sort(byS).slice(0, 3)
-                   .map(function (d) { return OBS[d.key][d.s >= 0 ? "hi" : "lo"]; });
+                   .map(function (d) {
+                     var dir = d.mid ? "mid" : (d.s >= 0 ? "hi" : (d.below ? "lo0" : "lo"));
+                     return OBS[d.key][dir];
+                   }).filter(Boolean);
     if (shape.length) {
-      // 같은 부위가 두 번 뽑히면 "눈썹이 곧게 뻗고, 눈썹이 눈에 가깝게 붙어서요"가 된다.
+      // 같은 부위가 두 번 뽑히면 "눈썹이 곧게 뻗고, 눈썹이 눈에 가깝게 붙고"가 된다.
       // 두 번째부터는 주어를 지운다 — part-report가 행 안에서 하는 것과 같은 처리다.
       var seen = {};
       var phrase = function (w, last) {
-        var t = last ? w.e : w.c;
+        var t = last ? (w.d || (w.e || "").replace(/서요$/, "요")) : w.c;
         var m = t.match(/^(\S+?)(이|가|은|는)\s/);
         if (m) { if (seen[m[1]]) t = t.slice(m[0].length); else seen[m[1]] = 1; }
         return t;
       };
-      out.push("이렇게 나온 건 " + shape.map(function (w, i) {
+      out.push("측정에서 도드라진 특징 — " + shape.map(function (w, i) {
         return phrase(w, i === shape.length - 1);
       }).join(", ") + ".");
     }
@@ -342,8 +431,7 @@
     if (col) {
       var w = OBS[COLOR_OBS_ALIAS[col.key]][col.s >= 0 ? "hi" : "lo"];
       var decl = (w.d || (w.e || "").replace(/서요$/, "요")) + ".";
-      // 앞에 형태 근거(~서요)가 섰으면 ~니다로 받고, 이 줄이 첫 줄이면 desc(~니다)를 ~요로 받는다.
-      out.push(out.length ? "색으로 봐도 같은 쪽입니다. " + decl : "색 쪽에서도 같은 방향 — " + decl);
+      out.push("색 쪽에서는 — " + decl);
     }
 
     // 못 잰 부위는 여기서 말하지 않는다. 바로 앞 장(파트별 나)이 그 부위 행에서 이미
@@ -359,10 +447,12 @@
   // 두 벌인 이유: 앞에 웜쿨 문장(~니다)이 서면 여기는 ~요로 받아야 어미가 안 겹친다.
   // 웜쿨이 결측이면 계절 문장(~예요) 바로 뒤라 반대로 ~니다가 필요하다.
   var MUTE_LINE = {
-    mute_confirmed:  ["드레이핑에서는 톤다운 쪽을 고르셨어요.", "드레이핑에서는 톤다운 쪽을 고르셨습니다."],
-    clear_confirmed: ["드레이핑에서는 선명한 쪽을 고르셨어요.", "드레이핑에서는 선명한 쪽을 고르셨습니다."],
-    mute_tentative:  ["톤다운 계열로 기울어 보이는데, 드레이핑 확인은 아직이에요.",
-                      "톤다운 계열로 기울어 보이는데, 드레이핑 확인은 아직입니다."]
+    // "톤다운"은 업계어라 쉬운 풀이를 붙인다 (대표 2026-08-29)
+    mute_confirmed:  ["드레이핑에서는 톤다운 쪽 — 채도가 낮고 회색이 살짝 섞인 색을 고르셨습니다.",
+                      "드레이핑에서 고른 것은 톤다운 쪽 — 채도가 낮고 회색이 살짝 섞인 색입니다."],
+    clear_confirmed: ["드레이핑에서는 선명한 쪽을 고르셨습니다.", "드레이핑에서 고른 것은 선명한 쪽입니다."],
+    mute_tentative:  ["채도가 낮고 회색이 살짝 섞인 톤다운 계열로 기울어 보이며, 드레이핑 확인은 아직입니다.",
+                      "채도가 낮고 회색이 살짝 섞인 톤다운 계열로 기울어 보입니다. 드레이핑 확인은 아직 전입니다."]
   };
   // 촬영 품질 각주(qualityNote)는 삭제했다 — 대표 지시 2026-08-25.
   // "사진이 흐릿하게 잡혔어요"·"밝기 보정을 못 걸었어요"는 **우리 측정이 못 미덥다**는 자백이고,
@@ -378,10 +468,14 @@
       // |v| 크기는 말하지 않는다 — 연속값을 노출하면 곧 "얼마부터 확실한가"의 밴드를 만들게 된다.
       out.wcLine = wc.borderline
         ? "웜과 쿨 사이 경계라 한쪽으로 딱 떨어지지는 않았습니다."
-        : (wc.v > 0 ? "피부색이 노란기 쪽으로 기울어 웜으로 갈렸습니다."
-                    : "피부색이 푸른기 쪽으로 기울어 쿨로 갈렸습니다.");
+        : (wc.v > 0 ? "피부색이 노란기 쪽으로 기울어 웜으로 판별됐습니다."
+                    : "피부색이 푸른기 쪽으로 기울어 쿨로 판별됐습니다.");
     }
-    if (d.mute && MUTE_LINE[d.mute]) out.muteLine = MUTE_LINE[d.mute][out.wcLine ? 0 : 1];
+    /* 외부진단 입력자에게 "드레이핑 확인은 아직"을 말하지 않는다(대표 지시 2026-08-29).
+       본인이 타입을 직접 입력했으면 드레이핑 결과값을 역추론할 수 있어 미확인 고지가
+       사실과 어긋난다. 확정 문구(mute/clear_confirmed)는 그대로 나간다. */
+    if (d.mute === "mute_tentative" && d.pc_declared) { /* 억제 */ }
+    else if (d.mute && MUTE_LINE[d.mute]) out.muteLine = MUTE_LINE[d.mute][out.wcLine ? 0 : 1];
     return out;
   }
 
@@ -411,8 +505,8 @@
     // 두 문장이 되면 그 순간 결핍 목록이 된다. 0.8은 nearestType의 인접 기준을 빌린 것 — 새 상수가 아니다.
     var second = ps[1];
     var alsoName = (second.gap >= far.gap * 0.8 && dirOf(second) === dir) ? (PART_LABEL[second.part] || second.part) : null;
-    out.push("가장 다른 데는 " + (alsoName ? gwa(name) + " " + ieyo(alsoName) : ieyo(name))
-           + ". 추구미 쪽이 " + dir + "이에요.");
+    out.push("가장 다른 데는 " + (alsoName ? gwa(name) + " " + alsoName : name)
+           + "입니다. 추구미 쪽이 " + dir + "입니다.");
     // 이미 닿은 부위 — **반드시 함께 낸다.** 이게 없으면 위 문장만 남아 결핍 목록이 된다.
     var near = ps[ps.length - 1];
     // "여기서부터 ~면 돼요"를 쓰지 않는다 — 같은 장 위쪽 photoGapLine이 이미
@@ -420,13 +514,13 @@
     if (near.part !== far.part && (!alsoName || near.part !== second.part))
       out.push(eun(PART_LABEL[near.part] || near.part)
              // "나머지"를 쓰지 않는다 — 두 줄 아래 4절 맺음말이 "나머지가 이번에 채울 자리예요."다.
-             + " 이미 그 방향에 가까이 가 있습니다. 여기에 맞춰가면 그만큼 좁혀져요.");
+             + " 이미 그 방향에 가까이 가 있습니다. 여기에 맞춰가면 그만큼 좁혀집니다.");
     return out;
   }
 
   root.RX = {
     statNarrative: statNarrative, topRanks: topRanks,
-    selfRatio: selfRatio, bandRows: bandRows,
+    selfRatio: selfRatio, bandRows: bandRows, rawRows: rawRows,
     widthLines: widthLines, medianDir: medianDir,
     whyThisType: whyThisType, whyThisSeason: whyThisSeason, gapByPart: gapByPart,
     version: "explain_v2"

@@ -230,14 +230,29 @@ h1{font-size:var(--fs-title);line-height:1.3;} h2{font-size:var(--fs-h);line-hei
 .tg b{flex:none;min-width:48px;font-size:12.5px;font-weight:800;color:var(--accent);}
 .tg span{flex:1;font-size:13.5px;line-height:1.55;word-break:keep-all;}
 /* 부위 장의 내 얼굴 조각 — photo.html이 기기에 남긴 것. 없으면 태그 자체를 안 만든다.
-   max-height로 세로를 묶는다: 정면 조각(비율·좌우)이 세로로 길어서, 안 묶으면 그 두 장만 넘친다. */
-.face-chip{display:block;margin:0 auto 12px;max-width:100%;max-height:118px;width:auto;
-  border-radius:12px;box-shadow:0 2px 8px rgba(58,43,69,.14);}
-/* 부위 페이지 안의 수치 행 — 라벨/판정/근거 3단 */
-.prow{padding:9px 0;border-top:1px solid rgba(0,0,0,.06);}
-.prow b{font-size:13.5px;}
-.prow .pv{font-size:12.5px;opacity:.85;margin-top:2px;}
+   가로 최대 폭으로 크게 쓴다(대표 2026-08-29). 세로는 max-height로만 묶는다 —
+   정면 전체 조각(비율·좌우)이 세로로 길어서, 안 묶으면 그 장만 화면을 넘친다. */
+.face-chip{display:block;margin:0 auto 12px;width:100%;max-height:46vh;object-fit:contain;
+  border-radius:14px;box-shadow:0 2px 8px rgba(58,43,69,.14);}
+/* 부위 페이지 안의 수치 행 — 측정값이 주인공(대표 2026-08-29 C).
+   항목명(작은 라벨) → 값(큰 숫자) → 한 줄 해설 → 기준 각주 순으로 쌓는다. */
+.prow{padding:10px 0;border-top:1px solid rgba(0,0,0,.06);}
+.prow b{display:block;font-size:11px;font-weight:700;letter-spacing:.07em;opacity:.55;}
+.prow .pn{font-size:23px;font-weight:800;line-height:1.25;letter-spacing:-0.01em;margin-top:1px;}
+.prow .pv{font-size:13px;opacity:.88;margin-top:2px;}
 .prow .ps{font-size:11.5px;opacity:.55;line-height:1.55;margin-top:2px;}
+/* 값이 없는 행(판정 라벨만 있는 행)은 라벨이 값 자리를 대신 맡는다 */
+.prow.novn .pv{font-size:15px;font-weight:700;opacity:.95;}
+/* 측정 방식·기준 팝업 — 장 최하단 버튼으로 연다(대표 2026-08-29 A) */
+.pm-open{display:block;width:100%;margin-top:16px;padding:11px 0;border:1.5px solid var(--line);
+  border-radius:12px;background:rgba(255,255,255,.6);color:var(--sub);font-size:12.5px;font-weight:700;
+  font-family:inherit;cursor:pointer;}
+.pm-modal{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(43,34,51,.45);}
+.pm-sheet{width:100%;max-width:560px;max-height:78vh;overflow-y:auto;background:#FDFBFE;
+  border-radius:18px 18px 0 0;padding:20px 20px 28px;box-sizing:border-box;text-align:left;}
+.pm-sheet .pm-x{display:block;width:100%;margin-top:14px;padding:12px 0;border:0;border-radius:12px;
+  background:var(--deep);color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
 /* ── 부위 장의 「어떻게 쟀나」·「이런 기준으로 봤어요」 (VLAS 양식 · 2026-08-26) ──
    둘 다 본문보다 한 단 낮은 글이다 — 판정 문장이 주인공이고 이건 그 근거와 배경이다.
    그래서 크기를 줄이되 회색으로 죽이지는 않는다. 읽으라고 넣은 글이지 각주가 아니다. */
@@ -251,8 +266,21 @@ h1{font-size:var(--fs-title);line-height:1.3;} h2{font-size:var(--fs-h);line-hei
 .pm-tag{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:99px;
   background:rgba(0,0,0,.06);color:var(--sub);}
 /* 지금 내가 있는 칸만 색을 준다. 나머지는 "이런 경우도 있다"는 참고라 눌러 둔다. */
-.pm-band.on .pm-tag{background:var(--soft);color:var(--deep);}
+/* --soft는 :root에 없던 변수라 배경이 통째로 비어 있었다 — '지금 여기' 칸에 사각형
+   배경이 안 보인 원인(대표 2026-08-29). 실재하는 색으로 고정한다. */
+.pm-band.on .pm-tag{background:var(--deep);color:#fff;}
 .pm-band.on p{opacity:.95;}
+/* 지금 여기 게이지(대표 R 2026-08-29) — 전 구간 위에 내 칸을 마커로 크게 */
+.pm-scale{display:flex;gap:3px;margin:4px 0 6px;}
+.pm-seg{flex:1;text-align:center;min-width:0;}
+.pm-seg i{display:block;height:10px;border-radius:5px;background:rgba(0,0,0,.09);position:relative;}
+.pm-seg.on i{background:linear-gradient(90deg,var(--accent),var(--deep));}
+.pm-seg.on i::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:15px;height:15px;border-radius:50%;background:#fff;border:4.5px solid var(--deep);
+  box-shadow:0 1px 4px rgba(43,34,51,.3);box-sizing:border-box;}
+.pm-seg span{display:block;margin-top:7px;font-size:9.5px;line-height:1.35;opacity:.5;word-break:keep-all;}
+.pm-seg.on span{opacity:1;font-weight:800;color:var(--deep);}
+.pm-now{margin:2px 0 14px;font-size:13px;font-weight:800;color:var(--deep);}
 /* 캐릭터 시트 방사형 (modules/stat-preview.html A안 이식) — 숫자는 기본 꺼짐, 탭하면 켜진다 */
 /* 폭 90% — 차트는 그림이라 조금 작아져도 읽히지만, 이 장은 차트 + 탑3 + 해설 + 각주가
    한 화면에 들어가야 한다. 100%로 두면 375×812에서 26px 넘쳐 각주가 잘렸다(실측). */
@@ -400,12 +428,12 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=d3f3d64"></script>
+<script src="modules/czm-core.js?v=7c6e73f"></script>
 <!-- 스탯 산식 정본(theory/산식_RPG스탯성장_v1_2026-08-24.md). 표시 층 전용 — 좌표·판정은 손대지 않는다. -->
-<script src="modules/czm-stats.js?v=d3f3d64"></script>
+<script src="modules/czm-stats.js?v=7c6e73f"></script>
 <!-- 리포트 해설(theory/리포트해설_확충_v1_2026-08-24.md). czm-core의 판정기를 유저 문장으로 인출한다.
      일반 스크립트인 이유: 캐릭터 시트 해설은 사진이 없어도 나오므로 첫 페인트에 동기로 있어야 한다. -->
-<script src="modules/report-explain.js?v=d3f3d64"></script>
+<script src="modules/report-explain.js?v=7c6e73f"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -473,7 +501,7 @@ const FLOW_WANT = new URLSearchParams(location.search).get("flow")==="want";
 const WANT_PARAM = new URLSearchParams(location.search).get("want");
 let WANT_PICK = null, WANT_SRC = null;   // 문항 점수 없이 물려받은 추구미(타입만)와 그 출처
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.35+d3f3d64"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.35+7c6e73f"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -1655,13 +1683,13 @@ function pickExtra(i){
 // 추구미 점수가 아예 없어서, 점수로 1위를 다시 뽑으면 아무도 안 고른 타입이 나온다.
 function gapSection(wKey, hKey, W, Hv, photo){
   if(wKey===hKey)
-    return `<div class="sec" style="width:100%"><p class="verdict-line">지금 매력과 추구미가 <b>같은 타입</b>으로 나왔어요.</p>
+    return `<div class="sec" style="width:100%"><p class="verdict-line">지금 매력과 추구미가 <b>같은 타입</b>으로 나왔습니다.</p>
       <p style="margin-top:8px">방향을 바꿀 게 아니라 지금 하고 있는 것을 더 선명하게 하면 됩니다.</p></div>`;
   // 가운데 칸은 부위별 격차(R7)가 들어올 자리다. 사진이 없으면 비어 있고, 그러면 예전 2문장 그대로다.
   return `<div class="sec" style="width:100%">
     <p class="verdict-line">지금은 <b>${Hv.name}</b> 쪽, 되고 싶은 모습은 <b>${W.name}</b>.</p>
     <div id="gapSec">${gapPartSection(photo, W.name)}</div>
-    <p style="margin-top:8px">두 매력이 겹치는 부분은 이미 갖고 있습니다. 나머지가 이번에 채울 자리예요.</p></div>`;
+    <p style="margin-top:8px">두 매력이 겹치는 부분은 이미 갖고 있습니다. 나머지가 이번에 채울 자리입니다.</p></div>`;
 }
 
 // ── 통합 리포트: 사진(HAVE-1) × 설문(HAVE-2·WANT) ──────────────────────
@@ -1734,14 +1762,28 @@ function photoBornPage(d, W){
   const best   = palette(d.pc.primary);
   const second = palette2(d.pc.primary);
   const prismBg=(col)=>`background:radial-gradient(115% 75% at 18% 8%,${col}5C,transparent 58%),radial-gradient(115% 75% at 85% 18%,${col}33,transparent 55%),linear-gradient(160deg,#F5F1FA,#ECEFF6)`;
+  /* 사진 측정값(대표 F 2026-08-29) — 드레이핑·판정이 먼저 서고 이 값들은 받침으로 뒤에 선다
+     (표시 순서·화법만 드레이핑 우선 — 판정 산식 불변, 2026-08-25 지시와 같은 방향).
+     five_axis는 저장 payload에 없어 못 낸다 — 있는 값만 말한다. */
+  const c = d.color || {};
+  const cRow = (k,v,unit,cap)=> (typeof v==="number" && isFinite(v))
+    ? `<div class="prow"><b>${k}</b><div class="pn">${v}${unit||""}</div><div class="ps">${cap}</div></div>` : "";
+  const colorRows =
+      cRow("밝기", c.skinL, "", "피부 밝기(L) — 클수록 밝은 톤")
+    + cRow("채도", c.chroma, "", "얼굴에 도는 색의 선명한 정도")
+    + cRow("웜쿨", c.hue, "°", "피부색 각도 — 클수록 노란기(웜) 쪽")
+    + cRow("대비", c.contrast, "", "피부와 머리·눈동자의 밝기 차이");
+  /* 병합 장(대표 J 2026-08-29) — 피부톤 부위 해설은 buildFacePages가 #skinExtra에 채운다.
+     측정 방식(볼 안쪽 두 곳…)은 본문에서 빼고 팝업으로 — METHOD.skin과 같은 내용이었다(대표 A). */
   return `
-     <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
+     <div class="cpage info-page" id="skinPage" style="${prismBg(W.color)}"><div class="cp-inner info glass">
        <div class="cp-kick">내 매력 분석 리포트</div>
-       <div class="cp-title">나의 퍼스널컬러</div>
+       <div class="cp-title">피부톤과 퍼스널컬러</div>
        <div class="sec" style="width:100%">
-         <p class="verdict-line">퍼스널컬러는 <b>${wc?wc+" · ":""}${ieyo(d.pc.primary)}</b>.${d.pc.borderline&&d.pc.secondary?` <span style="opacity:.75;font-weight:400">${d.pc.secondary}도 살짝 걸쳐 있어요.</span>`:""}</p>
-         <p class="how-line">볼 안쪽 두 곳에서 읽은 피부색을 밝기·따뜻함·맑기로 나눠 정한 결과입니다.</p>
-         ${why&&why.muteLine?`<p style="margin-top:8px">${why.muteLine}</p>`:""}
+         <div class="prow"><b>1순위</b><div class="pn">${wc?wc+" · ":""}${d.pc.primary}</div></div>
+         ${d.pc.secondary?`<div class="prow"><b>2순위</b><div class="pn">${d.pc.secondary}</div>${
+            d.pc.borderline?`<div class="ps">경계가 가까워 함께 살펴볼 계열</div>`:""}</div>`:""}
+         ${why&&why.muteLine?`<p style="margin-top:10px">${why.muteLine}</p>`:""}
          ${why&&why.wcLine?`<p style="margin-top:8px">${why.wcLine}</p>`:""}
        </div>
        ${best?`<div class="sec" style="width:100%">
@@ -1752,6 +1794,10 @@ function photoBornPage(d, W){
          <div class="pal-lab">세컨드 컬러</div>
          ${swatchRow(second)}
        </div>`:""}
+       ${colorRows?`<div class="sec" style="width:100%">
+         <p class="small" style="margin:0 0 4px">사진에서 측정한 값</p>${colorRows}
+       </div>`:""}
+       <div id="skinExtra" style="width:100%;text-align:left"></div>
        <!-- ⚠ [마케팅 게이트 필요] — 아래 각주 한 줄(-합니다체 교체분).
             측정 신뢰도 %와 촬영 품질 각주를 걷었다(대표 지시 2026-08-25).
             정확하지 않을 수 있다는 것을 **우리가 수치로 증명해 보여주는** 꼴이라 신뢰가 먼저 깎인다.
@@ -1768,7 +1814,7 @@ function photoGapLine(d, W, Hv){
          여기에 서술어를 붙이면 어느 쪽으로 맺어도 세로로 어미가 겹친다.
          둘째 줄 첫머리의 "타고난 색은"도 뺐다 — 바로 윗줄이 같은 말로 시작한다. -->
     타고난 색은 <b>${d.pc.primary}</b>, 지금 하고 있는 스타일은 <b>${Hv.name}</b>, 되고 싶은 모습은 <b>${W.name}</b>.<br>
-    <span style="opacity:.85">색은 그대로 살리고, <b>바꿀 수 있는 건 지금 스타일</b>입니다. 여기서부터 움직이면 돼요.</span>
+    <span style="opacity:.85">색은 그대로 살리고, <b>바꿀 수 있는 건 지금 스타일</b> — 여기서부터 움직이면 됩니다.</span>
     </p></div>`;
 }
 
@@ -1817,13 +1863,28 @@ function bandKeyOf(id, d, one){
   const r = d && d.ratio, l = d && d.line, c = d && d.color;
   const n = v => typeof v === "number" && isFinite(v);
   try{
-    if(id === "ratio" && r && n(r.upper) && n(r.lower)){
-      const gap = r.upper - r.lower;
-      return Math.abs(gap) < 0.02 ? "even" : gap > 0 ? "upper" : "lower";
+    /* 상·중·하 — 「상 : 중 : 하」 해설 행과 **같은 소스·같은 게이트**(thirdsGolden + 헤어라인).
+       upper−lower만 보던 옛 산식은 해설("중안부가 긴 편")과 기준표("하안부가 긴 편 · 지금 여기")가
+       서로 다른 칸을 가리키게 했다(대표 2026-08-29). 어느 칸이 '짧은 편'으로 나온 경우는
+       기준표에 그 칸이 없으므로 강조하지 않는다 — 다른 칸을 유추해 강조하면 해설과 또 갈린다. */
+    if(id === "ratio" && r && window.CZM && CZM.thirdsGolden){
+      if(d && d.quality && d.quality.hairline_detected === false) return null;
+      const th = CZM.thirdsGolden(r.upper, r.mid, r.lower);
+      if(!th || !th.label) return null;
+      if(th.label.indexOf("고른") >= 0) return "even";
+      const m = th.label.match(/^(상안부|중안부|하안부)/);
+      if(!m || th.label.indexOf("긴 편") < 0) return null;
+      return {상안부:"upper", 중안부:"mid", 하안부:"lower"}[m[1]];
     }
-    if(id === "eye" && l && n(l.eye_angle))
-      return l.eye_angle > 0.4 ? "up" : l.eye_angle < -0.4 ? "down" : "flat";
-    if(id === "mouth" && r && n(r.mouth_w))
+    /* 눈매 — bandRows·부위 해설과 같은 4갈래(자연 영점 0 + 중앙값 2.305 · SD_w 0.4288).
+       옛 3분위(±0.4)를 그대로 두면 6f9e4b3이 고친 모순이 기준표에만 남는다. */
+    if(id === "eye" && l && n(l.eye_angle)){
+      const v = l.eye_angle;
+      return v < 0 ? "down"
+           : Math.abs(v - 2.305) < 0.4288 ? "flat"
+           : v >= 2.305 ? "up" : "slight";
+    }
+    if((id === "mouth" || id === "nosemouth") && r && n(r.mouth_w))
       return r.mouth_w >= 0.42 ? "wide" : "narrow";
     if(id === "skin" && one && one.warmCool != null)
       return one.warmCool > 0.15 ? "warm" : one.warmCool < -0.15 ? "cool" : "neutral";
@@ -1831,6 +1892,28 @@ function bandKeyOf(id, d, one){
       return r.asym_score < 0.5 ? "even" : "some";
   }catch(e){ /* 값 모양이 예상과 다르면 칸을 안 정한다 */ }
   return null;
+}
+/* 표현 장의 근거 행(대표 K 2026-08-29) — PART C 응답과 각 답이 읽히는 방향.
+   방향은 문항 정의의 가중치(w) 상위 타입을 그대로 옮긴 것 — 새 판정을 만들지 않는다. */
+function exprAnswersHTML(){
+  const rows = [];
+  ["C1","C2","C3","C4","C5"].forEach(id=>{
+    const q = Q.find(x=>x.id===id);
+    if(!q || answers[id]===undefined || !q.opts) return;
+    const o = q.opts[answers[id]]; if(!o) return;
+    const label = String(q.txt||"").replace(/<[^>]*>/g,"").replace(/\?$/,"");
+    let dir = "";
+    if(o.w){
+      const es = Object.entries(o.w).sort((a,b)=>b[1]-a[1]);
+      const top = es.filter(([,v])=>v===es[0][1]).slice(0,3)
+        .map(([k])=>TYPES[k] ? TYPES[k].name : k);
+      dir = top.join(" · ") + " 쪽으로 읽히는 답";
+    }
+    rows.push(`<div class="prow novn"><b>${label}</b><div class="pv">“${o.t}”</div>${
+      dir?`<div class="ps">${dir}</div>`:""}</div>`);
+  });
+  if(!rows.length) return "";
+  return `<p class="small" style="margin:12px 0 4px">설문에서 고른 답과 읽히는 방향</p>${rows.join("")}`;
 }
 /* 헤어 연출 조언 — 마케팅 확정 문구(brand/문구확정_헤어연출조언_v1_2026-08-29.md).
    **표본 30건 전에는 켜지 않는다.** 경계가 잠정이라, 실측 분포를 보고 상·하 1/3 분위로
@@ -1882,8 +1965,9 @@ function faceShapeHTML(d){
   const label = faceShapeLabel(d);
   if(!label) return "";
   // 시범 운영 고지는 쓰지 않는다 (대표 지시 2026-08-29)
+  // 화면만 합니다체(대표 P) — 로그의 label 값은 캘리브레이션 연속성 때문에 그대로 둔다.
   return `<div class="card" style="margin-bottom:14px">
-    <h3>얼굴형</h3><p>${label}</p></div>`;
+    <h3>얼굴형</h3><p>${label.replace(/가까워요$/,"가깝습니다").replace(/사이예요$/,"사이입니다")}</p></div>`;
 }
 const HAIR_BANDS = [
   { min: 0.75, key:"hair_open",
@@ -1892,18 +1976,18 @@ const HAIR_BANDS = [
        "헤어라인은 이런저런 특징이있다 는 것만 얼굴형 부분에서 같이짚어주고
         헤어에대한 조언 은 뒷쪽에서 오늘 해볼것 에서 나올수있으면 좋지않을까"). */
     title: "드러난 이마",
-    obs: "이마가 거의 다 보이는 상태로 찍혔습니다. 얼굴 위쪽이 열려 있으면 이목구비가 또렷하게 읽혀요.",
+    obs: "이마가 거의 다 보이는 상태로 찍혔습니다. 얼굴 위쪽이 열려 있으면 이목구비가 또렷하게 읽힙니다.",
     // 미션 — 오늘의 한 걸음에서 쓴다
     mission: "앞머리를 조금만 내려보세요",
     why: "얼굴 길이가 짧아 보이고 인상이 한결 부드러워집니다." },
   { min: 0.40, key:"hair_half",
     title: "반쯤 열린 이마",
-    obs: "가운데는 드러나 있고 옆쪽은 머리가 덮은 상태예요. 어느 쪽으로도 갈 수 있는 자리입니다.",
+    obs: "가운데는 드러나 있고 옆쪽은 머리가 덮은 상태입니다. 어느 쪽으로도 갈 수 있는 자리입니다.",
     mission: "가르마를 넘기는 쪽을 바꿔보세요",
     why: "조금만 옮겨도 인상이 꽤 움직입니다. 두 장 찍어두면 뭐가 맞는지 비교하기 좋아요." },
   { min: 0, key:"hair_covered",
     title: "이마를 덮은 머리",
-    obs: "머리가 이마를 대부분 덮은 상태로 찍혔어요. 이마가 가려지면 시선이 눈·코·입으로 모입니다.",
+    obs: "머리가 이마를 대부분 덮은 상태로 찍혔습니다. 이마가 가려지면 시선이 눈·코·입으로 모입니다.",
     mission: "이마를 조금만 열어보세요",
     why: "얼굴이 위아래로 길어 보이고 윤곽이 또렷해져요. 어느 쪽이 나은지에 정답은 없고, 두 가지를 다 가진 사람이 선택지가 많습니다." },
 ];
@@ -1956,8 +2040,25 @@ function cropImg(secId){
   if(typeof src !== "string" || src.slice(0, 11) !== "data:image/") return "";
   return `<img class="face-chip" src="${src}" alt="">`;
 }
+/* 측정선 오버레이(대표 B 2026-08-29) — photo.html이 세션에 남긴, 측정선·수치가 얹힌 얼굴.
+   전체 얼굴을 쓰는 장(얼굴형·비율·좌우)에서 조각 대신 이걸 쓴다 — "어떤 측정이 있었는지"가
+   그림에 그대로 있다. sessionStorage라 탭을 닫으면 사라진다(얼굴을 기기에 눌러 앉히지 않는다).
+   없으면 부위 조각으로, 그것도 없으면 이미지 자리가 통째로 빠진다. */
+function shotImg(secId){
+  if(secId === "face" || secId === "ratio" || secId === "asym"){
+    try{
+      const s = sessionStorage.getItem("chugu_lecture_shot");
+      if(typeof s === "string" && s.slice(0, 11) === "data:image/")
+        return `<img class="face-chip" src="${s}" alt="">`;
+    }catch(e){}
+  }
+  return cropImg(secId);
+}
+/* 수치 행 — 값(r.n)이 있으면 값이 주인공(큰 타이포), 라벨(r.v)은 그 밑 한 줄 해설.
+   값이 없는 행은 라벨이 그 자리를 맡는다(novn). 대표 지시 2026-08-29 C. */
 function ratioRows(rows){
-  return rows.map(r=>`<div class="prow"><b>${r.k}</b><div class="pv">${r.v}</div>
+  return rows.map(r=>`<div class="prow${r.n?"":" novn"}"><b>${r.k}</b>
+        ${r.n?`<div class="pn">${r.n}</div>`:""}${r.v?`<div class="pv">${r.v}</div>`:""}
         ${r.s?`<div class="ps">${r.s}</div>`:""}</div>`).join("");
 }
 function ratioSection(d){   // 자기 얼굴 안의 비율 — SHAPE 없이도 나온다(계측용으로도 쓴다)
@@ -1993,7 +2094,7 @@ function widthDirs(d, one, raw){
     ["face_HW","interocular"].forEach(k=>{
       const g = CZM.goldenOf(k, d.ratio[k]);
       if(!g) return;
-      dirs[k] = /가까워요$/.test(g.label) ? null : (g.offPct > 0 ? "hi" : "lo");
+      dirs[k] = /가까운 편$/.test(g.label) ? null : (g.offPct > 0 ? "hi" : "lo");
     });
   return dirs;
 }
@@ -2039,13 +2140,16 @@ function faceSecHTML(d, hKey, sec, cache){
       K.band  = P.SHAPE ? RX.bandRows(d.ratio, d.line, P.SHAPE)
                             .filter(r => pitchOK || r.key !== "face_HW") : [];
       K.gold  = RX.selfRatio(d.ratio, d.quality);
+      // 신설 측정값(대표 D 2026-08-29) — 숫자+중립 캡션만. 옛 저장분에는 없어 조용히 빈다.
+      K.raw   = RX.rawRows ? RX.rawRows(d) : [];
       /* 이상비 행이 맡는 필드는 부위 문장에서 뺀다 (대표 지시 2026-08-27).
          WIDTH에서 셋을 해제했더니 부위 문장(12명 표본 기준)이 되살아나
          이상비 행과 정반대 말을 하게 된다 — 오늘 아침에 잡은 그 사고와 같은 꼴이다.
          한 필드는 리포트에서 한 번만, 그리고 **기준이 있는 쪽이 맡는다.** */
       K.wl = plan.wl;
       K.skip = {...plan.skip, face_HW:1, interocular:1, mouth_w:1, nose_w:1, lip_ul_ratio:1, lower_balance:1};
-      K.rows = P.PR.buildPartRows(one, { n: P.SNAP.dist.n, expressionType: surveyName, skip: K.skip });
+      // contrib — 부위 장은 기여 화법("~ 쪽으로 기여했어요")으로 말한다(대표 G 2026-08-29)
+      K.rows = P.PR.buildPartRows(one, { n: P.SNAP.dist.n, expressionType: surveyName, skip: K.skip, contrib: true });
       K.missing = [];
     }
     const wl = K.wl[sec.id] || [], skip = K.skip;
@@ -2058,6 +2162,14 @@ function faceSecHTML(d, hKey, sec, cache){
       // 그건 고지가 아니라 빈 장이다. 마지막 장에 한 줄로 붙인다.
       else if(K.missing.indexOf(p) < 0) K.missing.push(p);
     });
+    /* 표현 장 — 판정 한 줄만 있던 장에 근거를 세운다(대표 K 2026-08-29: "내가 어떤 정보를
+       입력했고 그 선택지가 왜 이런 모습으로 보이는지"). 유저가 고른 답과, 그 답이 읽히는
+       방향을 문항 정의의 가중치(w) 그대로 옮긴다 — 새 판정을 만들지 않는다.
+       측정 항목이 적다는 지적 자체는 이론 사안이라 여기서 늘리지 않는다(보고로 회부). */
+    if(sec.id === "expr"){
+      const ex = exprAnswersHTML();
+      if(ex){ head += ex; missAll = false; }
+    }
     /* 부위 문장이 실제로 쓴 필드 — 황금비 행은 그것도 비켜 간다(위 ①).
        ⚠ used를 skip으로 시작하면 안 된다 (2026-08-27). skip은 "부위 문장이 말하지 마라"인데,
          used는 "이상비 행이 비켜 가라"라서 **뜻이 반대다.**
@@ -2075,14 +2187,15 @@ function faceSecHTML(d, hKey, sec, cache){
     });
     const GKEY = { mouth_nose:"mouth_w" };   // 황금비 항목 → 그 값을 만든 측정 필드
     let rows = K.band.filter(r=>r.p===sec.f)
-      .concat(K.gold.filter(r=>r.p===sec.f && !used[GKEY[r.key] || r.key]));
+      .concat(K.gold.filter(r=>r.p===sec.f && !used[GKEY[r.key] || r.key]))
+      .concat((K.raw||[]).filter(r=>r.p===sec.f));
     // 행 이름이 장 제목과 같으면(좌우 균형) 표로 세울 이유가 없다 — 제목 아래 같은 말이 또 선다.
     // 그 행만 문장으로 풀어 올린다.
     rows = rows.filter(r=>{
       if(r.k !== sec.t) return true;
       // ~이에요 → ~입니다. 바로 아래 줄이 "가장 차이가 큰 곳은 눈꼬리예요."라 세로로 겹쳤다.
       head += `<p class="verdict-line">${r.v}입니다.</p>`
-            + (r.s ? `<p style="margin-top:8px">${ieyo(r.s)}. 표정 습관이 만드는 몫이 있어, 여기가 바꿔볼 수 있는 자리입니다.</p>` : "");
+            + (r.s ? `<p style="margin-top:8px">${r.s} — 표정 습관이 만드는 몫이 있어, 여기가 바꿔볼 수 있는 자리입니다.</p>` : "");
       missAll = false;
       return false;
     });
@@ -2090,18 +2203,19 @@ function faceSecHTML(d, hKey, sec, cache){
     //   조각 하나 때문에 빈 장이 되살아나면 안 된다.
     if(missAll && !rows.length && !wl.length) return "";
     if(!head && !rows.length && !wl.length) return "";
-    /* VLAS 양식 (2026-08-26) — 순서가 뜻을 만든다:
-         어떻게 쟀나 → 조각 사진 → 판정 문장 → 수치 → 이런 기준으로 봤어요
-       재는 방법을 먼저 말해야 그 아래 수치가 근거로 읽힌다. 판단 기준을 마지막에 두는 이유는
-       내 값을 본 다음에 "다른 경우는 어떤데"가 궁금해지기 때문이다.
-       PM이 없으면(모듈 로드 실패·옛 캐시) 두 블록만 빠지고 나머지는 종전대로 선다. */
+    /* 장 구조 개편 (대표 A·C 2026-08-29):
+         사진(가로 최대) → 측정값 행(큰 타이포) → 종합 해설·팁 → [측정 방식·기준] 팝업 버튼
+       측정 방식·판단 기준 블록은 본문에서 빼고 팝업으로 — 내용은 part-method 그대로 재사용한다.
+       버튼은 buildFacePages가 장 맨 끝(헤어 조언·결측 고지 뒤)에 붙인다.
+       PM이 없으면(모듈 로드 실패·옛 캐시) 팝업 버튼만 빠지고 나머지는 그대로 선다. */
     const PM = window.__PART && window.__PART.PM;
     const now = bandKeyOf(sec.id, d, one);
-    return (PM ? PM.methodBlock(sec.id) : "")
-      + cropImg(sec.id) + head
-      + (wl.length ? wl.map(w=>`<p style="margin-top:8px">${w.t}</p>`).join("") : "")
-      + (rows.length ? `<div style="margin-top:12px">${ratioRows(rows)}</div>` : "")
-      + (PM ? PM.bandBlock(sec.id, now) : "");
+    const pop = PM ? (PM.methodBlock(sec.id) + PM.bandBlock(sec.id, now)) : "";
+    if(pop) PMPOP._c[sec.id] = pop;
+    return shotImg(sec.id)
+      + (rows.length ? `<div style="margin-bottom:12px">${ratioRows(rows)}</div>` : "")
+      + head
+      + (wl.length ? wl.map(w=>`<p style="margin-top:8px">${w.t}</p>`).join("") : "");
   }catch(e){ console.warn("부위 장 렌더 실패", sec.id, e); return ""; }
 }
 /* ── 「타인이 보는 나의 매력」 (2026-08-26) ────────────────────────────────
@@ -2143,8 +2257,8 @@ async function buildFriendPage(bg, hKey){
   const comments = got.filter(r => r.comment).slice(0, 3);
 
   const line = N === 1
-    ? `한 분이 봐주셨어요.`
-    : `${N}분이 봐주셨어요.`;
+    ? `한 분이 봐주셨습니다.`
+    : `${N}분이 봐주셨습니다.`;
   const agree = myName && ranked[0][0] === myName;
 
   anchor.insertAdjacentHTML("afterend", `
@@ -2156,15 +2270,15 @@ async function buildFriendPage(bg, hKey){
         <div style="margin-top:12px">${ranked.map(([t, n]) =>
           `<div class="prow"><b>${esc(t)}</b><div class="pv">${n}명</div></div>`).join("")}</div>
         ${myName ? `<p style="margin-top:12px">${agree
-          ? `사진과 설문이 낸 <b>${esc(myName)}</b>과 같은 쪽이에요.`
-          : `사진과 설문은 <b>${esc(myName)}</b> 쪽이었어요. 보는 사람에 따라 달리 읽히는 자리가 있다는 뜻입니다.`}</p>` : ``}
+          ? `사진과 설문이 낸 <b>${esc(myName)}</b>과 같은 쪽입니다.`
+          : `사진과 설문은 <b>${esc(myName)}</b> 쪽이었습니다. 보는 사람에 따라 달리 읽히는 자리가 있다는 뜻입니다.`}</p>` : ``}
         ${whyTop.length ? `<p style="margin-top:14px">그렇게 본 이유로 ${
           whyTop.map(w => `<b>${esc(w)}</b>`).join(" · ")}${
           /* 마지막 낱말의 받침으로 조사를 고른다 — 「분위기을」이 나갔었다.
              이 파일에 jong()이 없어 여기서 계산한다(한 자리라 함수를 새로 세우지 않는다). */
           (()=>{ const w = whyTop[whyTop.length-1], c = w.charCodeAt(w.length-1);
                  return (c>=0xAC00 && c<=0xD7A3 && (c-0xAC00)%28) ? "을" : "를"; })()
-          } 꼽으셨어요.</p>` : ``}
+          } 꼽으셨습니다.</p>` : ``}
         ${changed.length ? `<p style="margin-top:14px">예전과 견준 답 — ${
           esc(changed.join(" · "))}</p>` : ``}
         ${comments.length ? `<div style="margin-top:16px">${comments.map(c =>
@@ -2175,19 +2289,39 @@ async function buildFriendPage(bg, hKey){
   anchor.dataset.done = "1";
 }
 
-/** 부위 장들을 #faceAnchor 뒤에 한 번에 끼워 넣는다. 낼 게 없는 장은 만들지 않는다. */
+/* 측정 방식·기준 팝업 (대표 A 2026-08-29) — 장마다 최하단 버튼, 탭하면 바텀시트.
+   내용은 faceSecHTML이 렌더 시점에 채워 둔다(지금 여기 강조가 그 시점 값이라서다). */
+function PMPOP(id){
+  const html = PMPOP._c[id]; if(!html) return;
+  let m = document.getElementById("pmModal");
+  if(!m){
+    m = document.createElement("div");
+    m.id = "pmModal"; m.className = "pm-modal";
+    m.onclick = e => { if(e.target === m) m.style.display = "none"; };
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `<div class="pm-sheet">${html}
+    <button class="pm-x" onclick="document.getElementById('pmModal').style.display='none'">닫기</button></div>`;
+  m.style.display = "flex";
+  track("part_method_open", {sec:id});
+}
+PMPOP._c = {};
+
+/** 부위 장들을 #faceAnchor 뒤에 한 번에 끼워 넣는다. 낼 게 없는 장은 만들지 않는다.
+ *  피부톤(색·피부) 해설은 병합 장(#skinPage)의 #skinExtra에 채우고(대표 J),
+ *  그 앞 부위들은 병합 장 앞에, 좌우·표현은 병합 장 뒤에 선다. */
 function buildFacePages(d, hKey, bg){
   const anchor = document.getElementById("faceAnchor");
   if(!anchor || anchor.dataset.done) return;
+  const SKIN_I = FACE_SECS.findIndex(s=>s.id==="skin");
   const cache = {}, pages = [];
-  FACE_SECS.forEach(s=>{
+  FACE_SECS.forEach((s,i)=>{
     const body = faceSecHTML(d, hKey, s, cache);
-    if(body) pages.push({ t: s.t, body: body });
-    // 헤어 조언은 얼굴형 장 아래 붙인다 — 얼굴 길이·윤곽 이야기 바로 다음이라야
-    // "앞머리를 내리면 얼굴이 짧아 보인다"가 앞 문장과 이어진다.
+    if(body) pages.push({ t: s.t, id: s.id, body: body, grp: i < SKIN_I ? 0 : i === SKIN_I ? 1 : 2 });
+    // 얼굴형 잠정 판정·헤어 관찰은 장 아래쪽에 — 측정값이 먼저, 종합 해설이 뒤(대표 C).
     if(s.id === "face" && body){
       const fs = faceShapeHTML(d);
-      if(fs) pages[pages.length-1].body = fs + pages[pages.length-1].body;
+      if(fs) pages[pages.length-1].body += fs;
       const h = hairAdviceHTML(d); if(h) pages[pages.length-1].body += h;
     }
   });
@@ -2195,7 +2329,7 @@ function buildFacePages(d, hKey, bg){
   // 3D 스캔이 있으면 코 장에서만 말한다 — 스캔이 실제로 더하는 값이 콧대 돌출 하나다.
   const nose = pages.find(p=>p.t==="코와 입");
   if(nose && loadScan())
-    nose.body += `<p class="small" style="margin-top:10px">3D 스캔이 더해진 측정입니다 — 사진으로는 못 하는 콧대 입체감까지 봤어요.</p>`;
+    nose.body += `<p class="small" style="margin-top:10px">3D 스캔이 더해진 측정입니다 — 사진으로는 못 하는 콧대 입체감까지 본 결과입니다.</p>`;
   // 결측 고지 — **빼지 않는다.** 안 한 판정을 한 것처럼 보이게 되기 때문이다.
   // 다만 장을 하나 통째로 "못 쟀어요"로 쓰지는 않는다. 마지막 부위 장에 한 줄로 모은다.
   if(cache.missing && cache.missing.length)
@@ -2204,12 +2338,26 @@ function buildFacePages(d, hKey, bg){
         } 이번 사진에서 잘 안 잡혀 판정하지 않았습니다.</p>`;
       // ~않았어요 → ~않았습니다 (게이트 2026-08-25). 바로 위 줄이 부위 판정 문장
       // "~ 매력에 가까워요."라 세로로 "~어요 / ~어요"가 붙었다. 고지 자체는 그대로 둔다.
-  anchor.insertAdjacentHTML("afterend", pages.map(p=>
+  // 팝업 버튼은 장의 진짜 맨 끝 — 헤어 조언·결측 고지까지 붙은 뒤에 단다(대표 A "최하단").
+  pages.forEach(p=>{
+    if(PMPOP._c[p.id]) p.body += `<button class="pm-open" onclick="PMPOP('${p.id}')">측정 방식과 기준 보기</button>`;
+  });
+  const pageHTML = ps => ps.map(p=>
     `<div class="cpage info-page" style="${bg}"><div class="cp-inner info glass">
        <div class="cp-kick">${FACE_KICK}</div>
        <div class="cp-title">${p.t}</div>
        <div style="width:100%;text-align:left">${p.body}</div>
-     </div></div>`).join(""));
+     </div></div>`).join("");
+  // 피부톤 해설 → 병합 장에 주입. 병합 장이 없으면(방어) 자체 장으로 남긴다.
+  const skinHost = document.getElementById("skinExtra");
+  const skin = pages.find(p=>p.grp===1);
+  if(skin && skinHost){ skinHost.innerHTML = skin.body; }
+  const skinPage = document.getElementById("skinPage");
+  const post = pages.filter(p=>p.grp===2 || (p.grp===1 && !skinHost));
+  const pre  = pages.filter(p=>p.grp===0);
+  // 뒤 그룹을 먼저 끼운다 — 같은 앵커에 afterend로 두 번 넣으면 나중 것이 앞에 서기 때문이다.
+  if(post.length) (skinPage || anchor).insertAdjacentHTML("afterend", pageHTML(post));
+  if(pre.length) anchor.insertAdjacentHTML("afterend", pageHTML(pre));
   anchor.dataset.done = "1";
 }
 /** 「나를 읽는 법」 2·3장 채우기. 인라인 대체 문장이 이미 서 있으므로 여기서는 덮어쓰기만 한다. */
@@ -2230,32 +2378,63 @@ function fillReadMe(d, hKey){
     const narr = overall ? P.PR.summaryNarrative(rows, overall, !!one.energeticSignal, conv) : "";
     const judged = rows.filter(r=>r.line && r.type);
     if(narr || judged.length)
-      // 앞 장(「한 문장으로 말하면」)은 설문이 정한 타입을, 이 장은 사진이 잰 부위들을 말한다.
-      // 둘이 다를 수 있으므로 무엇을 모은 결과인지 먼저 밝힌다 — 안 밝히면 판정이 둘로 보인다.
-      box.innerHTML = `<p class="small" style="margin:0 0 10px">사진에서 부위마다 측정한 값만 모은 결과예요.</p>`
+      // 앞 장(「한 문장으로 말하면」)은 설문이 정한 타입을, 이 장은 사진이 측정한 부위들을 말한다.
+      // 둘이 다를 수 있으므로 관계를 문장으로 밝힌다 — 한 줄 각주로는 판정이 둘로 보였다
+      // (대표 2026-08-29 "종합점수 반영이 전혀 제대로 안 되고 있다는 뜻").
+      box.innerHTML = `<p class="small" style="margin:0 0 10px">사진이 부위마다 측정한 값만 모은 장입니다.${
+          (overall && surveyName && overall !== surveyName)
+            ? ` 설문으로 본 스타일(${surveyName})과는 측정 대상이 달라, 방향이 다르게 나올 수 있습니다.` : ``}</p>`
         + (narr ? `<p class="verdict-line">${narr}</p>` : "")
+        // "쪽 기여" — 부위 장의 기여 화법과 잇는다(대표 G). 1페이지 순위와 이어져 읽히는 자리다.
         + (judged.length ? `<div style="margin-top:12px">${judged.map(r=>
-            `<div class="prow"><b>${r.part}</b><div class="pv">${r.type}</div></div>`).join("")}</div>` : "");
+            `<div class="prow novn"><b>${r.part}</b><div class="pv">${r.type} 쪽 기여</div></div>`).join("")}</div>` : "");
+  }
+  /* 「여기를 만지면 달라집니다」 — 일반론 대신 **이 사람의 측정값**으로 채운다(대표 L).
+     그대로 가져갈 것 = 골격 측정값(고정) / 손대면 달라지는 것 = 오늘 바꿀 수 있는 측정 자리.
+     값이 없으면 그 줄만 빠지고, 전부 없으면 대체 문장이 그대로 남는다. */
+  if(d && d.ratio){
+    const num = v => typeof v === "number" && isFinite(v);
+    const keepP = document.getElementById("keepP");
+    if(keepP){
+      const ks = [];
+      if(d.line && num(d.line.chin_angle_deg)) ks.push(`턱끝 ${d.line.chin_angle_deg}°`);
+      if(num(d.ratio.face_HW)) ks.push(`가로 : 세로 1 : ${d.ratio.face_HW}`);
+      if(num(d.ratio.gonial_ang)) ks.push(`하악 꺾임 ${d.ratio.gonial_ang}°`);
+      if(ks.length) keepP.innerHTML =
+        `${ks.join(" · ")} — 이 골격 값들은 바꾸는 대상이 아니라,\n나머지를 맞춰 나가는 기준선입니다.`;
+    }
+    const chgP = document.getElementById("changeP");
+    if(chgP){
+      const cs = [], q = d.quality || {};
+      if(num(q.brow_peak))
+        cs.push(`눈썹 — 산 위치 ${q.brow_peak}. 그리는 위치와 두께로 오늘 바꿀 수 있는 자리입니다.`);
+      if(d.color && num(d.color.contrast))
+        cs.push(`대비 ${d.color.contrast} — 머리색과 립 컬러가 이 값을 움직입니다.`);
+      if(num(d.forehead_open))
+        cs.push(`이마 노출 ${Math.round(d.forehead_open*100)}% — 앞머리가 정하는 값이라 연출로 달라집니다.`);
+      if(cs.length) chgP.innerHTML = cs.join("\n");
+    }
   }
   const chg = document.getElementById("changeSec");
   if(chg && d && d.ratio && window.RX && P && P.SHAPE){
     const band = RX.bandRows(d.ratio, d.line, P.SHAPE).find(r=>r.p==="좌우");
-    if(band && band.s && band.s.indexOf("가장 차이가 큰 곳은") === 0)
+    if(band && band.s && band.s.indexOf("얼굴 중앙선 대비 평균 어긋남 · 가장 차이가 큰 곳은") === 0)
       chg.insertAdjacentHTML("beforeend",
-        `<p class="pl" style="margin-top:8px">${ieyo(band.s.replace("가장 차이가 큰 곳은 ","좌우 차이가 가장 큰 곳은 "))}.\n같은 자리를 좌우 맞춰 정리하면 인상이 먼저 달라집니다.</p>`);
+        `<p class="pl" style="margin-top:8px">좌우 차이가 가장 큰 곳은 ${band.s.split("가장 차이가 큰 곳은 ")[1]}입니다.\n같은 자리를 좌우 맞춰 정리하면 인상이 먼저 달라집니다.</p>`);
   }
 }
 
 // ── 「지금의 나」 근거 ───────────────────────────────────────
 // 지금까지 이 장은 같은 타입이면 8명이 완전히 같은 두 문장을 받았다(타입명 + 고정 desc).
 // 대표가 지적한 "불친절"의 진앙이다. 고정 desc 뒤에 **내 측정에서 나온 근거**를 붙인다.
-function whySection(d){
+function whySection(d, hvName){
   const P = window.__PART;
   if(!P || !window.RX) return "";
   const one = photoScore(d);
   if(!one) return "";
   // 부위 장의 폭 서술이 이미 가져간 필드는 여기서 다시 말하지 않는다 — 기준이 달라 정반대로 읽힌다.
-  return RX.whyThisType(one, P.PR.OBS, widthPlan(d, one).skip)
+  // hvName = 이 장의 판정(설문 타입). 사진 종합이 다르면 whyThisType이 출처를 먼저 밝힌다(2026-08-29).
+  return RX.whyThisType(one, P.PR.OBS, widthPlan(d, one).skip, hvName || null)
            .map(t=>`<p style="margin-top:8px">${t}</p>`).join("");
 }
 
@@ -2343,11 +2522,11 @@ function statSheetPage(bg, hKey, first){   // bg = 다른 절과 같은 prismBg 
   const peerShown = peers.slice(0, 2), peerMore = peers.length - peerShown.length;
   const topLine = peers.length
     ? `<p class="verdict-line">${bold(topK)}${jong(nmOf(topK))?"과":"와"} ${peerShown.map(bold).join(", ")}${
-         peerMore > 0 ? ` 외 ${peerMore}개` : ""}가 같은 높이로 나왔어요.</p>
+         peerMore > 0 ? ` 외 ${peerMore}개` : ""}가 같은 높이로 나왔습니다.</p>
        <p style="margin-top:8px">${up
          ? `미션으로 쌓은 만큼 올라와 나란해졌습니다. 그중 결과 타입은 ${ieyo(nmOf(topK))}.`
          : `그중 결과 타입은 ${ieyo(nmOf(topK))}.`}</p>`
-    : `<p class="verdict-line">가장 돋보이는 나의 매력은 ${bold(topK)}${jong(nmOf(topK))?"이에요":"예요"}.</p>`;
+    : `<p class="verdict-line">가장 돋보이는 나의 매력은 ${bold(topK)}입니다.</p>`;
   // 배합 해설 — 이론 §3-5 분포 유형 4종. 상쇄형은 종합 좌표를 봐야 판정되므로 여기서 넘긴다.
   // 사진이 없어도 나오는 유일한 확충분이라(설문만 한 유저의 재고가 여기뿐이다) 동기 스크립트로 둔다.
   const NM = Object.fromEntries(TKEYS.map(k=>[k, TYPES[k].name]));
@@ -2384,9 +2563,7 @@ function statSheetPage(bg, hKey, first){   // bg = 다른 절과 같은 prismBg 
       ${topLine}
       ${rankList}
       ${narr.map(t=>`<p class="pl" style="margin-top:8px">${t}</p>`).join("")}
-      <p class="note" style="margin-top:10px;opacity:.72">${up
-        ? `점선이 진단 직후 모양이에요. 미션으로 <b>${up}</b>만큼 밖으로 나갔습니다.`
-        : `총량은 누구나 같습니다. 어디에 몰렸는지가 다를 뿐이에요.`}</p>
+      ${up ? `<p class="note" style="margin-top:10px;opacity:.72">점선이 진단 직후의 모양 — 미션으로 <b>${up}</b>만큼 밖으로 나갔습니다.</p>` : ``}
     </div>
     ${first?`<p class="swipe-hint" id="swHint">옆으로 넘기면 이어집니다<i>›</i></p>`:``}
   </div></div>`;
@@ -2422,14 +2599,14 @@ function heroPage(W,Hv,wKey,hKey){
   const ah=(a)=>({x:W0.x-14*Math.cos(ang+a), y:W0.y-14*Math.sin(ang+a)});
   const a1=ah(.42), a2v=ah(-.42);
   const same=wKey===hKey;
-  let note='방향은 이미 맞습니다. 남은 일은 바꾸는 게 아니라 더 또렷하게 드러내는 것이에요.';
+  let note='방향은 이미 맞습니다. 남은 일은 바꾸는 게 아니라 더 또렷하게 드러내는 것입니다.';
   if(!same && near){
-    note=`지도 위에서 두 점이 거의 붙어 있습니다. 이미 <b>${W.name}</b> 쪽에 서 있다는 뜻이에요. 방향을 바꾸기보다 지금 것을 더 또렷하게 하면 됩니다.`;
+    note=`지도 위에서 두 점이 거의 붙어 있습니다. 이미 <b>${W.name}</b> 쪽에 서 있다는 뜻입니다. 방향을 바꾸기보다 지금 것을 더 또렷하게 다듬으면 됩니다.`;
   } else if(!same && w && h){
     // 축 이름("시원함 쪽으로 한 뼘")으로 쓰던 자리다. 좌표가 8타입 가중평균이라
     // 축 부호가 맞아도 유저 직관과 어긋난다 — 카리스마를 화려함보다 '따뜻하다'고 읽는 사람은 없다
     // (대표 실기기 지적 2026-08-24). 이동은 타입 이름으로 말하고, 방향은 지도 그림이 보여준다.
-    note=`<b>${Hv.name}에서 ${W.name} 쪽으로.</b> 지금 매력을 지우는 게 아니라, ${W.name} 쪽 색을 하나씩 더하는 일이에요.`;
+    note=`<b>${Hv.name}에서 ${W.name} 쪽으로.</b> 지금 매력을 지우는 게 아니라, ${W.name} 쪽 색을 하나씩 더하는 일입니다.`;
   }
   const chip=(P0,key,col,sz,bw,z)=>`
     <div class="map-chip" style="left:${(P0.x/300*100).toFixed(1)}%;top:${(P0.y/210*100).toFixed(1)}%;width:${sz}px;height:${sz}px;z-index:${z}">
@@ -2619,7 +2796,7 @@ function renderResult(){
   const prismBg=(col)=>`background:radial-gradient(115% 75% at 18% 8%,${col}5C,transparent 58%),radial-gradient(115% 75% at 85% 18%,${col}33,transparent 55%),linear-gradient(160deg,#F5F1FA,#ECEFF6)`;  // 추구미 타입 컬러 계열 프리즘
   // 강의 코호트 한정 안내문단 (마케팅 확정 A-2, 2026-07-27) — 진단 갭 이해 개선
   const lectureNote = isLectureCohort()
-    ? `<div class="sec lecture-note" style="width:100%"><p><b>오늘 진단 두 개, 다르게 나왔나요?</b><br>선생님이 본 건 타고난 매력이라 잘 안 바뀌고, 여기 나온 건 지금 하고 있는 스타일이라 내일도 바꿀 수 있어요.<br>둘이 다르다면, 타고난 매력을 지금 옷장이 아직 안 살려주고 있다는 <b>신호입니다.</b> 채워갈 곳이 보인다는 <b>뜻이기도 해요.</b></p></div>`
+    ? `<div class="sec lecture-note" style="width:100%"><p><b>오늘 진단 두 개, 다르게 나왔나요?</b><br>선생님이 본 건 타고난 매력이라 잘 안 바뀌고, 여기 나온 건 지금 하고 있는 스타일이라 내일도 바꿀 수 있습니다.<br>둘이 다르다면, 타고난 매력을 지금 옷장이 아직 안 살려주고 있다는 <b>신호입니다.</b> 채워갈 곳이 보인다는 <b>뜻이기도 합니다.</b></p></div>`
     : "";
   app.innerHTML=`
    <div class="result-stage">
@@ -2632,12 +2809,15 @@ function renderResult(){
           "이걸 어떻게 알았지"가 떠오르는 순간**이 여기다.
           PM은 비동기 모듈이라 첫 페인트에 없다 — 자리만 잡아 두고 도착하면 채운다. -->
      <div id="pipeAnchor" style="display:none"></div>
-     ${photoBornPage(PHOTO, W)}
      <!-- 부위별 해설 장들은 여기 뒤에 붙는다. 첫 페인트에는 없다 —
           엔진(asset-score·part-report)과 관측 분포가 비동기로 오기 때문이다.
           빈 자리표를 .cpage로 두지 않는 이유: 숨긴 장도 도트에 세어지고, 결측이면 끝까지 못 채운다.
           display:none인 마커는 flex 흐름에서 빠지고 .cpage 선택자에도 안 걸린다. -->
      <div id="faceAnchor" style="display:none"></div>
+     <!-- 피부톤·퍼스널컬러 병합 장 (대표 J 2026-08-29) — 위치는 부위 장 시퀀스의 피부톤 자리.
+          동기 렌더라 엔진이 늦어도 퍼스널컬러는 먼저 선다. 얼굴형~코와 입 장은 faceAnchor
+          뒤(이 장 앞)에, 좌우·표현 장은 이 장 뒤에 비동기로 끼워진다. -->
+     ${photoBornPage(PHOTO, W)}
      <!-- 「나를 읽는 법」 3장 — 대표 지시 2026-08-25 「나에 대한 3~5장 정도의 디테일한 설명」의 [초안].
           [게이트 통과 2026-08-25] 제목 3개를 바꿨다.
             "무엇이 그렇게 보이게 하나" · "어디를 만지면 달라지나" — 둘 다 «~나»로 끝나
@@ -2664,7 +2844,7 @@ function renderResult(){
          <p class="verdict-line">지금 하고 있는 스타일은 <b style="color:${Hv.color==='#3E3A45'?'#2B2233':Hv.color}">${Hv.name}</b>에 가깝습니다.</p>
          <p style="margin-top:8px">${g(Hv.desc)}</p>
          <!-- 여기부터가 내 측정에서 나온 근거다. 없으면 예전처럼 위 두 문장만 남는다. -->
-         <div id="whySec">${whySection(PHOTO)}</div>
+         <div id="whySec">${whySection(PHOTO, Hv.name)}</div>
        </div>
        ${lectureNote}
      </div></div>
@@ -2674,22 +2854,26 @@ function renderResult(){
        <!-- 인라인 대체 문장이 먼저 선다. 엔진이 오면 fillReadMe가 덮어쓰고, 안 오면 이게 남는다.
             빈 칸을 두면 엔진 실패 때 제목만 뜬 카드가 된다. -->
        <div class="sec" id="convSec" style="width:100%"><p class="pl">${PHOTO
-         ? `부위마다 측정한 값을 모아 보면 방향이 보여요.\n지금 불러오는 중입니다.`
-         : `지금은 설문 답만으로 읽은 결과예요.\n사진을 한 장 더하면 눈매·윤곽·피부색이 각각 무엇을 만들고 있는지까지 나옵니다.`}</p></div>
+         ? `부위마다 측정한 값을 모아 보면 방향이 보입니다.\n지금 불러오는 중입니다.`
+         : `지금은 설문 답만으로 읽은 결과입니다.\n사진을 한 장 더하면 눈매·윤곽·피부색이 각각 무엇을 만들고 있는지까지 나옵니다.`}</p></div>
        ${gapNote}
      </div></div>
+     <!-- 「여기를 만지면 달라집니다」 — 측정값 기반으로만 세운다(대표 L 2026-08-29
+          "뻔한 소리가 적혀 있는데 왜 적은 건지 모르겠음"). 사진이 없으면 장 자체를 만들지
+          않는다 — 일반론만 남는 장이기 때문이다. 구체 내용은 fillReadMe가 측정값으로 채운다. -->
+     ${PHOTO ? `
      <div class="cpage info-page" id="readMe3" style="${prismBg(W.color)}"><div class="cp-inner info glass">
        <div class="cp-kick">내 매력 분석 리포트</div>
        <div class="cp-title">여기를 만지면 달라집니다</div>
        <div class="sec" style="width:100%">
          <h3>그대로 가져갈 것</h3>
-         <p class="pl">골격과 비율은 이 얼굴의 기준선이에요.\n바꾸는 대상이 아니라, 나머지를 맞춰 나가는 자리입니다.</p>
+         <p class="pl" id="keepP">골격과 비율은 이 얼굴의 기준선입니다.\n바꾸는 대상이 아니라, 나머지를 맞춰 나가는 자리입니다.</p>
        </div>
        <div class="sec" id="changeSec" style="width:100%">
          <h3>손대면 달라지는 것</h3>
-         <p class="pl">눈썹 모양, 머리색, 옷의 색 — 오늘 바꾸면 내일 다르게 읽히는 것들이에요.\n이 셋이 인상에서 차지하는 몫이 생각보다 큽니다.</p>
+         <p class="pl" id="changeP">눈썹 모양, 머리색, 옷의 색 — 오늘 바꾸면 내일 다르게 읽히는 것들입니다.</p>
        </div>
-     </div></div>
+     </div></div>` : ``}
      <!-- 4절 「추구미와의 거리」 — 정본 §3-4. 결핍 화법 금지.
           화면 제목은 대표 결정(2026-08-09)으로 "추구미에 가까워지는 길".
           추구미 막대 4개가 여기로 왔다 — WANT 순위인데 '지금의 나'와 한 장에 있어서
@@ -2701,10 +2885,10 @@ function renderResult(){
        <div class="cp-title">추구미에 가까워지는 길</div>
        ${wantScored() ? `<div class="sec" style="width:100%">
          <h3>내 추구미 순위</h3>
-         <p class="small" style="margin-bottom:10px">되고 싶은 모습으로 고른 답이 어느 타입에 모였는지 보여줍니다. 지금의 나가 아니라 <b>추구미</b> 쪽 숫자예요.</p>
+         <p class="small" style="margin-bottom:10px">되고 싶은 모습으로 고른 답이 어느 타입에 모였는지 보여줍니다. 지금의 나가 아니라 <b>추구미</b> 쪽 숫자입니다.</p>
          ${bars}
        </div>` : `<div class="sec" style="width:100%">
-         <p>직접 고른 추구미가 <b>${W.name}</b>${jong(W.name)?"이에요":"예요"}. 언제든 바꿀 수 있고, 문항으로 찾아볼 수도 있습니다.</p>
+         <p>직접 고른 추구미는 <b>${W.name}</b>입니다. 언제든 바꿀 수 있고, 문항으로 찾아볼 수도 있습니다.</p>
        </div>`}
        ${photoGapLine(PHOTO, W, Hv)}
        ${gapSection(wKey, hKey, W, Hv, PHOTO)}
@@ -2735,77 +2919,40 @@ function renderResult(){
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
        <div class="cp-kick">내 매력 분석 리포트</div>
        <div class="cp-title">나의 4주</div>
-       <div id="myWeeks" style="width:100%"><p class="small">불러오는 중이에요.</p></div>
+       <div id="myWeeks" style="width:100%"><p class="small">불러오는 중입니다.</p></div>
      </div></div>` : ``}
-     <!-- 마지막 장. 추구미가 없으면 여기가 「어디로 갈지 정하는」 입구가 된다.
-          저장·공유 카드는 추구미가 주인공이라(캐릭터 2장+분포) 아직 못 만든다 —
-          없는 추구미를 그려 넣느니 정하러 가는 문을 연다. -->
+     <!-- 마지막 장 (대표 M·N 2026-08-29 재구성)
+          · 추구미 없음 = 「이번에는 목표를 세울 차례」 — 직접 고르기 / 테스트하러 가기 두 갈래.
+          · 피드백 요청은 이 장에서 뺐다 — 리포트 끝에 도달하면 팝업으로 1회만 청한다(showFbPopup).
+          · '처음부터 다시' 제거 — 앱에서는 재진단 입구가 홈에 있다.
+          · 맨 뒤 가이드 장(탭 소개) 제거 — 메인 튜토리얼은 목표 설정 후 메인에서 나올 별건(보고).
+            홈으로 가는 문(해설지의 끝 단 하나의 문 — 2026-08-25 원칙)은 이 장 맨 아래로 옮겼다. -->
      <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
        <div class="cp-kick">내 매력 분석 리포트</div>
-       <div class="cp-title">${WANT_ON ? "저장하고 공유하기" : "이제 어디로 갈지 정할 차례"}</div>
+       <div class="cp-title">${WANT_ON ? "저장하고 공유하기" : "이번에는 목표를 세울 차례"}</div>
        ${WANT_ON ? `
        <button class="btn" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent);margin-top:0" onclick="saveSheet()">내 결과 저장하기 (3장)</button>
        <p class="share-what">카드 한 장에 지금의 나와 추구미가 같이 들어갑니다.</p>
        <button class="btn" style="background:linear-gradient(90deg,#B76BA3,#4A2B5C)" onclick="shareCard()">내 매력 카드 공유하기</button>
-       <!-- C11 신설 (마케팅 확정 2026-08-27) — 「타인이 보는 나의 매력」 장은 만들어 뒀는데
-            응답을 받아 올 문이 홈 탭 안쪽에만 있었다. 결과를 막 본 순간이 남에게 보여주고
-            싶은 마음이 가장 큰 순간이고, 그때 청하지 않으면 그 장은 영영 안 채워진다.
-            버튼 라벨은 home.html의 실제 라벨과 한 글자도 다르지 않게 맞춘다 —
-            화면에 없는 이름을 안내하면 유저가 찾다가 못 찾는다. -->
        <div class="sec" style="width:100%"><h3>친구 눈에 비친 나</h3>
-         <p style="margin:0 0 10px;line-height:1.7">이 리포트는 안에서 본 나입니다. 밖에서 보는 나는 친구에게 물어봐야 나와요.</p>
+         <p style="margin:0 0 10px;line-height:1.7">이 리포트는 안에서 본 나입니다. 밖에서 보는 나는 친구에게 물어봐야 나옵니다.</p>
          <a class="btn" href="modules/home.html?ask=1" style="display:block;text-align:center;text-decoration:none;background:#fff;color:var(--accent);border:1.5px solid var(--accent);margin-top:0"
             onclick="track('report_ask_friend_tap',{})">친구에게 물어보기</a></div>` : `
-       <p style="width:100%;margin:0 0 14px;line-height:1.75">지금 어디에 서 있는지는 나왔어요. 추구미를 정하면 여기서 거기까지 가는 지도와, 이번 주에 뭘 바꿀지가 함께 나옵니다.</p>
-       <a class="btn" href="modules/career.html" style="display:block;text-align:center;text-decoration:none;background:linear-gradient(90deg,#B76BA3,#4A2B5C);margin-top:0">추구미 정하러 가기</a>
-       <button class="btn" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent)" onclick="saveSheet()">지금의 나 저장하기 (1장)</button>`}
-       <div class="sec" style="width:100%"><h3>이 결과, 어땠나요?</h3>
-         <!-- 이모지를 뺐다 (2026-08-26). 앞의 스무 장이 측정·근거로 쌓아 온 무게가
-              마지막 장의 이모지 두 개에서 깎인다. 헌법 §6-1이 유저향 문구에서 과도한 이모지를
-              금지하는 것과 같은 이유이고, 여기는 리포트의 맺음이라 특히 그렇다. -->
-         <div class="fb"><button id="fbY" onclick="fb(1)">나 같아요</button><button id="fbN" onclick="fb(0)">갸우뚱해요</button></div>
-         <div id="selfPickBox" style="display:none;margin-top:10px">
-           <p style="font-size:13px;color:var(--sub);margin-bottom:8px">그렇다면, ${WANT_ON?"스스로 생각하는 내 추구미는":"스스로 보기에 지금의 나는"} 뭐에 가까워요? <span style="font-weight:400">(선택)</span></p>
-           <div class="chipgrid">${TKEYS.map(k=>`<div class="chip-item sp-chip" data-k="${k}" onclick="pickSelf('${k}')">${TYPES[k].name}</div>`).join("")}</div>
-         </div>
-         <textarea id="fbTxt" placeholder="추가하고 싶은 질문이나, 이상했던 문항이 있다면 알려주세요! (선택)"></textarea>
-         <button class="btn" onclick="saveLog()">다음 — 피드백 남기기</button>
-         <!-- 홈으로 가는 문은 마지막 장으로 옮겼다(대표 지시 2026-08-25) — 해설지의 끝은
-              "이번 주에 할 것 보러 가기" 하나여야 하고, 문이 두 군데 있으면 그게 안 된다. -->
-         ${FLOW_LECTURE
-           ? `<a class="btn" href="modules/lecture.html" style="display:block;text-align:center;text-decoration:none">강의 리포트로 돌아가기 →</a>`
-           : ``}
-         <button class="btn ghost" onclick="restart()">처음부터 다시</button></div>
+       <p style="width:100%;margin:0 0 14px;line-height:1.75">지금 어디에 서 있는지는 나왔습니다. 목표를 정하면 여기서 거기까지 가는 지도와, 이번 주에 바꿀 것이 함께 나옵니다.</p>
+       <a class="btn" href="modules/career.html" style="display:block;text-align:center;text-decoration:none;background:linear-gradient(90deg,#B76BA3,#4A2B5C);margin-top:0"
+          onclick="track('report_goal_tap',{path:'pick'})">직접 고르기</a>
+       <a class="btn" href="index.html?flow=want" style="display:block;text-align:center;text-decoration:none;background:#fff;color:var(--accent);border:1.5px solid var(--accent)"
+          onclick="track('report_goal_tap',{path:'test'})">테스트하러 가기</a>
+       <button class="btn ghost" onclick="saveSheet()">지금의 나 저장하기 (1장)</button>`}
        ${WANT_ON ? `
        <details class="sec coach-fold" id="waitSec" style="width:100%"><summary>내 추구미로 가는 4주 코칭 <span class="coach-cue">알림 신청 ▾</span></summary>
          <p class="small" style="margin:4px 0 10px;text-align:left">구미가 매주 하나씩, 지금 나에게 맞는 미션을 정해 보냅니다. 열리면 가장 먼저 알려드릴게요.</p>
          <input id="wlContact" placeholder="이메일 또는 인스타 아이디" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--line);font-size:16px;box-sizing:border-box"/>
          <button class="btn" style="margin-top:8px" onclick="joinWaitlist()">코칭 열리면 알려주세요</button></details>` : ``}
+       ${FLOW_LECTURE
+         ? `<a class="btn" href="modules/lecture.html" style="display:block;text-align:center;text-decoration:none">강의 리포트로 돌아가기 →</a>`
+         : (WANT_ON ? `<a class="btn" href="modules/home.html" style="display:block;text-align:center;text-decoration:none;background:linear-gradient(90deg,#B76BA3,#4A2B5C)">이번 주에 할 것 보러 가기</a>` : ``)}
      </div></div>
-     <!-- 마지막 장 — 대표 지시 2026-08-25.
-          「구미가 다시 한번 나오면서, 앱의 메인 기능을 한번 더 간략하게 소개해줘.」
-          탭 이름은 app-tabbar.js의 실제 라벨을 그대로 쓴다. 화면에 없는 이름을 안내하면
-          유저가 그 탭을 찾다가 못 찾는다.
-          [게이트 통과 2026-08-25] 두 곳을 고쳤다.
-            ① "오늘" 줄이 "바꿔볼 것 하나. 딱 하나만 하면 돼요"로 한 줄에 «하나»가 두 번 있었고,
-               미션이 «앱이 하나 정해준다»에서 «목록에서 고른다»로 바뀐 것도 안 담겨 있었다.
-            ② 맺음 문장 "여러분의 매력 발전은 이제부터 시작입니다" — 한 사람이 보는 화면의
-               "여러분"과 명사화 문어체("매력 발전")를 같이 걷었다. 바로 위 줄이 "쌓입니다"라
-               어미도 겹쳤다. -->
-     ${FLOW_LECTURE ? `` : `
-     <div class="cpage info-page" style="${prismBg(W.color)}"><div class="cp-inner info glass">
-       <div class="cp-kick">내 매력 분석 리포트</div>
-       <div class="cp-title">여기서부터는 같이 갑니다</div>
-       <img class="step-gumi" src="bg/char_${WANT_ON?wKey:hKey}.png" alt="" onerror="this.style.display='none'">
-       <div class="tabguide">
-         <div class="tg"><b>미션</b><span>이번 주에 바꿔볼 것. 진행 가능 목록에서 골라 수락해요.</span></div>
-         <div class="tg"><b>스탯</b><span>여덟 칸이 어디로 움직였는지 보이는 자리입니다.</span></div>
-         <div class="tg"><b>인벤토리</b><span>옷·화장품을 넣어 두면 그걸 쓰는 미션이 나와요.</span></div>
-         <div class="tg"><b>기록</b><span>해낸 미션과 다시 찍은 사진이 쌓입니다.</span></div>
-       </div>
-       <p class="verdict-line" style="width:100%;margin:18px 0 0">여기까지가 지금의 나. 바꾸는 건 이제부터예요.</p>
-       <a class="btn" href="modules/home.html" style="display:block;text-align:center;text-decoration:none;background:linear-gradient(90deg,#B76BA3,#4A2B5C)">이번 주에 할 것 보러 가기</a>
-     </div></div>`}
    </div>
    <!-- 도트는 페이지 수를 따라간다. 하드코딩하면 절 추가 때마다 어긋난다(정본 5절 + 저장/공유 = 6) -->
    <div class="dots" id="rdots"></div>
@@ -2824,7 +2971,7 @@ function renderResult(){
     // 결측률을 장 단위로 보는 유일한 지표라 대시보드에서 이걸로 "몇 명이 몇 장짜리를 받았나"를 센다.
     pages: document.querySelectorAll(".cpage").length,
     stat:  statSheetPage._lines|0,
-    why:   _n(whySection(PHOTO), /<p/g),
+    why:   _n(whySection(PHOTO, Hv.name), /<p/g),
     gap:   _n(gapPartSection(PHOTO, W.name), /<p/g),
     ratio: _n(ratioSection(PHOTO), /border-top/g),
     line:  _n(lineSection(PHOTO), /border-top/g) });
@@ -2832,7 +2979,7 @@ function renderResult(){
   window.__onPartEngineReady = () => {
     photoScore._k = null;                      // 엔진이 늦게 왔다 — 빈 산출을 캐시로 물고 있지 않게 비운다
     const wy = document.getElementById("whySec");
-    if (wy) wy.innerHTML = whySection(PHOTO);
+    if (wy) wy.innerHTML = whySection(PHOTO, Hv.name);
     const gp = document.getElementById("gapSec");
     if (gp) gp.innerHTML = gapPartSection(PHOTO, W.name);
     buildFacePages(PHOTO, hKey, prismBg(W.color));
@@ -2920,7 +3067,13 @@ function carDot(){ // 결과 캐러셀 현재 페이지 → 도트 표시 동기
      1회만 남긴다: 캐러셀은 스크롤할 때마다 이 함수를 부른다. */
   if(!carDot._end && n && i === n - 1){
     carDot._end = 1;
-    track("report_reached_end", {pages: n, has_photo: !!(d && d.pc)});
+    /* ⚠ 버그 수정(2026-08-29 발견): 여기 있던 `d`는 이 함수 스코프에 없어 ReferenceError를
+       던졌다 — 마지막 장에 도달할 때마다 조용히 죽어서 report_reached_end가 **한 번도 적재된
+       적이 없다**(2026-08-27 신설 이후). 리포트 완주 지표가 통째로 비어 있던 원인. */
+    track("report_reached_end", {pages: n, has_photo: !!loadPhoto()});
+    // 피드백은 여기서 팝업으로 한 번만 청한다(대표 M 2026-08-29). 마지막 장에서 상호작용을
+    // 시작하기 전에 뜨도록 한 박자 늦춘다.
+    setTimeout(showFbPopup, 700);
   }
 }
 function fitCarousel(){ // 모바일 원페이지: 캐러셀을 뷰포트 남는 높이에 맞춤 (각 페이지=한 화면)
@@ -2931,6 +3084,42 @@ function fitCarousel(){ // 모바일 원페이지: 캐러셀을 뷰포트 남는
 }
 window.addEventListener("resize",fitCarousel);
 window.addEventListener("orientationchange",()=>setTimeout(fitCarousel,200));
+/* 피드백 팝업 (대표 M 2026-08-29) — "피드백은 추구미 진단 다 끝나고 팝업으로 한 번 요청할 일."
+   리포트 끝 장 도달 시 1회. 같은 진단(ts)에 대해 다시 묻지 않는다. */
+function showFbPopup(){
+  if(FLOW_LECTURE || document.getElementById("fbModal")) return;
+  let key = "chugu_fb_asked";
+  try{ const dd=JSON.parse(localStorage.getItem("chugu_diag")||"null"); if(dd && dd.ts) key += "_"+dd.ts; }catch(e){}
+  try{ if(localStorage.getItem(key)) return; localStorage.setItem(key, "1"); }catch(e){}
+  const wantOn = !!(window._result && window._result.want);
+  const wrap = document.createElement("div");
+  wrap.id = "fbModal"; wrap.className = "pm-modal";
+  wrap.onclick = e => { if(e.target === wrap) wrap.remove(); };
+  wrap.innerHTML = `<div class="pm-sheet"><h3 style="margin:0 0 10px">이 결과, 어땠나요?</h3>
+    <div class="fb"><button id="fbY" onclick="fb(1)">나 같아요</button><button id="fbN" onclick="fb(0)">갸우뚱해요</button></div>
+    <div id="selfPickBox" style="display:none;margin-top:10px">
+      <p style="font-size:13px;color:var(--sub);margin-bottom:8px">그렇다면, ${wantOn?"스스로 생각하는 내 추구미는":"스스로 보기에 지금의 나는"} 뭐에 가까워요? <span style="font-weight:400">(선택)</span></p>
+      <div class="chipgrid">${TKEYS.map(k=>`<div class="chip-item sp-chip" data-k="${k}" onclick="pickSelf('${k}')">${TYPES[k].name}</div>`).join("")}</div>
+    </div>
+    <textarea id="fbTxt" placeholder="추가하고 싶은 질문이나, 이상했던 문항이 있다면 알려주세요! (선택)"></textarea>
+    <button class="btn" style="margin-top:10px" onclick="fbSubmit()">피드백 보내기</button>
+    <button class="pm-x" style="background:rgba(0,0,0,.08);color:var(--sub)" onclick="document.getElementById('fbModal').remove()">다음에 할게요</button>
+  </div>`;
+  document.body.appendChild(wrap);
+  track("fb_popup_shown",{});
+}
+function fbSubmit(){
+  const durS = Math.round((Date.now()-startTs)/1000);
+  const fbText = ($("fbTxt") && $("fbTxt").value || "").trim().slice(0,500);
+  const log = {ts:new Date().toISOString(), gender:GENDER, dur:durS, answers,
+               result:window._result, fb:fbVal, selfPick, fbText};
+  try{ const arr=JSON.parse(localStorage.getItem("aim_logs")||"[]"); arr.push(log); localStorage.setItem("aim_logs",JSON.stringify(arr)); }catch(e){}
+  track("survey_submit",{fb:fbVal, selfPick, hasText:!!fbText, text:fbText, via:"popup"});
+  const m = document.getElementById("fbModal");
+  if(m) m.querySelector(".pm-sheet").innerHTML = `<h3 style="margin:0 0 8px">고맙습니다!</h3>
+    <p class="small" style="margin:0 0 12px">남겨주신 답은 다음 리포트를 고치는 데 쓰입니다.</p>
+    <button class="pm-x" onclick="document.getElementById('fbModal').remove()">닫기</button>`;
+}
 let fbVal=null, selfPick=null;
 function fb(v){
   fbVal=v; $("fbY").classList.toggle("sel",v===1); $("fbN").classList.toggle("sel",v===0);
@@ -3362,12 +3551,12 @@ if(FLOW_LECTURE){
 <script type="module">
   try{
     const [AS, PR, SE, PM, snapRes, shapeRes] = await Promise.all([
-      import("./modules/asset-score.js?v=d3f3d64"),
-      import("./modules/part-report.js?v=d3f3d64"),
-      import("./modules/step-engine.js?v=d3f3d64"),
+      import("./modules/asset-score.js?v=7c6e73f"),
+      import("./modules/part-report.js?v=7c6e73f"),
+      import("./modules/step-engine.js?v=7c6e73f"),
       // 「어떻게 쟀나」·「이런 기준으로 봤어요」 — VLAS 양식 반영(2026-08-26 대표 지시).
       // 못 뜨면 그 두 블록만 빠지고 부위 장의 나머지는 그대로 선다.
-      import("./modules/part-method.js?v=d3f3d64").catch(()=>null),
+      import("./modules/part-method.js?v=7c6e73f").catch(()=>null),
       fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
       // 관측 분포 — 「선과 좌우」의 밴드 라벨이 여기서 나온다. 없으면 그 장을 안 만든다.
       // 현 밴드 상수(jaw 7/19 등)는 14명 전원을 같은 칸에 넣어 표시용으로 못 쓴다.
@@ -3381,14 +3570,14 @@ if(FLOW_LECTURE){
     // import를 못 쓰므로 여기서 window에 얹는다(czm-core·PART와 같은 방식).
     // ⚠ 여기서 buildFriendPage를 부르지 않는다. 앵커는 renderResult가 그린 뒤에야 생긴다 —
     //   부위 장과 같은 이유로 __onPartEngineReady 쪽에서 부른다.
-    try{ window.__SESSION = await import("./modules/session.js?v=d3f3d64"); }
+    try{ window.__SESSION = await import("./modules/session.js?v=7c6e73f"); }
     catch(e){ console.warn("session 모듈 로드 실패", e); }
     if (typeof window.__onPartEngineReady === "function") window.__onPartEngineReady();
     // 「나의 4주」 — 홈과 같은 엔진·같은 사전을 쓴다. 여기서 목록을 따로 만들면
     // 결과지가 약속한 것과 홈이 내는 것이 갈린다(이론 §5-2 "미리보기가 곧 대기열").
     try{
       const [QE, dict, quiz] = await Promise.all([
-        import("./modules/quest-engine.js?v=d3f3d64"),
+        import("./modules/quest-engine.js?v=7c6e73f"),
         fetch("./modules/quest-dict.json").then(r=>r.json()),
         fetch("./modules/quest-quiz.json").then(r=>r.ok?r.json():null).catch(()=>null),
       ]);

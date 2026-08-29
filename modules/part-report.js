@@ -30,10 +30,10 @@ export const OBS = {
      93건이 양수), 표본 하위를 "내려와 있다"고 쓰면 96%에게 사실이 아닌 말이 나간다.
      lo0 = 실제로 내려간 눈(4%)에게만 쓰는 단정형. lo = 올라갔지만 완만한 눈.
      고르는 것은 asset-score의 below 플래그다. */
-  eye_angle: { hi:{c:"눈꼬리가 눈머리보다 뚜렷하게 올라가 있고", e:"눈꼬리가 눈머리보다 뚜렷하게 올라가 있어서요", d:"눈꼬리가 눈머리보다 뚜렷하게 올라가 있어요"},
-               lo:{c:"눈꼬리가 눈머리보다 조금 올라가 있고", e:"눈꼬리가 눈머리보다 조금 올라가 있어서요", d:"눈꼬리가 눈머리보다 조금 올라가 있어요"},
-               lo0:{c:"눈꼬리가 눈머리보다 내려와 있고", e:"눈꼬리가 눈머리보다 내려와 있어서요", d:"눈꼬리가 눈머리보다 내려와 있어요"},
-               mid:{c:"눈매가 수평에 가깝고", e:"눈매가 수평에 가까워서요", d:"눈매가 수평에 가까워요"} },
+  eye_angle: { hi:{c:"눈꼬리가 눈머리보다 뚜렷하게 올라가 있고", e:"눈꼬리가 눈머리보다 뚜렷하게 올라가 있어서요", d:"눈꼬리가 눈머리보다 뚜렷하게 올라가 있습니다"},
+               lo:{c:"눈꼬리가 눈머리보다 조금 올라가 있고", e:"눈꼬리가 눈머리보다 조금 올라가 있어서요", d:"눈꼬리가 눈머리보다 조금 올라가 있습니다"},
+               lo0:{c:"눈꼬리가 눈머리보다 내려와 있고", e:"눈꼬리가 눈머리보다 내려와 있어서요", d:"눈꼬리가 눈머리보다 내려와 있습니다"},
+               mid:{c:"눈매가 수평에 가깝고", e:"눈매가 수평에 가까워서요", d:"눈매가 수평에 가깝습니다"} },
   /* ⚠ eye_round(0.50) · eye_len(0.44) · brow_arch_deg(0.57) · brow_eye_gap(0.52) ·
      lip_thickness(0.44) 항목을 뺐다 (2026-08-25 재현성 검증 · 12명 × 21회 촬영).
      판정 기준은 SD_w < 0.35 × SD_b — **한 사람이 다시 찍었을 때의 변동이 사람들 사이 차이의
@@ -44,41 +44,41 @@ export const OBS = {
      ⚠ 결과: 눈썹은 등재 어휘가 0개가 되어 판정 문장만 남는다("눈썹은 ~ 매력에 가까워요.").
        bandRows의 「눈썹 모양」 값 행(brow_arch_deg)은 여기가 아니라 report-explain에 있다 —
        같은 값을 다른 계층에서 계속 말하고 있으므로 **이론 회부 대기**다. */
-  interocular: { hi:{c:"두 눈 사이가 멀고", e:"두 눈 사이가 멀어서요", d:"두 눈 사이가 멀어요"},
-                 lo:{c:"두 눈 사이가 가깝고", e:"두 눈 사이가 가까워서요", d:"두 눈 사이가 가까워요"},
-                 mid:{c:"두 눈 사이가 좁지도 넓지도 않고", e:"두 눈 사이가 좁지도 넓지도 않아서요", d:"두 눈 사이 간격이 균형에 가까워요"} },
-  mouth_w: { hi:{c:"입이 얼굴 너비에 비해 넓고", e:"입이 얼굴 너비에 비해 넓어서요", d:"입이 얼굴 너비에 비해 넓어요"},
-             lo:{c:"입이 얼굴 너비에 비해 좁고", e:"입이 얼굴 너비에 비해 좁아서요", d:"입이 얼굴 너비에 비해 좁아요"},
-             mid:{c:"입 너비가 얼굴과 균형을 이루고", e:"입 너비가 얼굴과 균형을 이뤄서요", d:"입 너비가 얼굴과 균형을 이뤄요"} },
+  interocular: { hi:{c:"두 눈 사이가 멀고", e:"두 눈 사이가 멀어서요", d:"두 눈 사이가 먼 편입니다"},
+                 lo:{c:"두 눈 사이가 가깝고", e:"두 눈 사이가 가까워서요", d:"두 눈 사이가 가까운 편입니다"},
+                 mid:{c:"두 눈 사이가 좁지도 넓지도 않고", e:"두 눈 사이가 좁지도 넓지도 않아서요", d:"두 눈 사이 간격이 균형에 가깝습니다"} },
+  mouth_w: { hi:{c:"입이 얼굴 너비에 비해 넓고", e:"입이 얼굴 너비에 비해 넓어서요", d:"입이 얼굴 너비에 비해 넓은 편입니다"},
+             lo:{c:"입이 얼굴 너비에 비해 좁고", e:"입이 얼굴 너비에 비해 좁아서요", d:"입이 얼굴 너비에 비해 좁은 편입니다"},
+             mid:{c:"입 너비가 얼굴과 균형을 이루고", e:"입 너비가 얼굴과 균형을 이뤄서요", d:"입 너비가 얼굴과 균형을 이룹니다"} },
   /* ⚠ jaw_angular_deg 항목을 뺐다 (2026-08-25, 오류대장 §045 · 이론 재판정).
      인물 간 차이(SD_b 0.7533)보다 한 사람의 촬영 간 변동(SD_w 1.4679)이 **2배 크다.**
      이 값으로 "턱선이 또렷하게 꺾여 있어요"라고 말하면, 그건 그 사람의 턱이 아니라
      **그날 어느 각도에서 찍었는지**를 말하는 것이다. 사전에서 빠지면 이 부위는
      문장이 안 나가고 조용히 건너뛴다(OBS에 키가 없으면 그 필드는 발화하지 않는다).
      판정 기여(asset-score)는 별건 — 폐기·재설계·유지는 이론 판단 대기. */
-  face_HW: { hi:{c:"얼굴이 갸름한 편이고", e:"얼굴이 갸름한 편이라서요", d:"얼굴이 갸름한 편이에요"},
-             lo:{c:"얼굴이 동그란 편이고", e:"얼굴이 동그란 편이라서요", d:"얼굴이 동그란 편이에요"},
-             mid:{c:"얼굴 세로와 가로가 균형에 가깝고", e:"얼굴 세로와 가로가 균형에 가까워서요", d:"얼굴 세로와 가로가 균형에 가까워요"} },
-  chin_len: { hi:{c:"입술 아래에서 턱 끝까지가 길고", e:"입술 아래에서 턱 끝까지가 길어서요", d:"입술 아래에서 턱 끝까지가 길어요"},
-              lo:{c:"입술 아래에서 턱 끝까지가 짧고", e:"입술 아래에서 턱 끝까지가 짧아서요", d:"입술 아래에서 턱 끝까지가 짧아요"},
-              mid:{c:"입술 아래에서 턱 끝까지가 길지도 짧지도 않고", e:"입술 아래에서 턱 끝까지가 길지도 짧지도 않아서요", d:"입술 아래에서 턱 끝까지가 알맞아요"} },
-  parts_vpos: { hi:{c:"눈코입이 얼굴 아래쪽에 놓이고", e:"눈코입이 얼굴 아래쪽에 놓여서요", d:"눈코입이 얼굴 아래쪽에 놓여 있어요"},
-                lo:{c:"눈코입이 얼굴 위쪽에 놓이고", e:"눈코입이 얼굴 위쪽에 놓여서요", d:"눈코입이 얼굴 위쪽에 놓여 있어요"},
-                mid:{c:"눈코입이 위아래로 치우치지 않고", e:"눈코입이 위아래로 치우치지 않아서요", d:"눈코입이 얼굴 가운데에 자리 잡았어요"} },
-  skinL: { hi:{c:"피부 톤이 밝은 편이고", e:"피부 톤이 밝은 편이라서요", d:"피부 톤이 밝은 편이에요"},
-           lo:{c:"피부 톤이 짙은 편이고", e:"피부 톤이 짙은 편이라서요", d:"피부 톤이 짙은 편이에요"} },
-  chroma: { hi:{c:"얼굴에 도는 색이 선명하고", e:"얼굴에 도는 색이 선명해서요", d:"얼굴에 도는 색이 선명해요"},
-            lo:{c:"얼굴에 도는 색이 옅고", e:"얼굴에 도는 색이 옅어서요", d:"얼굴에 도는 색이 옅어요"} },
-  contrast: { hi:{c:"피부와 눈동자·머리 색의 밝기 차이가 크고", e:"피부와 눈동자·머리 색의 밝기 차이가 커서요", d:"피부와 눈동자·머리 색의 밝기 차이가 커요"},
-              lo:{c:"피부와 눈동자·머리 색의 밝기 차이가 작고", e:"피부와 눈동자·머리 색의 밝기 차이가 작아서요", d:"피부와 눈동자·머리 색의 밝기 차이가 작아요"} },
+  face_HW: { hi:{c:"얼굴이 갸름한 편이고", e:"얼굴이 갸름한 편이라서요", d:"얼굴이 갸름한 편입니다"},
+             lo:{c:"얼굴이 동그란 편이고", e:"얼굴이 동그란 편이라서요", d:"얼굴이 동그란 편입니다"},
+             mid:{c:"얼굴 세로와 가로가 균형에 가깝고", e:"얼굴 세로와 가로가 균형에 가까워서요", d:"얼굴 세로와 가로가 균형에 가깝습니다"} },
+  chin_len: { hi:{c:"입술 아래에서 턱 끝까지가 길고", e:"입술 아래에서 턱 끝까지가 길어서요", d:"입술 아래에서 턱 끝까지가 긴 편입니다"},
+              lo:{c:"입술 아래에서 턱 끝까지가 짧고", e:"입술 아래에서 턱 끝까지가 짧아서요", d:"입술 아래에서 턱 끝까지가 짧은 편입니다"},
+              mid:{c:"입술 아래에서 턱 끝까지가 길지도 짧지도 않고", e:"입술 아래에서 턱 끝까지가 길지도 짧지도 않아서요", d:"입술 아래에서 턱 끝까지가 알맞은 길이입니다"} },
+  parts_vpos: { hi:{c:"눈코입이 얼굴 아래쪽에 놓이고", e:"눈코입이 얼굴 아래쪽에 놓여서요", d:"눈코입이 얼굴 아래쪽에 놓여 있습니다"},
+                lo:{c:"눈코입이 얼굴 위쪽에 놓이고", e:"눈코입이 얼굴 위쪽에 놓여서요", d:"눈코입이 얼굴 위쪽에 놓여 있습니다"},
+                mid:{c:"눈코입이 위아래로 치우치지 않고", e:"눈코입이 위아래로 치우치지 않아서요", d:"눈코입이 얼굴 가운데에 자리 잡았습니다"} },
+  skinL: { hi:{c:"피부 톤이 밝은 편이고", e:"피부 톤이 밝은 편이라서요", d:"피부 톤이 밝은 편입니다"},
+           lo:{c:"피부 톤이 짙은 편이고", e:"피부 톤이 짙은 편이라서요", d:"피부 톤이 짙은 편입니다"} },
+  chroma: { hi:{c:"얼굴에 도는 색이 선명하고", e:"얼굴에 도는 색이 선명해서요", d:"얼굴에 도는 색이 선명한 편입니다"},
+            lo:{c:"얼굴에 도는 색이 옅고", e:"얼굴에 도는 색이 옅어서요", d:"얼굴에 도는 색이 옅은 편입니다"} },
+  contrast: { hi:{c:"피부와 눈동자·머리 색의 밝기 차이가 크고", e:"피부와 눈동자·머리 색의 밝기 차이가 커서요", d:"피부와 눈동자·머리 색의 밝기 차이가 큰 편입니다"},
+              lo:{c:"피부와 눈동자·머리 색의 밝기 차이가 작고", e:"피부와 눈동자·머리 색의 밝기 차이가 작아서요", d:"피부와 눈동자·머리 색의 밝기 차이가 작은 편입니다"} },
 };
 
 // 코 전용 문장 — 마케팅 검수 **승인분**(2026-08-09, 안전장치 6항 준수). 조합 서술만, 측정 단독 근거 없음.
 const NOSE_LINE = {
-  "클래식":  "코가 얼굴 중심을 단정하게 잡아줘요 — 클래식 매력에서 자주 보이는 인상이에요.",
-  "카리스마":"코의 인상이 또렷한 편이에요 — 카리스마 매력에서 자주 보여요.",
-  "세련된":  "코의 인상이 또렷한 편이에요 — 세련된 매력에서 자주 보여요.",
-  "_default":"코가 얼굴 전체에 부드럽게 어우러져요 — {T} 매력을 자연스럽게 받쳐줘요.",
+  "클래식":  "코가 얼굴 중심을 단정하게 잡아줍니다 — 클래식 매력에서 자주 보이는 인상입니다.",
+  "카리스마":"코의 인상이 또렷한 편입니다 — 카리스마 매력에서 자주 보이는 모습입니다.",
+  "세련된":  "코의 인상이 또렷한 편입니다 — 세련된 매력에서 자주 보이는 모습입니다.",
+  "_default":"코가 얼굴 전체에 부드럽게 어우러집니다 — {T} 매력을 자연스럽게 받쳐주는 자리입니다.",
 };
 
 /** 게이지 = min(표본 등급, 측정 등급, 이론 등급). 세 성분 전부 기존 문턱 재사용(§3-6-1). */
@@ -111,20 +111,20 @@ function gatedOnly(score, part) {
   return rows.every(x => x.gated);
 }
 
-export function partRow({ part, type, second, adjacent, obs, n, missing, flagged, gated, axis }) {
+export function partRow({ part, type, second, adjacent, obs, n, missing, flagged, gated, axis, contrib }) {
   const g = gauge({ part, n, missing, flagged });
   const row = { part, type, gauge: g };
 
   if (missing) {                       // 강등 ① — 라벨 교체 + 이유 문장 생략(정본 §3-3 강등)
     // gated = 측정은 됐고 판정에만 안 쓴 경우. 사진 탓으로 돌리지 않는다(2026-08-26).
-    row.label = gated ? "측정은 했고, 판정 기준을 세우는 중이에요"
-                      : "사진에서 잘 안 잡혔어요";
+    row.label = gated ? "측정은 마쳤고, 판정 기준을 세우는 중입니다"
+                      : "사진에서 잘 잡히지 않았습니다";
     row.gated = !!gated;
     row.line = "";
     return row;
   }
   // 인접 표기(정본 §3-3) — A′ 임계는 [미정]이라 엔진이 준 adjacent 플래그를 그대로 따른다
-  row.label = adjacent && second ? `${type}인데, ${second} 매력도 조금 섞여 있어요` : `${type} 매력에 가까워요`;
+  row.label = adjacent && second ? `${type}인데, ${second} 매력도 조금 섞여 있습니다` : `${type} 매력에 가까운 편`;
 
   if (part === "코") {                 // §3-3-1 — 전용 화법. 측정 단독 근거를 만들지 않는다
     row.line = (NOSE_LINE[type] || NOSE_LINE._default).replace("{T}", type);
@@ -173,9 +173,15 @@ export function partRow({ part, type, second, adjacent, obs, n, missing, flagged
     }
     // 기운 정도가 미미하면 말하지 않는다 — 없는 이유를 지어내지 않는다.
     if (k && Math.abs(best) >= 0.15)
-      why = ` ${part === "색·피부" ? "이 색이" : "이 선들이"} ${AXW[k][best >= 0 ? 1 : 0]}으로 기울어 ${type}으로 읽혀요.`;
+      why = ` ${part === "색·피부" ? "이 색이" : "이 선들이"} ${AXW[k][best >= 0 ? 1 : 0]}으로 기울어 ${type}으로 읽힙니다.`;
   }
-  row.line = `${eun(part)} ${type} 매력에 ${tail ? "가깝습니다" : "가까워요"}.${tail}${why}`;
+  /* contrib(대표 G 2026-08-29) — "눈썹은 클래식 매력에 가까워요"가 아니라 이 부위가 종합
+     판정에 어느 타입 방향으로 기여했는지로 말한다. 점수 숫자(+1)는 쓰지 않는다 —
+     절대 점수 화법은 헌법 §4 충돌 소지가 있어 이론 협의 대상(보고에 남김).
+     앱 리포트만 켠다 — 강의판(lecture.html)은 기존 화법 유지(분리 트랙). */
+  row.line = contrib
+    ? `${eun(part)} 종합 판정에 ${type} 쪽으로 기여했습니다.${tail}${why}`
+    : `${eun(part)} ${type} 매력에 가깝습니다.${tail}${why}`;
   // 저신뢰 병기("사진 한 장으론 확신이 낮은 부위예요")는 삭제했다 — 대표 지시 2026-08-25.
   // 유저가 그 문장을 읽고 할 수 있는 게 없고, 신뢰만 깎인다. 결측 고지(위 강등 ①)는 남는다.
   return row;
@@ -201,21 +207,21 @@ export function channelConvergence({ colorType, shapeType, surveyType, expressio
  */
 export function summaryNarrative(rows, overallType, varianceHigh, conv) {
   if (varianceHigh)
-    return `부위마다 매력이 엇갈리는 얼굴이에요 — 이 엇갈림 자체가 ${overallType}의 생기예요.`;
+    return `부위마다 매력이 엇갈리는 얼굴입니다 — 이 엇갈림 자체가 ${overallType}의 생기입니다.`;
   const agree = rows.filter(r => r.type === overallType && r.line).map(r => r.part);
   const differ = rows.filter(r => r.type && r.type !== overallType && r.line);
   // 채널 수렴 미충족 → 확신 화법 금지. 방향 제시 + 인접 표기로 강등(정본 v1.4 §3-3)
   if (conv && !conv.strong) {
     // 앞 줄이 "…모은 결과예요."라 여기까지 ~이에요로 받으면 세로로 같은 어미가 셋 이어진다.
     let s = `지금 보이는 방향은 ${overallType} 쪽입니다.`;
-    if (differ.length) s += ` ${differ[0].type} 매력도 섞여 있어요.`;
+    if (differ.length) s += ` ${differ[0].type} 매력도 함께 섞인 상태입니다.`;
     return s;
   }
   if (agree.length < 2) return "";
   const [a1, a2] = agree;
   const pair = `${jong(a1) ? a1 + "과" : a1 + "와"} ${iga(a2)}`;
-  let s = `${pair} 같은 방향을 가리켜서, 종합은 ${jong(overallType) ? overallType + "으로" : overallType + "로"} 모였어요.`;
-  if (differ.length) s += ` ${eun(differ[0].part)} ${differ[0].type} 쪽이라, ${overallType} 안에 ${differ[0].type} 매력이 섞인 얼굴이에요.`;
+  let s = `${pair} 같은 방향을 가리켜, 종합은 ${jong(overallType) ? overallType + "으로" : overallType + "로"} 모였습니다.`;
+  if (differ.length) s += ` ${eun(differ[0].part)} ${differ[0].type} 쪽이라, ${overallType} 안에 ${differ[0].type} 매력이 섞인 얼굴입니다.`;
   return s;
 }
 
@@ -235,7 +241,7 @@ export function summaryNarrative(rows, overallType, varianceHigh, conv) {
  * @param opts   { n: 분포 표본 수, expressionType: 설문에서 온 표현 타입 }
  */
 /** @param skip {필드:1} — 화면 다른 줄이 이미 그 필드를 말했으면 부위 문장에서 뺀다(2026-08-25). */
-export function buildPartRows(score, { n = 0, expressionType = null, skip = null } = {}) {
+export function buildPartRows(score, { n = 0, expressionType = null, skip = null, contrib = false } = {}) {
   const overall = score.overallType && score.overallType.type;
   const obsOf = p => (score.detail || [])
     .filter(d => d.part === p && d.s !== null && !(skip && skip[d.key]))
@@ -252,15 +258,15 @@ export function buildPartRows(score, { n = 0, expressionType = null, skip = null
       if (!c || !c.n) return partRow({ part, n, missing: true });
       const t = nearestType({T:c.T, D:c.D, M:c.M});
       return partRow({ part, type: t.type, second: t.second, adjacent: t.adjacent,
-                       obs: obsOf("색"), n, axis: {T:c.T, D:c.D, M:c.M} });
+                       obs: obsOf("색"), n, axis: {T:c.T, D:c.D, M:c.M}, contrib });
     }
     // 표현 — 설문에서 온다. 없으면 결측(사진만 한 경우)
     if (part === "표현")
-      return expressionType ? partRow({ part, type: expressionType, obs: [], n })
+      return expressionType ? partRow({ part, type: expressionType, obs: [], n, contrib })
                             : partRow({ part, n, missing: true });
     // 코 — 직접 측정치 부재는 실패가 아니다. 종합 타입에 얹어 조합 서술(게이지는 이론 등급 2가 지배)
     if (part === "코")
-      return overall ? partRow({ part, type: overall, obs: [], n })
+      return overall ? partRow({ part, type: overall, obs: [], n, contrib })
                      : partRow({ part, n, missing: true });
 
     const key = part === "볼·입체" ? "볼입체" : part;   // 엔진 부위명과의 표기 차이
@@ -277,7 +283,7 @@ export function buildPartRows(score, { n = 0, expressionType = null, skip = null
        → gated 사유를 구분해 넘긴다. 문구는 partRow가 고른다. */
     if (!t) return partRow({ part, n, missing: true, gated: gatedOnly(score, key) });
     return partRow({ part, type: t.type, second: t.second, adjacent: t.adjacent,
-                     obs: obsOf(key), n, axis: ax });
+                     obs: obsOf(key), n, axis: ax, contrib });
   });
 }
 
@@ -297,7 +303,7 @@ export function selfCheck() {
   ok(gauge({ part: "눈", n: 500, missing: true, flagged: false }) === 1, "결측 → 1");
   // 5) 결측 행은 라벨 교체 + 이유 문장 생략
   const r0 = partRow({ part: "눈", type: "로맨틱", obs: [], n: 10, missing: true });
-  ok(r0.label === "사진에서 잘 안 잡혔어요" && r0.line === "", "결측 강등 문안");
+  ok(r0.label === "사진에서 잘 잡히지 않았습니다" && r0.line === "", "결측 강등 문안");
   // 6) 코는 전용 문장, 관찰 어휘를 쓰지 않는다
   const rn = partRow({ part: "코", type: "클래식", obs: [{ field: "skinL", dir: "hi" }], n: 10 });
   ok(rn.line.startsWith("코가 얼굴 중심을"), "코 승인 예문");
@@ -311,7 +317,7 @@ export function selfCheck() {
   // lo0 — 실제로 내려간 눈(자연 영점 아래)에게만 단정형이 나간다
   const rd = partRow({ part: "눈", type: "로맨틱", n: 10,
     obs: [{ field: "eye_angle", dir: "lo0" }] });
-  ok(rd.line.includes("눈꼬리가 눈머리보다 내려와 있어요"), "lo0는 단정형");
+  ok(rd.line.includes("눈꼬리가 눈머리보다 내려와 있습니다"), "lo0는 단정형");
   // 8) 금지어가 산출물에 없다
   const bad = /이상적|정상|평균보다|약해요|부족|결이에요|의 결|당신은/;
   ok(!bad.test(re.line + rn.line), "금지어 없음");
@@ -319,7 +325,7 @@ export function selfCheck() {
   ok(re.dots === undefined && re.note === undefined, "게이지 도트·저신뢰 병기 제거");
   // 9) 인접 표기
   const ra = partRow({ part: "입", type: "로맨틱", second: "화려함", adjacent: true, obs: [], n: 10 });
-  ok(ra.label === "로맨틱인데, 화려함 매력도 조금 섞여 있어요", "인접 표기");
+  ok(ra.label === "로맨틱인데, 화려함 매력도 조금 섞여 있습니다", "인접 표기");
   // 10) 분산 신호 서사
   ok(summaryNarrative([], "에너제틱", true).includes("엇갈림 자체가"), "분산 서사");
 
@@ -334,17 +340,17 @@ export function selfCheck() {
   // 마케팅 확정 2026-08-18: 이유형(-서요)이 아니라 평서 종결형(d)으로 끝난다.
   // 동작 동사는 "-어 있어요"여야 상태로 읽힌다("붙어요"는 지금 붙는 중으로 들린다).
   ok(!/서요\./.test(r2.line), "이유형 종결 없음");
-  ok(r2.line.endsWith("두 눈 사이가 멀어요."), "마지막 관찰이 평서 종결형");
+  ok(r2.line.endsWith("두 눈 사이가 먼 편입니다."), "마지막 관찰이 평서 종결형");
   // 앞문장이 "눈은 ~"인데 뒷문장도 "눈이 ~"면 주어가 두 번 선다 — 뒤쪽은 지운다
-  ok(!/가까워요\. 눈이 /.test(r2.line), "주어 중복 없음");
+  ok(!/가깝습니다\. 눈이 /.test(r2.line), "주어 중복 없음");
   ok(r2.line.startsWith("눈은 로맨틱"), "부위 조사 정상");
   // 13) 관찰 1개일 때도 종결형
   // 눈썹은 재현성 미달로 등재 어휘가 0개가 됐다(위 OBS 주석). 살아 있는 부위로 옮겨 같은 경로를 잰다.
   const r1 = partRow({ part:"입", type:"로맨틱", n:10, obs:[{field:"mouth_w",dir:"hi"}] });
-  ok(r1.line === "입은 로맨틱 매력에 가깝습니다. 얼굴 너비에 비해 넓어요.", "관찰 1개 종결형");
+  ok(r1.line === "입은 로맨틱 매력에 가깝습니다. 얼굴 너비에 비해 넓은 편입니다.", "관찰 1개 종결형");
   // 관찰이 하나도 없으면 혼자 서는 문장이라 ~요를 지킨다
-  ok(partRow({ part:"입", type:"로맨틱", n:10, obs:[] }).line === "입은 로맨틱 매력에 가까워요.",
-     "관찰 0개는 ~요 유지");
+  ok(partRow({ part:"입", type:"로맨틱", n:10, obs:[] }).line === "입은 로맨틱 매력에 가깝습니다.",
+     "관찰 0개도 합니다체 (P 2026-08-29)");
   // 뺀 어휘가 사전에 되살아나면 여기서 걸린다(재현성 미달 5종 · 2026-08-25)
   ok(["eye_round","eye_len","brow_arch_deg","brow_eye_gap","lip_thickness"]
        .every(k => OBS[k] === undefined), "재현성 미달 어휘 미등재");
@@ -352,7 +358,7 @@ export function selfCheck() {
   const sn = summaryNarrative(
     [{part:"눈",type:"로맨틱",line:"x"},{part:"눈썹",type:"로맨틱",line:"x"},{part:"코",type:"클래식",line:"x"}],
     "로맨틱", false);
-  ok(sn.startsWith("눈과 눈썹이 ") && sn.includes("로맨틱으로 모였어요") && sn.includes("코는 클래식 쪽이라"), "서사 조사");
+  ok(sn.startsWith("눈과 눈썹이 ") && sn.includes("로맨틱으로 모였습니다") && sn.includes("코는 클래식 쪽이라"), "서사 조사");
 
   // 15) 채널 수렴 — 부위끼리의 일치는 채널이 아니다(정본 v1.4 §3-3)
   const cvNo = channelConvergence({ colorType:"세련된", shapeType:null, surveyType:null,
@@ -368,16 +374,16 @@ export function selfCheck() {
   // 16) 미충족 시 확신 화법을 쓰지 않는다
   const rr = [{part:"눈",type:"세련된",line:"x"},{part:"윤곽",type:"세련된",line:"x"},{part:"코",type:"클래식",line:"x"}];
   const weak = summaryNarrative(rr, "세련된", false, cvNo);
-  ok(!/같은 방향을 가리켜서|모였어요/.test(weak), "미충족 → 확신 화법 없음");
+  ok(!/같은 방향을 가리켜|모였습니다/.test(weak), "미충족 → 확신 화법 없음");
   ok(weak.includes("보이는 방향은") && weak.includes("쪽입니다"), "미충족 → 방향 제시 화법");
   const strong = summaryNarrative(rr, "세련된", false, cvYes);
-  ok(strong.includes("모였어요"), "충족 → 확신 화법");
+  ok(strong.includes("모였습니다"), "충족 → 확신 화법");
   // 17) conv 미전달이면 기존 동작(하위 호환)
-  ok(summaryNarrative(rr, "세련된", false).includes("모였어요"), "conv 없으면 기존 동작");
+  ok(summaryNarrative(rr, "세련된", false).includes("모였습니다"), "conv 없으면 기존 동작");
 
   // 21) 중간대 — 방향을 단정하지 않고 균형을 말한다. 문장이 사라지지 않는 것이 요점이다.
   const rm = partRow({ part: "윤곽", type: "우아한", n: 10, obs: [{ field: "face_HW", dir: "mid" }] });
-  ok(rm.line.includes("얼굴 세로와 가로가 균형에 가까워요"), "mid는 균형 문장");
+  ok(rm.line.includes("얼굴 세로와 가로가 균형에 가깝습니다"), "mid는 균형 문장");
   ok(!/갸름|동그란/.test(rm.line), "mid는 방향을 말하지 않는다");
   ok(rm.line.length > 0, "mid에서 문장이 사라지지 않는다");
   // mid 어휘가 여섯 필드 모두에 있다 — 하나라도 없으면 그 필드는 중간대에서 침묵한다

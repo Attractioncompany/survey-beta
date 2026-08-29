@@ -478,9 +478,9 @@ body.cam-open{overflow:hidden;}
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="modules/czm-core.js?v=d3f3d64"></script>
-<script src="modules/measure-color.js?v=d3f3d64"></script>
-<script src="modules/measure-structure.js?v=d3f3d64"></script>
+<script src="modules/czm-core.js?v=7c6e73f"></script>
+<script src="modules/measure-color.js?v=7c6e73f"></script>
+<script src="modules/measure-structure.js?v=7c6e73f"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -529,8 +529,8 @@ window.__pm={ analyze:img=>analyze(img), get state(){ return STATE; } };
 // 개발/검수 모드: 주소 뒤에 ?dev=1 — 출력 JSON·랜드마크 오버레이·엔진 버전 표기 등 순수 개발용만.
 // 지표(수치+해설)는 기본 화면에 항상 표시한다 (대표 2회 확정 07-11·07-20, REQUEST_dev_ux_restore §1).
 // 과거의 "수치는 내부·검증·B2B 전용" 근거는 폐기됨 — 지표를 다시 숨기려면 대표 승인 필요.
-const DEV = new URLSearchParams(location.search).get("d3f3d64")==="1";
-if(DEV) document.body.classList.add("d3f3d64");
+const DEV = new URLSearchParams(location.search).get("7c6e73f")==="1";
+if(DEV) document.body.classList.add("7c6e73f");
 // 성별 전달 경로 (이론 이목구비앵커 §3, 2026-07-30) — index GENDER를 ?gender=f/m 로 수신. 여성한정 앵커(eye_len F1)·성별밴드(U30) 검증용.
 // ⚠ photo_measurements payload에는 넣지 않음(성별은 app_users.gender 조인, backend 결정 2026-07-30). 현재는 경로만 확보, 실사용은 통합/eye_len 카드 구현 시.
 const GENDER_PM = new URLSearchParams(location.search).get("gender")||null;
@@ -1034,6 +1034,12 @@ function analyze(img){
   }catch(e){}
 
   STATE.quality.shadow = shadowBands(STATE.ratio, STATE.line);   // 가설 섀도 상시 기록(CARD_GATE 무관, 판정·노출 불변)
+  // 측정선이 얹힌 얼굴 이미지를 리포트로 넘긴다. 수치만 보면 어디를 잰 건지 알 수 없다.
+  // 강의 전용이었다가 앱 리포트도 쓰도록 흐름 공통으로 올렸다(대표 B 2026-08-29 —
+  // "사진 위에 어떤 측정이 있었는지 오버레이로 표기하기로 했던 것 반영이 안 돼 있음").
+  // ⚠ sessionStorage — 탭을 닫으면 사라진다. 얼굴 사진을 기기에 눌러 앉히지 않는다.
+  //    서버로도 안 간다(sendMeasurement는 ratio·line·quality만 보낸다). 헌법 §4.
+  try{ if(STATE.overlay) sessionStorage.setItem("chugu_lecture_shot", STATE.overlay); }catch(e){}
   // ?flow=lecture — 강의용. 퍼스널컬러는 현장 상호진단으로 직접 입력받으므로
   // 드레이핑(R1~R4)과 색 판정을 건너뛰고 **형태 측정만** 넘긴다.
   // 색 판정 정확도가 아직 6/12라 현장에서 쓰지 않는 것이 맞다(2026-08-17 대표 결정).
@@ -1041,10 +1047,6 @@ function analyze(img){
     try{ localStorage.setItem("chugu_lecture_face", JSON.stringify({
       v:1, ts:Date.now(), engine_ver:"photo_v2.2_sat_anchor",
       ratio:STATE.ratio, line:STATE.line, quality:STATE.quality })); }catch(e){}
-    // 측정선이 얹힌 얼굴 이미지를 리포트로 넘긴다. 수치만 보면 어디를 잰 건지 알 수 없다.
-    // ⚠ sessionStorage — 탭을 닫으면 사라진다. 얼굴 사진을 기기에 눌러 앉히지 않는다.
-    //    서버로도 안 간다(sendMeasurement는 ratio·line·quality만 보낸다). 헌법 §4.
-    try{ if(STATE.overlay) sessionStorage.setItem("chugu_lecture_shot", STATE.overlay); }catch(e){}
     // 서버 적재 — 이 호출이 없어서 강의 참가자 측정값이 하나도 안 남았다(2026-08-18).
     // 색은 리포트에 안 쓰지만 측정은 됐고 동의 범위 안이다. 쌓아야 색 판정 정확도를 올릴 수 있다.
     /* axes를 안 넘겨서 **강의 측정 62건 전부 축값이 null이었다**(2026-08-29 발견).
@@ -2109,9 +2111,18 @@ function render(o){
       // hairline_detected가 빠져 있어 리포트가 3분할을 게이트할 수 없었다. 미검출이면 상안부가
       // 이마 중간 기준으로 잡혀 **체계적으로 짧게** 나오는데(검출O 0.173~0.314 vs 검출X 0.141~0.161),
       // 그 상태로 "하안부가 긴 편"을 내면 틀린 말이다. 옛 저장분은 이 값이 없어 undefined로 통과한다.
-      quality:{gaze_h:o.quality.gaze_h, dev_tilt:o.quality.dev_tilt, hazy:o.quality.hazy,
-               L_corrected:o.quality.L_corrected, forehead_used:o.quality.forehead_used,
-               hairline_detected:o.quality.hairline_detected}};
+      quality:(()=>{
+        const q={gaze_h:o.quality.gaze_h, dev_tilt:o.quality.dev_tilt, hazy:o.quality.hazy,
+                 L_corrected:o.quality.L_corrected, forehead_used:o.quality.forehead_used,
+                 hairline_detected:o.quality.hairline_detected};
+        /* 신설 14종(2026-08-29)은 quality에만 실려 있어 rec에 안 담기면 리포트가 영영 못 읽는다
+           (lower_balance 열흘 유실과 같은 유형). 검출 실패분은 키 자체가 없고 그대로 둔다. */
+        ["glabella_w","brow_len","brow_thick","brow_peak","brow_gap_out",
+         "eye_curve_up","eye_curve_dn","sclera_up","sclera_dn","eye_gap_out",
+         "nose_len","ala_thick","nostril_show","philtrum"].forEach(k=>{
+          if(o.quality[k]!=null) q[k]=o.quality[k];
+        });
+        return q; })()};
     try{
       let prev=[];
       try{ const old=JSON.parse(localStorage.getItem("chugu_photo_result")||"null");

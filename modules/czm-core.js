@@ -206,7 +206,7 @@
   var PHI = 1.618;
   var GOLDEN = {
     face_HW:   { ideal: PHI, name: "얼굴 가로 : 세로", a: "가로", b: "세로",
-                 low: "가로가 넉넉한 편", high: "세로로 긴 편",
+                 low: "황금비 대비 가로가 조금 넓은 편", high: "황금비 대비 세로가 긴 편",   // 어휘 교정 (대표 2026-08-29)
                  tell: "얼굴 길이를 가로폭으로 나눈 값이에요" },
     mouth_nose:{ ideal: PHI, name: "코 : 입 너비", a: "코", b: "입",
                  low: "코 대비 입이 아담한 편", high: "코 대비 입이 시원한 편",
@@ -218,7 +218,7 @@
                  low: "입술이 아래쪽에 자리한 편", high: "입술이 위쪽에 자리한 편",
                  tell: "입술틈에서 턱끝까지를 코밑에서 입술틈까지로 나눈 값이에요" },
     interocular:{ ideal: 1.0, name: "눈 길이 : 눈 사이", a: "눈 길이", b: "눈 사이",
-                 low: "눈 사이가 가까운 편", high: "눈 사이가 여유로운 편",
+                 low: "눈 사이 여백이 좁은 편", high: "눈 사이 여백이 넓은 편",   // "여유로운"은 사람 말이 아니다 (대표 2026-08-29)
                  tell: "두 눈 사이 거리를 한쪽 눈 길이로 나눈 값이에요 — 이상은 1 : 1이에요" }
   };
   // ±5%는 측정 오차 수준이다(같은 사람을 조명만 바꿔 찍어도 이 정도는 움직인다).
@@ -235,7 +235,8 @@
       idealPair: "1 : " + (+g.ideal.toFixed(2)),
       myPair: "1 : " + (+v.toFixed(2)),
       offPct: +off.toFixed(1),
-      label: Math.abs(ratio - 1) <= GOLDEN_TOL ? "황금비율에 가까워요" : (off < 0 ? g.low : g.high)
+      // 라벨 명사 종결 — 리포트 전면 합니다체 전환(대표 P 2026-08-29). 판정·산식 불변, 표기만.
+      label: Math.abs(ratio - 1) <= GOLDEN_TOL ? "황금비율에 가까운 편" : (off < 0 ? g.low : g.high)
     };
   }
 
@@ -277,8 +278,8 @@
     return {
       pct: t.pct, off: off, line: t.line,
       rel: rel, relLine: rel ? rel.join(" : ") : t.line,
-      label: even ? "세 칸이 고른 편이에요"
-                  : NAME[far] + (off[far] > 0 ? "가 긴 편이에요" : "가 짧은 편이에요"),
+      label: even ? "세 칸이 고른 편"
+                  : NAME[far] + (off[far] > 0 ? "가 긴 편" : "가 짧은 편"),
       tell: "이상적인 얼굴은 상·중·하가 1 : 1 : 1 이에요"
     };
   }
