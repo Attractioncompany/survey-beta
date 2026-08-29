@@ -120,13 +120,31 @@ function detectHairline(ctx, lm, W, H, faceW, brow, cheek){
   const top10 = P(lm,10,W,H);
   const xs = [top10.x - faceW*0.10, top10.x, top10.x + faceW*0.10];
   const maxRise = faceW*0.7;
+  /* 배경 도달도 경계다 (2026-08-29 실기기 오탐 수정).
+     이마를 완전히 드러낸 사람은 피부에서 머리카락 없이 곧장 배경으로 이어지는데,
+     기존 규칙("밝아지는 픽셀은 피부 취급")이 밝은 배경을 피부로 보고 끝까지 올라가
+     경계를 못 찾았다 — 이마를 깐 사람이 "이마 선이 가려서"라는 안내를 받는 역설.
+     상단 모서리 두 점의 Lab을 배경 기준으로 삼고, 배경과 같아지는 지점을
+     피부의 끝(=헤어라인 근사)으로 인정한다. 배경이 피부색과 비슷하면 못 가르는
+     한계는 남는다 — 그때는 기존과 같이 미검출이다. */
+  const bgTL = sampleLab(ctx, 3, 3), bgTR = sampleLab(ctx, W-4, 3);
+  /* 배경 감지는 **배경이 피부와 뚜렷이 다를 때만** 켠다. 첫 판에 무조건 켰더니
+     피부 톤과 배경 밝기가 가까운 사진(inv1)에서 이마의 밝은 피부를 배경으로 오판해
+     스캔이 일찍 끊겼다 — 13장 회귀 13→12. 배경↔피부가 가까우면 이 경로를 끄고
+     기존(어두움·색조 변화)만 쓴다. 이마 깐 사람의 전형(흰 벽·밝은 단색 배경)은
+     피부와 L·a·b 어느 축으로든 크게 갈라져 감지가 살아 있다. */
+  const refL0 = Math.min(brow.L, cheek.L + 6), refA0 = brow.a, refB0 = brow.b;
+  const bgFar = b => Math.abs(b.L-refL0) > 14 || Math.abs(b.a-refA0) > 10 || Math.abs(b.b-refB0) > 12;
+  const bgRefs = [bgTL, bgTR].filter(bgFar);
+  const isBg = px => bgRefs.some(b =>
+    Math.abs(px.L-b.L) < 10 && Math.abs(px.a-b.a) < 8 && Math.abs(px.b-b.b) < 8);
   const ys=[];
   for(const x of xs){
     // v3.2: 기준은 '고정' — L만 볼로 바닥 고정(하이라이트 오염 차단), 색조는 이마 자체.
     // 적응형 추적(EMA)은 기각: 잔머리의 점진적 어두워짐을 기준이 따라 내려가 경계를 통과함(가을딥 dev 로그 hairline_detected:false로 확인)
     const refL = Math.min(brow.L, cheek.L + 6);
     const refA = brow.a, refB = brow.b;
-    let boundary=null, run=0;
+    let boundary=null, run=0, bgRun=0;
     for(let dy=2; dy<maxRise; dy+=2){
       const y = top10.y - dy;
       if(y<2) break;
@@ -135,6 +153,9 @@ function detectHairline(ctx, lm, W, H, faceW, brow, cheek){
       const chromaShift = (Math.abs(px.a-refA) > 12 || Math.abs(px.b-refB) > 14) && px.L <= refL + 6;
       if(darker || chromaShift){ run++; if(run>=3){ boundary = y + 6; break; } }
       else run=0;
+      // 배경 도달 — 머리카락 없이 피부가 끝났다. 연속 3회라야 반사 한 줄에 안 속는다.
+      if(isBg(px)){ bgRun++; if(bgRun>=3){ boundary = y + 6; break; } }
+      else bgRun=0;
     }
     if(boundary!==null && boundary < top10.y - 4) ys.push(boundary);
   }
@@ -179,12 +200,15 @@ function detectHairline(ctx, lm, W, H, faceW, brow, cheek){
       if (x < 2 || x > W-3) { profile.push(null); profState.push("oob"); continue; }
       // 시작점이 이미 어두우면 = 머리가 덮고 있다. 못 잰 게 아니라 그렇게 생긴 것이다.
       if (isDark(sampleLab(ctx, x, top10.y, 2))) { profile.push(null); profState.push("covered"); continue; }
-      let b = null, run = 0;
+      let b = null, run = 0, bgRun = 0;
       for (let dy = 2; dy < maxRise; dy += 2) {
         const yy = top10.y - dy;
         if (yy < 2) break;
-        if (isDark(sampleLab(ctx, x, yy, 2))) { run++; if (run >= 3) { b = yy + 6; break; } }
+        const px = sampleLab(ctx, x, yy, 2);
+        if (isDark(px)) { run++; if (run >= 3) { b = yy + 6; break; } }
         else run = 0;
+        if (isBg(px)) { bgRun++; if (bgRun >= 3) { b = yy + 6; break; } }
+        else bgRun = 0;
       }
       if (b !== null) { profile.push(+((top10.y - b)/faceW).toFixed(3)); profState.push("found"); }
       else { profile.push(null); profState.push("none"); }
