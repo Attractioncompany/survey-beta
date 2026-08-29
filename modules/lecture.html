@@ -182,7 +182,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=fe9e0db"></script>
+<script src="czm-core.js?v=3ec7c1f"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -211,12 +211,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "fe9e0db";
+const BUILD = "3ec7c1f";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=fe9e0db";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=3ec7c1f";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -743,6 +743,33 @@ function verdicts(r, l, q){
      (조사 2026-08-18: 검출O 0.173~0.314 vs 검출X 0.141~0.161 — 구간이 겹치지도 않는다).
      그 상태로 "하안부가 가장 길어요"를 내면 틀린 말이다. 측정 못 한 건 말하지 않는다. */
   const hairOK = !q || q.hairline_detected !== false;
+
+  /* 얼굴형 잠정 판정 — index.html faceShapeLabel과 같은 경계(예시 13장 §8-2 · 13/13 일치).
+     대표 판단(2026-08-29): "기준 잡아서 일단 리포트가 나오게 만들어놔야 현장에서
+     잘못 나오는지 알 수 있다" + 재질문("오차가 그정도로 클까?")으로 강의판 포함 확정.
+     강의는 대표가 현장에서 육안 대조할 수 있는 유일한 자리라 오히려 검증에 최적이다.
+     경계 0.865 ±0.001 폭 안 판별은 신뢰 불가 — 실측 분포 후 재조정. 라벨은 계측으로 남긴다. */
+  (()=>{
+    const ss=r.side_straight, hw=r.face_HW, gn=r.gonial_ang, jd=r.jaw_drop;
+    if(typeof ss!=="number"||!isFinite(ss)) return;   // 신설값 없는 옛 측정 — 침묵
+    let label=null;
+    if(ss > 0.865){
+      if(typeof hw!=="number") return;
+      label = hw>=1.43 ? "긴 얼굴형에 가까워요" : hw<=1.24 ? "둥근형에 가까워요"
+            : "둥근형과 긴 얼굴형 사이예요";
+    } else {
+      if(typeof gn==="number" && gn>=133.4)      label="역삼각형에 가까워요";
+      else if(typeof jd==="number" && jd<=0.257) label="각진 얼굴형에 가까워요";
+      else                                       label="계란형에 가까워요";
+    }
+    out.push({group:"얼굴형", k:"얼굴형", v:label,
+              s:"시범 운영 중인 기준을 사용하며, 측정 결과가 쌓이면 조정될 수 있습니다"});
+    lecTrack("face_shape_shown",{label, ss:+ss.toFixed(3),
+      hw:typeof hw==="number"?+hw.toFixed(2):null,
+      gn:typeof gn==="number"?+gn.toFixed(1):null,
+      jd:typeof jd==="number"?+jd.toFixed(3):null});
+  })();
+
   const th = hairOK ? CZM.thirdsGolden(r.upper, r.mid, r.lower) : null;
   if(th) out.push({group:"얼굴형", k:"상 : 중 : 하", v:th.relLine,
                    s:`${th.label} · 이상적 비율은 1 : 1 : 1이에요`});
@@ -946,7 +973,7 @@ function renderReport(){
        } }catch(e){}
 
   const PART_PAGES=[
-    {t:"얼굴형", rows:pick("얼굴 가로 : 세로","상 : 중 : 하","턱선","턱끝","좌우 균형"), line:P["윤곽"]},
+    {t:"얼굴형", rows:pick("얼굴형","얼굴 가로 : 세로","상 : 중 : 하","턱선","턱끝","좌우 균형"), line:P["윤곽"]},
     {t:"눈",     rows:pick("눈매","눈 길이 : 눈 사이","눈썹 모양"), line:[P["눈"],P["눈썹"]].filter(Boolean).join(" ")},
     {t:"코",     rows:pick("코 : 입 너비"), line:P["코"]},
     {t:"입",     rows:pick("입꼬리","윗입술 : 아랫입술"), line:P["입"]},
@@ -1106,7 +1133,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=fe9e0db"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=3ec7c1f"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
