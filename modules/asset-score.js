@@ -47,7 +47,18 @@ export const COLOR_ASSETS = [
 export const ASSETS = [
   // ── 눈 (v1.4 §3-1)
   { part:"눈", key:"eye_angle",   label:"눈꼬리",
-    pos:{T:+0.6}, neg:{T:-0.4} },                       // 상향=카리·세련·에너 / 하향·수평=로맨·우아
+    pos:{T:+0.6}, neg:{T:-0.4},                         // 상향=카리·세련·에너 / 하향·수평=로맨·우아
+    /* natural:0 — 이 값의 자연 영점(눈머리와 눈꼬리가 같은 높이). 도(度)가 아니라
+       세로 오프셋을 얼굴 크기로 나눈 정규화 지수다(poc-metrics.js).
+       실측 97건: 양수 93건(95.9%) · 중앙값 2.08 · IQR 1.56~2.81.
+       사람 눈은 원래 눈꼬리가 눈머리보다 조금 높다(양의 canthal tilt가 정상)이라
+       이 쏠림은 측정 오류가 아니다. 그래서 **부호로 방향을 말하면 96%가 같은 말을 듣는다.**
+       한편 표본 기준 하위(s<0)를 "내려와 있다"로 단정하면 96%에게 거짓말이 된다
+       (대표 지적 2026-08-25: "측정에서는 수평에 가까운 눈매라면서 눈꼬리가 부드럽게
+       내려온다고 해설이 되어있으면 안맞는거아닌가").
+       그래서 가르는 것은 셋이다 — 실제로 내려간 눈(4%)만 "내려와 있다"고 말하고,
+       나머지는 올라간 정도를 뚜렷/완만으로 나눈다. 좌표 기여(s)는 손대지 않는다. */
+    natural:0, sd_w:0.4288 },
   { part:"눈", key:"eye_round",   label:"눈 종횡비", derive:m => ratio(m.eye_open, m.eye_len),
     pos:{T:-0.4}, neg:{T:+0.4, D:+0.2},                 // 동그람 / 길고 가늠
     /* ⚠ 재현성 게이트 실격 (2026-08-25 12명 판정). r = SD_w/SD_b = **0.497** (기준 0.35).
@@ -58,7 +69,7 @@ export const ASSETS = [
     enabled:false, gate:"재현성 r=0.497 (기준 0.35) — 2026-08-25 12명 판정" },
   { part:"눈", key:"eye_len",     label:"눈 크기",
     pos:{M:-0.4}, neg:{M:+0.4} },                       // 큼=동안. D 소적재(여성한정)는 섀도라 제외(§5-3)
-  { part:"눈", key:"interocular", label:"눈 사이 간격",
+  { part:"눈", key:"interocular", label:"눈 사이 간격", sd_w:0.0416,
     pos:{M:-0.2}, neg:null },                           // 넓음만 단방향 — 좁음은 앵커 없음(§3-1)
 
   // ── 눈썹 (v1.4 §3-2)
@@ -77,17 +88,17 @@ export const ASSETS = [
     /* ⚠ 재현성 게이트 실격 (2026-08-25 12명 판정). r = **0.442** (기준 0.35).
        LOO 최소 0.377로 역시 견고한 실격. eye_round와 같은 경위다 — 위 주석 참조. */
     enabled:false, gate:"재현성 r=0.442 (기준 0.35) — 2026-08-25 12명 판정" },
-  { part:"입", key:"mouth_w",       label:"입 크기",
+  { part:"입", key:"mouth_w",       label:"입 크기", sd_w:0.0105,
     pos:{D:+0.4}, neg:null },                           // 큼만 — 조합 판독 전용(D28 단독 금지)
 
   // ── 윤곽 (v1.4 §3-5)
   { part:"윤곽", key:"jaw_angular_deg", label:"턱선 꺾임",
     pos:{T:+0.6, D:+0.3}, neg:{T:-0.6} },
-  { part:"윤곽", key:"face_HW",         label:"얼굴 세로/가로",
+  { part:"윤곽", key:"face_HW",         label:"얼굴 세로/가로", sd_w:0.0354,
     pos:{M:+0.6}, neg:{M:-0.6} },                       // M축 전용(§5-3 — T·D 적재 제거)
-  { part:"윤곽", key:"chin_len",        label:"턱 길이",
+  { part:"윤곽", key:"chin_len",        label:"턱 길이", sd_w:0.0109,
     pos:{M:+0.4}, neg:{M:-0.4} },
-  { part:"윤곽", key:"parts_vpos",      label:"파츠 상하 위치",
+  { part:"윤곽", key:"parts_vpos",      label:"파츠 상하 위치", sd_w:0.0155,
     pos:{M:-0.4}, neg:{M:+0.4} },                       // 아래쪽(값 큼)=동안
 
   // ── 볼·입체 (v1.6 §3-6) — 3D 스캔 전용
@@ -134,12 +145,47 @@ export function buildRef(samples){
      scoreOne은 L141에서 이미 derive를 쓰고 있었다. 두 곳이 갈려 있던 것이다. */
   const defs=[...ASSETS, ...COLOR_ASSETS];
   const seen=new Set();
+  /* 사람 단위 집계 (이론 v3 등재 D · 2026-08-29).
+     행 단위로 세면 여러 장 찍은 사람이 기준을 끈다 — 실측에서 12장 찍은 한 명이
+     기준의 15%를 차지했고 IQR이 필드별로 15~62% 어긋났다.
+     같은 user_id는 **평균 한 표**로 접는다. user_id가 없는 샘플은 각자 한 사람으로 본다
+     (옛 스냅샷·수기 표본 호환). */
+  const byPerson = (() => {
+    const hasId = samples.some(s => s && s.user_id);
+    if (!hasId) return samples;
+    const g = new Map();
+    for (const s of samples) {
+      const id = s.user_id || Symbol();
+      if (!g.has(id)) g.set(id, []);
+      g.get(id).push(s);
+    }
+    // 사람마다 필드별 평균을 낸 대표 샘플 하나를 만든다
+    return [...g.values()].map(rows => {
+      if (rows.length === 1) return rows[0];
+      const rep = {};
+      const keys = new Set(rows.flatMap(r => Object.keys(r)));
+      for (const k of keys) {
+        const vs = rows.map(r => r[k]).filter(isNum);
+        if (vs.length) rep[k] = vs.reduce((a, b) => a + b, 0) / vs.length;
+      }
+      return rep;
+    });
+  })();
   for(const a of defs){
     const k=a.key;
     if(seen.has(k)) continue; seen.add(k);
-    const vals=samples.map(s => a.derive ? a.derive(s) : s[k]).filter(isNum).sort((a,b)=>a-b);
+    const vals=byPerson.map(s => a.derive ? a.derive(s) : s[k]).filter(isNum).sort((a,b)=>a-b);
     if(vals.length<4){ ref[k]=null; continue; }          // 4개 미만이면 사분위가 무의미
-    const q=p=>vals[Math.min(vals.length-1, Math.floor(vals.length*p))];
+    /* 분위 계산 교정 (이론 지적 2026-08-27 · 구현 오류라 이론 변경 없음).
+       옛 식 `vals[floor(n*p)]`는 n=12에서 q(0.5)=vals[6] — 12개의 중앙값이 아니라
+       **7번째 값(≈54퍼센타일)**이었다. q(0.25)=vals[3](≈29pct), q(0.75)=vals[9](≈79pct)라
+       IQR도 25–75가 아닌 **29–79 비대칭 구간**이었다.
+       부호가 갈리는 지점이 중앙에서 밀려 있었고, 그 부호가 곧 부위 해설 문장을 골랐다.
+       선형보간(R type-7 · numpy 기본)으로 바꾼다 — 표본이 작을수록 차이가 크다. */
+    const q=p=>{
+      const h=(vals.length-1)*p, lo=Math.floor(h), hi=Math.ceil(h);
+      return lo===hi ? vals[lo] : vals[lo] + (h-lo)*(vals[hi]-vals[lo]);
+    };
     const med=q(0.5), iqr=q(0.75)-q(0.25);
     ref[k]={med, iqr, n:vals.length};
   }
@@ -161,6 +207,19 @@ export function scoreAssets(m, ref){
     const s = relative(raw, ref[a.key]);
     const contrib = s==null ? null : (s>=0 ? a.pos : a.neg);
     const rec={ part:a.part, key:a.key, label:a.label, raw:isNum(raw)?+raw.toFixed(4):null, s:s==null?null:+s.toFixed(3) };
+    // 자연 영점이 있는 필드는 "실제로 그 아래인가"를 따로 표시한다.
+    // 방향(dir)은 표본 기준 s 그대로 두고, 해설이 단정형을 쓸지 정도형을 쓸지만 이걸로 고른다.
+    if(isNum(a.natural) && isNum(raw)) rec.below = raw < a.natural;
+    /* 중간대 — |관측 − 중앙값| < SD_w이면 방향을 단정하지 않는다(이론 v3 §5-2 등재 F).
+       SD_w는 같은 사람을 다시 찍었을 때의 흔들림 폭이다. 그 안쪽에 선 사람은
+       다시 찍으면 문장이 뒤집힌다 — face_HW에서 52명 중 23명(44%)이 그 자리다.
+       ⚠ 침묵하지 않는다(대표 지시 2026-08-29: "중간값을 두고 중간값해설을 만들면되지").
+       방향 대신 균형을 말한다. 균형은 애매한 상태가 아니라 그 사람이 가진 것이고,
+       조언도 거기서 갈린다 — 기울어진 얼굴은 그 방향을 살리거나 눌러야 하지만
+       균형에 선 얼굴은 어느 쪽으로든 갈 수 있다. 그게 더 쓸모 있는 정보다.
+       SD_w가 없는 필드는 이 가지가 없다 — 지어낸 폭으로 자르지 않는다. */
+    if(isNum(a.sd_w) && isNum(raw) && ref[a.key] && isNum(ref[a.key].med)
+       && Math.abs(raw - ref[a.key].med) < a.sd_w) rec.mid = true;
     if(a.enabled===false) rec.gated=a.gate||true;         // 관측은 남기고 좌표에는 안 넣는다
     detail.push(rec);
     if(a.enabled===false) continue;                       // 승격 게이트가 닫힌 에셋
@@ -314,7 +373,8 @@ export function partObservations(score, part, limit=2){
     .filter(d=>d.part===part && d.s!==null && !d.gated)
     .sort((a,b)=>Math.abs(b.s)-Math.abs(a.s))
     .slice(0,limit)
-    .map(d=>({field:d.key, dir:d.s>=0?"hi":"lo"}));
+    // mid가 lo0보다 앞선다 — 재현성이 방향을 보장하지 못하는 자리가 먼저다.
+    .map(d=>({field:d.key, dir:d.mid?"mid":(d.s>=0?"hi":(d.below?"lo0":"lo")), below:d.below, mid:d.mid}));
 }
 
 /** 좌표 → 최근접 타입. 1·2위 거리비가 0.8 이상이면 A′(인접) 병기(§5-1). */
@@ -473,5 +533,35 @@ export function selfCheck(){
   ok(obs.length<=2 && obs.every(o=>o.field && (o.dir==="hi"||o.dir==="lo")), "관찰 추출 형식");
   ok(partObservations(one, "코").length===0, "3D 없으면 코 관찰 0");
 
-  return "asset-score selfCheck 통과 (15/15 · 볼 슬롯 4-b 포함)";
+  // 15) 자연 영점 — 방향(dir)은 표본 기준 그대로, below만 실제 부호를 알린다.
+  //     표본 중앙값 3에서 2(수평보다 위이나 표본 하위)를 넣으면 s<0이면서 below=false여야
+  //     해설이 "내려와 있다"가 아니라 "완만하게 올라가 있다"를 고를 수 있다.
+  {
+    const refE={eye_angle:{med:3, iqr:2, n:12}};
+    const d=scoreAssets({eye_angle:2}, refE).detail.find(x=>x.key==="eye_angle");
+    ok(d.s<0, "2는 표본 하위 → s 음수");
+    ok(d.below===false, "2는 자연 영점 위 → below false (내려갔다고 말하면 안 된다)");
+    const dn=scoreAssets({eye_angle:-1.5}, refE).detail.find(x=>x.key==="eye_angle");
+    ok(dn.below===true, "실제로 내려간 눈만 below true");
+    ok(partObservations(scoreAssets({eye_angle:2}, refE), "눈")[0].dir==="lo", "표본 하위·영점 위 → lo(정도형)");
+    ok(partObservations(scoreAssets({eye_angle:-1.5}, refE), "눈")[0].dir==="lo0", "영점 아래 → lo0(단정형)");
+  }
+
+  // 16) 사람 단위 집계 — 같은 user_id는 여러 장을 찍어도 한 표다
+  {
+    const many = [
+      {user_id:"A", face_HW:1.0}, {user_id:"A", face_HW:1.0}, {user_id:"A", face_HW:1.0},
+      {user_id:"A", face_HW:1.0}, {user_id:"A", face_HW:1.0}, {user_id:"A", face_HW:1.0},
+      {user_id:"B", face_HW:2.0}, {user_id:"C", face_HW:3.0}, {user_id:"D", face_HW:4.0},
+    ];
+    const r = buildRef(many).face_HW;
+    // 행 단위면 A가 6/9라 중앙값이 1.0이 된다. 사람 단위면 1·2·3·4의 중앙값 2.5여야 한다.
+    ok(Math.abs(r.med - 2.5) < 1e-9, `사람 단위 중앙값 2.5여야 함 (받은 값 ${r.med})`);
+    ok(r.n === 4, `사람 수 4여야 함 (받은 값 ${r.n})`);
+    // user_id가 없는 옛 표본은 각자 한 사람 — 기존 동작 유지
+    const old = buildRef([{face_HW:1},{face_HW:2},{face_HW:3},{face_HW:4}]).face_HW;
+    ok(old.n === 4 && Math.abs(old.med - 2.5) < 1e-9, "user_id 없는 표본은 행=사람");
+  }
+
+  return "asset-score selfCheck 통과 (22/22 · 사람 단위 16 포함)";
 }

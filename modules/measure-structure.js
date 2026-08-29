@@ -114,6 +114,127 @@
     // face_taper: temple_w는 «개인차 미검증» — 불변이면 jaw_w의 재척도일 뿐이다(오류대장 §046)
     var faceTaper = templeW > 0 ? +(jawW / templeW).toFixed(3) : null;
 
+    /* 측면 직선성 — 대표 지시 2026-08-29의 얼굴형 판별 1단계.
+       "긴형의 특징중에 또 하나가 정면에서 볼떄 눈썹 옆(관자놀이쯤)부터 하악각까지가
+        거의 일자로 떨어져서 더 길이감이 강하게 느껴져. 보통 계란형들은 광대부터
+        턱선방향으로 각져서 떨어지는 반면, 긴형과 둥근형은 광대부터 하악각까지가
+        정면에서 봤을때 일자로 떨어지는 편이야"
+
+       위의 face_taper(lm127·356 기준)로는 이걸 못 잰다. 예시 4장으로 확인했더니
+       그 랜드마크에서는 광대가 관자놀이보다 **좁게** 나온다 — 해부학적으로 뒤집힌 값이라
+       lm127·356이 대표가 말한 "눈썹 옆"보다 위·뒤를 잡고 있다는 뜻이다.
+       그래서 고정 인덱스가 아니라 **눈썹 높이에서 윤곽선을 잘라** 폭을 잰다.
+       같은 방식으로 광대 높이·하악각 높이도 잰다.
+
+       1에 가까울수록 일자(긴형·둥근형), 작을수록 아래로 좁아짐(계란형).
+       ⚠ 로깅 전용. 밴드 경계는 이론팀 판정 사항이다. */
+    var OVAL_L = [234,127,162,21,54,103,67,109,132,93,58,172,136,150,149,176,148];
+    var OVAL_R = [454,356,389,251,284,332,297,338,361,323,288,397,365,379,378,400,377];
+    function widthAtY(y){
+      function nearest(side){
+        var best = null, bd = Infinity;
+        for (var i = 0; i < side.length; i++) {
+          var p = P(side[i]), d = Math.abs(p.y - y);
+          if (d < bd) { bd = d; best = p; }
+        }
+        return best;
+      }
+      var l = nearest(OVAL_L), r = nearest(OVAL_R);
+      return (l && r) ? Math.abs(r.x - l.x) : null;
+    }
+    var wBrow  = widthAtY(browY);
+    var wCheek = widthAtY(P(116).y);
+    var wGon   = widthAtY((P(172).y + P(397).y) / 2);
+    var sideStraight = (wBrow > 0 && wGon != null) ? +(wGon / wBrow).toFixed(3) : null;
+
+    /* 턱 하강·하악 꺾임 — 대표 지시 2026-08-29 3차의 각진형/역삼각 판별.
+       각진형: "턱이 수평감이 있고, 광대-하악각-하악각-턱까지의 선이 선명하게 드러난다"
+       역삼각: "광대→하악각부터 각도가 안쪽으로 들어와서 눈 아랫부분이 삼각형의 느낌을
+               주면서 급격하게 들어간다. 보통 이마 양옆이 좀 벗겨지듯이 넓다"
+
+       jaw_drop   = 하악각에서 턱끝까지의 세로 낙차 / 얼굴폭. 작을수록 턱이 수평이다.
+       gonial_ang = 광대 → 하악각 → 턱끝이 이루는 각. 클수록 안쪽으로 급히 들어간다.
+
+       예시 13장 검산: 각진형 하강 0.210~0.251 · 꺾임 126.4~133.1
+                       역삼각 하강 0.263~0.286 · 꺾임 133.7~145.8  — 둘 다 겹침 없이 갈렸다.
+       ⚠ 로깅 전용. 경계는 이론팀 판정 사항이다. */
+    var _gonL = P(172), _gonR = P(397), _chin = P(152);
+    var jawDrop = faceW > 0
+      ? +((((_chin.y - _gonL.y) + (_chin.y - _gonR.y)) / 2) / faceW).toFixed(3) : null;
+    function angAt(a, b, cc) {
+      var v1 = Math.atan2(a.y - b.y, a.x - b.x), v2 = Math.atan2(cc.y - b.y, cc.x - b.x);
+      var d = Math.abs(v1 - v2) * 57.3; if (d > 180) d = 360 - d; return d;
+    }
+    var gonialAng = +(((angAt(P(116), _gonL, _chin) + angAt(P(345), _gonR, _chin)) / 2)).toFixed(1);
+
+    /* ── 대표 요청 항목 신설 (2026-08-29) ─────────────────────────────
+       "체크되서 해설로 나갔으면 하는 부분" 15개 중, **랜드마크만으로 재는 것**을 여기 넣는다.
+       음영·3D가 필요한 것(측면 턱선, 얼굴 입체감, 콧대 휘어짐)은 여기서 하지 않는다 —
+       2D 정면 사진에서 지어내면 조명을 재고 얼굴이라고 부르게 된다.
+       전부 얼굴폭(faceW) 또는 얼굴높이(faceH)로 정규화한다. 로깅 전용. */
+
+    // ⑥ 미간 너비 — 눈썹 안쪽 끝 사이 (눈썹 굵기·길이 조절의 기준)
+    var glabellaW = +(dist(P(107), P(336)) / faceW).toFixed(3);
+    // ⑥ 눈썹 길이 — 안쪽 끝 ~ 바깥 끝
+    var browLenL = dist(P(107), P(46)), browLenR = dist(P(336), P(276));
+    var browLen = +(((browLenL + browLenR) / 2) / faceW).toFixed(3);
+    // ⑥ 눈썹 두께 — 위선(70·105·107) 대비 아래선(46·53·52)의 세로 간격 평균
+    var browThick = +((
+        (Math.abs(P(105).y - P(53).y) + Math.abs(P(334).y - P(283).y)) / 2) / faceH).toFixed(4);
+    /* ⑥ 눈썹 산 위치 — 안쪽 끝에서 산까지가 눈썹 전체 길이의 몇 %인가.
+       0.5면 가운데, 클수록 바깥쪽에 산이 있다. 눈썹을 어디서 꺾을지의 기준이 된다. */
+    var browPeakL = browLenL > 0 ? Math.abs(P(105).x - P(107).x) / browLenL : null;
+    var browPeakR = browLenR > 0 ? Math.abs(P(334).x - P(336).x) / browLenR : null;
+    var browPeak = (browPeakL != null && browPeakR != null)
+      ? +(((browPeakL + browPeakR) / 2)).toFixed(3) : null;
+    // ⑥ 눈썹 바깥 끝 ~ 얼굴 윤곽 여백 (눈썹을 더 뺄 수 있는가)
+    var browGapOut = +((
+        (Math.abs(P(46).x - P(234).x) + Math.abs(P(276).x - P(454).x)) / 2) / faceW).toFixed(3);
+
+    /* ⑨ 눈 곡률 — 위 눈꺼풀과 아래 눈꺼풀이 각각 얼마나 휘었나.
+       양 끝을 잇는 직선에서 가운데가 얼마나 벗어나는지를 눈 길이로 나눈다.
+       위가 크면 위로 둥근 눈, 아래가 크면 아래로 둥근 눈, 둘 다 작으면 직선적인 눈이다.
+       **타입 이름을 붙이지 않는다** — 대표 요청도 "어떤 타입으로 규정하지않더라도"였다. */
+    function lidCurve(outer, inner, mid) {
+      var a = P(outer), b = P(inner), m = P(mid);
+      var len = Math.hypot(b.x - a.x, b.y - a.y);
+      if (!(len > 0)) return null;
+      var d = Math.abs((b.y - a.y) * m.x - (b.x - a.x) * m.y + b.x * a.y - b.y * a.x) / len;
+      return d / len;
+    }
+    var eyeCurveUp = +(((lidCurve(33, 133, 159) + lidCurve(263, 362, 386)) / 2)).toFixed(4);
+    var eyeCurveDn = +(((lidCurve(33, 133, 145) + lidCurve(263, 362, 374)) / 2)).toFixed(4);
+
+    /* ⑩ 삼백안 — 홍채 위·아래로 흰자가 얼마나 보이나.
+       홍채 중심(468·473)에서 위·아래 눈꺼풀까지의 거리를 홍채 반지름으로 나눈다.
+       1보다 크면 그쪽에 흰자가 드러난다. 아래가 크면 하삼백안, 위가 크면 상삼백안이다.
+       홍채 랜드마크는 face_landmarker.task가 기본 포함한다(478점). */
+    function scleraShow(iris, ringA, ringB, upper, lower) {
+      var c = P(iris), r = dist(P(ringA), P(ringB)) / 2;
+      if (!(r > 0)) return null;
+      return { up: (c.y - P(upper).y) / r, dn: (P(lower).y - c.y) / r };
+    }
+    var _scL = scleraShow(468, 469, 471, 159, 145);
+    var _scR = scleraShow(473, 474, 476, 386, 374);
+    var scleraUp = (_scL && _scR) ? +(((_scL.up + _scR.up) / 2)).toFixed(3) : null;
+    var scleraDn = (_scL && _scR) ? +(((_scL.dn + _scR.dn) / 2)).toFixed(3) : null;
+
+    // ⑪ 눈 바깥 끝 ~ 얼굴 윤곽 여백 (눈 주위 여백감)
+    var eyeGapOut = +((
+        (Math.abs(P(33).x - P(234).x) + Math.abs(P(263).x - P(454).x)) / 2) / faceW).toFixed(3);
+
+    // ⑫ 코 길이 — 코뿌리(168) ~ 코밑(2)
+    var noseLen = +((Math.abs(P(2).y - P(168).y)) / faceH).toFixed(3);
+    // ⑫ 콧볼 두께 — 콧볼 폭 대비 코 기둥(측면 아닌 정면 근사)
+    var alaThick = +((dist(P(48), P(278)) / dist(P(129), P(358)))).toFixed(3);
+    // ⑫ 콧구멍 노출 — 코끝(4)이 콧볼 아래선보다 얼마나 위인가. 클수록 콧구멍이 보인다
+    var nostrilShow = +(((P(2).y - P(4).y) / faceH)).toFixed(4);
+
+    // ⑭ 인중 길이 — 코밑(2) ~ 윗입술 상단(0)
+    var philtrum = +((Math.abs(P(0).y - P(2).y)) / faceH).toFixed(4);
+    var cheekOut     = (wBrow > 0 && wCheek != null) ? +(wCheek / wBrow).toFixed(3) : null;
+    var jawCheek     = (wCheek > 0 && wGon != null) ? +(wGon / wCheek).toFixed(3) : null;
+
     // ── 좌우 대칭 (2026-08-18 대표 지시) ────────────────────
     // 자기 얼굴 안에서만 재므로 외부 표본도 규준도 필요 없다.
     // 중앙선 = 미간(168)·코밑(2)·턱끝(152)을 최소제곱으로 맞춘 직선.
@@ -194,6 +315,16 @@
         brow_eye_gap: browEyeGap, brow_eye_gap_x: browEyeGapX,
         lip_upper: lipUpper, lip_lower: lipLower, lip_ul_ratio: lipUlRatio, mouth_open: mouthOpen,
         temple_w: templeW, chin_len: chinLen, parts_vpos: partsVpos, face_taper: faceTaper,
+        // 얼굴형 1단계 후보 (대표 정의 2026-08-29) — 로깅 전용
+        side_straight: sideStraight, cheek_out: cheekOut, jaw_cheek: jawCheek,
+        jaw_drop: jawDrop, gonial_ang: gonialAng,
+        // 대표 요청 신설 (2026-08-29) — 랜드마크 기반, 로깅 전용
+        glabella_w: glabellaW, brow_len: browLen, brow_thick: browThick,
+        brow_peak: browPeak, brow_gap_out: browGapOut,
+        eye_curve_up: eyeCurveUp, eye_curve_dn: eyeCurveDn,
+        sclera_up: scleraUp, sclera_dn: scleraDn, eye_gap_out: eyeGapOut,
+        nose_len: noseLen, ala_thick: alaThick, nostril_show: nostrilShow,
+        philtrum: philtrum,
         asym_score: asymScore, asym_max: +asymMax.toFixed(2),
         asym_parts: asymParts, asym_tilt: asymTilt,
         // 미간 기준 — 규준(41.6:58.4)과 직접 견줄 수 있는 유일한 비율

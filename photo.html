@@ -478,9 +478,9 @@ body.cam-open{overflow:hidden;}
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="modules/czm-core.js?v=52df0ad"></script>
-<script src="modules/measure-color.js?v=52df0ad"></script>
-<script src="modules/measure-structure.js?v=52df0ad"></script>
+<script src="modules/czm-core.js?v=fe9e0db"></script>
+<script src="modules/measure-color.js?v=fe9e0db"></script>
+<script src="modules/measure-structure.js?v=fe9e0db"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -529,8 +529,8 @@ window.__pm={ analyze:img=>analyze(img), get state(){ return STATE; } };
 // 개발/검수 모드: 주소 뒤에 ?dev=1 — 출력 JSON·랜드마크 오버레이·엔진 버전 표기 등 순수 개발용만.
 // 지표(수치+해설)는 기본 화면에 항상 표시한다 (대표 2회 확정 07-11·07-20, REQUEST_dev_ux_restore §1).
 // 과거의 "수치는 내부·검증·B2B 전용" 근거는 폐기됨 — 지표를 다시 숨기려면 대표 승인 필요.
-const DEV = new URLSearchParams(location.search).get("52df0ad")==="1";
-if(DEV) document.body.classList.add("52df0ad");
+const DEV = new URLSearchParams(location.search).get("fe9e0db")==="1";
+if(DEV) document.body.classList.add("fe9e0db");
 // 성별 전달 경로 (이론 이목구비앵커 §3, 2026-07-30) — index GENDER를 ?gender=f/m 로 수신. 여성한정 앵커(eye_len F1)·성별밴드(U30) 검증용.
 // ⚠ photo_measurements payload에는 넣지 않음(성별은 app_users.gender 조인, backend 결정 2026-07-30). 현재는 경로만 확보, 실사용은 통합/eye_len 카드 구현 시.
 const GENDER_PM = new URLSearchParams(location.search).get("gender")||null;
@@ -602,6 +602,7 @@ async function sendMeasurement(out){
       line_score:a.line_score, soft_deep:a.soft_deep, warm_cool:a.warm_cool,
       quality:out.quality||{}
     };
+
     // keepalive: 강의 흐름은 전송 직후 리포트로 떠난다. 없으면 요청이 취소된다(2026-08-18 진단 유실과 같은 원인).
     await fetch(`${PM_SB_URL}/rest/v1/photo_measurements`,{method:"POST",keepalive:true,headers:{"Content-Type":"application/json","apikey":PM_SB_KEY,"Authorization":`Bearer ${PM_SB_KEY}`},body:JSON.stringify(payload)});
   }catch(e){}
@@ -907,7 +908,18 @@ function analyze(img){
   // 드레이핑에 쓸 얼굴 크롭 — 개발 오버레이를 그리기 전에 떠 둡니다(점이 찍히면 색 비교가 흐려져요)
   const faceCrop = cropFace(cv, lm, W, H, faceW);
   // 셀카 측정 오버레이(VLAS #2) — 위와 같은 이유로 dev 랜드마크 점이 찍히기 전에 뜹니다. STATE 메모리 전용, out(JSON)에는 넣지 않습니다.
-  const overlayImg = overlayFace(cv, lm, W, H, faceW, {upper:f_upper, mid:f_mid, lower:f_lower, browY, splitY, topY:hairTop.y, hairline_detected:hairTop.detected, eye_angle:+eyeAngle.toFixed(2), face_HW:+faceRatio.toFixed(2)});
+  const overlayImg = overlayFace(cv, lm, W, H, faceW, {upper:f_upper, mid:f_mid, lower:f_lower, browY, splitY, topY:hairTop.y, hairline_detected:hairTop.detected,
+       eye_angle:+eyeAngle.toFixed(2), face_HW:+faceRatio.toFixed(2),
+       /* 이상비 나머지 (대표 지시 2026-08-27: "이미지에 오버레이되어있는 데이터 방식이
+          매우 깔끔하고 보기좋음"). 리포트에서 숫자로만 나가던 것을 사진 위 그 자리에 얹는다.
+          스코어링은 넣지 않는다 — 대표 지시이자 헌법 §4(절대 매력 점수 금지)와 같은 방향. */
+       interocular:+interocular.toFixed(2),
+       mouth_nose:(mouthW && noseW) ? +(mouthW/noseW).toFixed(2) : null,
+       /* 입이 벌어진 사진에서는 입술 두께비·하안부 균형이 둘 다 stomion(입 다문 선)을
+          기준으로 나오므로 값이 어긋난다. 리포트가 이미 mouth_open을 게이트로 쓰고 있어
+          같은 기준을 오버레이에도 적용한다 — 틀린 숫자를 얼굴 위에 얹지 않는다. */
+       lip_ul:mouthOpen ? null : lipUlRatio,
+       lower_balance:mouthOpen ? null : R_.lower_balance});
   // 해설지 부위 장에 붙일 조각. 위 둘과 같은 이유로 dev 랜드마크 점이 찍히기 전에 뜬다.
   // 원본 캔버스(cv)는 읽기만 한다 — 측정은 이미 위에서 끝났고 여기서 아무것도 바뀌지 않는다.
   const partCrops = cropParts(cv, lm, W, H);
@@ -954,11 +966,73 @@ function analyze(img){
       lip_upper:lipUpper, lip_lower:lipLower, lip_ul_ratio:lipUlRatio, mouth_open:mouthOpen,
       temple_w:templeW,                                              // [가설] 내부 신호 전용, 카드 비노출
       chin_len:chinLen, parts_vpos:partsVpos, face_taper:faceTaper,
-      n_mid_pct:_ST.ratio.n_mid_pct, n_low_pct:_ST.ratio.n_low_pct}, // M축·윤곽 후보 — 로깅 전용, 판정 미투입 [가설]
+      // ⚠ _ST.ratio에서 끌어오는 값은 여기 빠뜨리면 화면에는 보이고 서버에는 안 남는다.
+      //   lower_balance가 실제로 그렇게 열흘간 0건이었다(분석팀 2026-08-29 ⑥-1).
+      //   위 597행 주석이 자책한 3분할 5종 사고가 바로 옆 필드에서 재발한 것이다.
+      n_mid_pct:_ST.ratio.n_mid_pct, n_low_pct:_ST.ratio.n_low_pct,   // M축·윤곽 후보 — 로깅 전용, 판정 미투입 [가설]
+      lower_balance:_ST.ratio.lower_balance,
+      // 비대칭 4종 — 계산만 되고 이 파일에 한 번도 실리지 않았다(2026-08-29 발견).
+      // DB 컬럼이 없어 아래 quality에 실어 보낸다. 컬럼 신설은 백엔드팀 요청 대상.
+      asym_score:_ST.ratio.asym_score, asym_max:_ST.ratio.asym_max,
+      asym_parts:_ST.ratio.asym_parts, asym_tilt:_ST.ratio.asym_tilt,
+      // 얼굴형 1단계 후보 (대표 정의 2026-08-29) — 로깅 전용, 판정 미투입
+      side_straight:_ST.ratio.side_straight, cheek_out:_ST.ratio.cheek_out,
+      jaw_cheek:_ST.ratio.jaw_cheek, jaw_drop:_ST.ratio.jaw_drop, gonial_ang:_ST.ratio.gonial_ang},
     line:{jaw_angular_deg:+jawAngular.toFixed(1), chin_angle_deg:+chinAngle.toFixed(1), brow_arch_deg:+browArch.toFixed(1),
       eye_angle:+eyeAngle.toFixed(2), eye_open:+eyeOpen.toFixed(2), mouth_corner:+mouthCorner.toFixed(2),
       jaw_curve_mse3:jawCurveMse3, jaw_curve_mse2:jawCurveMse2, jaw_curve_a:jawCurveA}
   };
+  /* ⚠ STATE.ratio는 _ST.ratio를 손으로 옮겨 적은 것이라, 새 필드가 생기면 여기 적기를 잊는다.
+     실제로 세 번 그랬다 — 3분할 5종이 열흘간, lower_balance가 그 옆에서, asym 4종은 아예 한 번도.
+     셋 다 화면에는 멀쩡히 보여서 아무도 몰랐다(분석팀 2026-08-29 ⑥-1이 둘째를 발견).
+     이제 옮겨 적지 않은 키 이름이 quality에 남으므로 다음 회차 첫 판독에서 바로 잡힌다.
+     통째 펼치기로 자동화하지 않는 이유: DB 전송(601행)이 컬럼과 1:1이라 없는 컬럼이 섞이면
+     전송 전체가 실패한다. 옮겨 적는 것은 사람이 하고, 빠뜨렸는지는 기계가 센다. */
+  /* 이마 곡률 — 대표 얼굴형 기준의 "헤어라인이 둥글려져 있을 것" 조건(2026-08-29).
+     전용 컬럼이 없어 quality에 싣는다. 분포가 쌓이면 이론팀이 밴드를 정한다.
+     검출 실패 시 null이 아니라 키 자체를 넣지 않는다 — 못 잰 것과 0을 섞지 않는다. */
+  if(_CL && _CL.hairTop && _CL.hairTop.arch != null){
+    STATE.quality.forehead_arch = _CL.hairTop.arch;
+    // 어느 폭에서 쟀는지 함께 남긴다 — 폭이 다르면 값의 크기도 달라서, 섞어서
+    // 분포를 내면 두 척도를 한 자에 놓는 것이 된다.
+    STATE.quality.arch_span = _CL.hairTop.arch_span;
+  }
+  // 헤어라인 유형 판별 재료 (대표 4유형 기준, 2026-08-29)
+  ["hair_irregular","hair_lr_diff","hair_straight"].forEach(k=>{
+    if(_CL && _CL.hairTop && _CL.hairTop[k] != null) STATE.quality[k] = _CL.hairTop[k];
+  });
+  // 머리 폭 — 배경이 복잡하면 null이라 그때는 키를 안 넣는다(못 잰 것과 0을 섞지 않는다)
+  if(_CL && _CL.headW != null) STATE.quality.head_w = _CL.headW;
+  // 두상 높이 — 헤어라인 위로 머리가 얼마나 솟았나 (대표 지시 2026-08-29).
+  // 정수리가 잘리거나 배경을 못 가르면 null이고, 그때는 키를 안 넣는다.
+  if(_CL && _CL.crownH != null) STATE.quality.crown_h = _CL.crownH;
+  /* 헤어라인 프로파일 — 헤어 연출 조언을 위한 지속 개발용(대표 지시 2026-08-29).
+     형태 판정은 하지 않는다. 원값과 **실패 사유**를 쌓아 검출을 고칠 근거를 만든다.
+     사유는 한 글자로 줄인다: f=찾음 · c=머리가 덮음 · n=경계 없음 · o=화면 밖.
+     c와 n을 가르는 것이 요점이다 — c는 관측이고 n만 실패다. */
+  if(_CL && _CL.hairTop && _CL.hairTop.profile){
+    STATE.quality.hair_profile = _CL.hairTop.profile;
+    STATE.quality.hair_state = (_CL.hairTop.profState||[]).map(v=>v[0]).join("");
+    // 헤어 조언 뼈대 — 이마 노출 비율과 좌우 쏠림
+    if(_CL.hairTop.forehead_open != null) STATE.quality.forehead_open = _CL.hairTop.forehead_open;
+    if(_CL.hairTop.forehead_bias != null) STATE.quality.forehead_bias = _CL.hairTop.forehead_bias;
+  }
+  /* 얼굴형 1단계 셋 — 전용 컬럼이 없어 quality에 함께 싣는다.
+     분포가 쌓이면 이론팀이 경계를 정하고, 그때 컬럼을 만든다. */
+  ["side_straight","cheek_out","jaw_cheek","jaw_drop","gonial_ang",
+   // 대표 요청 신설 (2026-08-29) — 눈썹·눈·코·인중 14종. 전용 컬럼 없어 quality로 간다.
+   "glabella_w","brow_len","brow_thick","brow_peak","brow_gap_out",
+   "eye_curve_up","eye_curve_dn","sclera_up","sclera_dn","eye_gap_out",
+   "nose_len","ala_thick","nostril_show","philtrum"].forEach(k=>{
+    if(_ST.ratio[k] != null) STATE.quality[k] = _ST.ratio[k];
+  });
+
+  try{
+    const src=_ST.ratio||{};
+    const missed=Object.keys(src).filter(k=>src[k]!=null && !(k in STATE.ratio));
+    if(missed.length) STATE.quality.unsent_ratio_keys=missed;
+  }catch(e){}
+
   STATE.quality.shadow = shadowBands(STATE.ratio, STATE.line);   // 가설 섀도 상시 기록(CARD_GATE 무관, 판정·노출 불변)
   // ?flow=lecture — 강의용. 퍼스널컬러는 현장 상호진단으로 직접 입력받으므로
   // 드레이핑(R1~R4)과 색 판정을 건너뛰고 **형태 측정만** 넘긴다.
@@ -973,7 +1047,19 @@ function analyze(img){
     try{ if(STATE.overlay) sessionStorage.setItem("chugu_lecture_shot", STATE.overlay); }catch(e){}
     // 서버 적재 — 이 호출이 없어서 강의 참가자 측정값이 하나도 안 남았다(2026-08-18).
     // 색은 리포트에 안 쓰지만 측정은 됐고 동의 범위 안이다. 쌓아야 색 판정 정확도를 올릴 수 있다.
+    /* axes를 안 넘겨서 **강의 측정 62건 전부 축값이 null이었다**(2026-08-29 발견).
+       개인 경로(finalize)만 axes를 실어 왔고, 그래서 "측정값과 설문 진단의 갭"을
+       재려 해도 잴 값이 없었다 — 대표가 오늘 물은 바로 그 분석이 막혀 있던 원인이다.
+
+       soft_deep·line_score는 이 시점에 이미 STATE.axes_partial에 있고 개인 경로와
+       정의가 같다. 지금 실으면 D축 비교가 열린다.
+
+       warm_cool은 싣지 않는다 — 개인 경로의 그 값은 드레이핑 응답을 융합한 것이고
+       여기는 드레이핑 전이다. 같은 컬럼에 정의가 다른 두 값을 섞으면 그 컬럼이 죽는다
+       (n_mid_pct 주석 사고와 같은 종류). 색 단독 신호는 이름을 달리해 quality에 남긴다. */
+    if(STATE.axes_partial) STATE.quality.wc_color = STATE.wc_color;
     sendMeasurement({ color:STATE.color, ratio:STATE.ratio, line:STATE.line,
+                      axes:STATE.axes_partial,
                       quality:STATE.quality, engine_ver:"photo_v2.2_sat_anchor" });
     // 순차 진행(대표 지적 2026-08-17) — 버튼을 누르게 하지 않고 알아서 다음 단계로 간다.
     // 다만 "됐다"는 것은 보여주고 간다. 아무 표시 없이 화면이 바뀌면 뭘 한 건지 모른다.
@@ -1257,6 +1343,25 @@ function overlayFace(cv, lm, W, H, faceW, m){
   g.strokeStyle="rgba(255,255,255,.85)"; g.lineWidth=1.5;
   g.strokeRect(bTL.x, bTL.y, bBR.x-bTL.x, bBR.y-bTL.y);
   label(`H/W ${m.face_HW}`, bTL.x+6, bBR.y-6);
+
+  /* 이상비 나머지 셋 — 오른쪽에 세운다 (대표 지시 2026-08-27).
+     왼쪽은 상·중·하 %가, 가운데 위는 눈꼬리가, 왼쪽 아래는 H/W가 이미 쓰고 있다.
+     오른쪽이 비어 있어 겹치지 않는다. 각 항목을 그 값이 나온 **높이**에 둬서
+     숫자와 얼굴 위치가 눈으로 이어지게 한다.
+     ⚠ 점수는 적지 않는다. 이상값과 내 값을 나란히 보여줄 뿐이다 —
+       "얼마나 떨어졌나"는 유저가 보고, 우리가 등급을 매기지 않는다(헌법 §4). */
+  const rlabel=(txt,y)=>{
+    g.font="700 10.5px -apple-system,sans-serif";
+    const w=g.measureText(txt).width;
+    const x=Math.max(4, CW - w - 8);
+    g.fillStyle="#fff"; g.strokeStyle="rgba(0,0,0,.55)"; g.lineWidth=3;
+    g.strokeText(txt,x,y); g.fillText(txt,x,y);
+  };
+  const lowH = pChin.y - pNose.y;
+  if(m.interocular!=null)   rlabel(`눈 사이 1:${m.interocular}`, (eL.y+eR.y)/2 - 20);
+  if(m.mouth_nose!=null)    rlabel(`입:코 1:${m.mouth_nose}`,      pNose.y + lowH*0.28);
+  if(m.lip_ul!=null)        rlabel(`윗:아랫입술 1:${m.lip_ul}`,     pNose.y + lowH*0.50);
+  if(m.lower_balance!=null) rlabel(`하안부 1:${m.lower_balance}`,  pNose.y + lowH*0.78);
 
   return c.toDataURL("image/jpeg", 0.9);
 }
@@ -1985,6 +2090,10 @@ function render(o){
       // 2-7·2-8-1 응답 (대표 2026-08-25) — 판정 미투입, 측정 결과와 맞대보기 위한 기록.
       // 여기 안 실으면 저장본(rec)은 out과 모양이 달라 index.html이 영영 못 읽는다.
       pc_declared:o.pc_declared||null,
+      /* 헤어 조언용 두 값 — 리포트(index.html)가 읽는다. 서버에도 quality로 따로 간다.
+         여기 안 실으면 화면에서는 영영 못 읽는다(rec이 리포트의 유일한 입력이다). */
+      forehead_open:(o.quality&&o.quality.forehead_open!=null)?o.quality.forehead_open:null,
+      forehead_bias:(o.quality&&o.quality.forehead_bias!=null)?o.quality.forehead_bias:null,
       axes:{line_score:o.axes.line_score, soft_deep:o.axes.soft_deep, warm_cool:o.axes.warm_cool},
       ratio:o.ratio, line:o.line,
       // hair_L·dyed는 산출은 되는데 여기서 빠져 있어 헤어 걸음이 판정될 수 없었다.

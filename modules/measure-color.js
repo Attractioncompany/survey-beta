@@ -140,7 +140,199 @@ function detectHairline(ctx, lm, W, H, faceW, brow, cheek){
   }
   if(ys.length<2) return {y: top10.y, detected:false};
   ys.sort((a,b)=>a-b);
-  return {y: ys[Math.floor(ys.length/2)], detected:true};
+  const y = ys[Math.floor(ys.length/2)];
+
+  /* 이마 곡률 — 대표가 준 얼굴형 기준의 두 번째 조건("헤어라인이 둥글려져 있을 것,
+     이마가 사각이 아님", 2026-08-29)을 재는 값이다. 지금까지 이 조건은 측정 자체가 없었다.
+
+     위 3점(±10%)은 y를 정하는 데 쓰고 정의를 바꾸지 않는다 — 이미 적재된 값과 갈리면 안 된다.
+     곡률만 **따로 넓게(±28%)** 본다. 좁은 폭으로는 둥근 이마와 사각 이마가 안 갈린다.
+
+     arch = (양끝 평균 y − 가운데 y) / faceW.
+     둥근 이마는 가운데가 위로 솟아(y가 작아) 양수가 크고, 사각 이마는 세 점이 나란해 0에 가깝다.
+     양끝 중 하나라도 못 찾으면 null — 지어내지 않는다.
+     ⚠ 로깅 전용. 밴드 경계는 실측 분포를 보고 이론팀이 정한다(헌법 §3). */
+  /* 헤어라인 프로파일 — 중앙 기준 ±40%를 9점으로 훑는다.
+     **목적이 분류가 아니라 헤어 연출 조언이다**(대표 지시 2026-08-29:
+     "헤어라인체크방법에 대한건 지속적으로 개발이되야해. 그래야 이 사람한테
+      헤어연출에 대한 조언을 제대로 해줄 수 있어").
+
+     ⚠ 실패를 두 종류로 가른다. 예전에는 둘 다 null이었는데, 섞으면 안 된다 —
+       covered = 스캔 시작점부터 이미 어둡다. **머리가 이마를 덮고 있다는 관측**이고,
+                 그 자체가 헤어 연출 정보다(옆머리가 이마를 가리는 사람).
+       none    = 끝까지 훑어도 경계가 없다. 배경·조명 때문에 **못 잰 것**이다.
+     이 둘을 가르지 않으면 "덮였다"가 "측정 실패"로 묻히고, 개선할 지점을 영영 못 찾는다.
+
+     실측으로 이 프로파일의 바깥쪽(±30·±40%) 검출률이 15~50%임을 확인했다(예시 13장).
+     M자·계단형 판별은 바로 그 구간에 있어서, 지금 값으로는 형태를 논할 수 없다.
+     **그래서 형태 판정을 하지 않고 프로파일 원값과 실패 사유를 쌓는다.**
+     어느 지점이 왜 실패하는지가 쌓여야 검출을 고칠 수 있다. */
+  var profile = null, profState = null, arch = null, archSpan = null;
+  try{
+    const refL = Math.min(brow.L, cheek.L + 6);
+    const isDark = (px) => (px.L < refL - 16) ||
+      ((Math.abs(px.a - brow.a) > 12 || Math.abs(px.b - brow.b) > 14) && px.L <= refL + 6);
+    const DX = [-0.40,-0.30,-0.20,-0.10,0,0.10,0.20,0.30,0.40];
+    profile = []; profState = [];
+    for (const dx of DX) {
+      const x = top10.x + faceW*dx;
+      if (x < 2 || x > W-3) { profile.push(null); profState.push("oob"); continue; }
+      // 시작점이 이미 어두우면 = 머리가 덮고 있다. 못 잰 게 아니라 그렇게 생긴 것이다.
+      if (isDark(sampleLab(ctx, x, top10.y, 2))) { profile.push(null); profState.push("covered"); continue; }
+      let b = null, run = 0;
+      for (let dy = 2; dy < maxRise; dy += 2) {
+        const yy = top10.y - dy;
+        if (yy < 2) break;
+        if (isDark(sampleLab(ctx, x, yy, 2))) { run++; if (run >= 3) { b = yy + 6; break; } }
+        else run = 0;
+      }
+      if (b !== null) { profile.push(+((top10.y - b)/faceW).toFixed(3)); profState.push("found"); }
+      else { profile.push(null); profState.push("none"); }
+    }
+    /* arch — 가운데가 양옆보다 얼마나 솟았나. ±30%로 먼저 재고, 덮여 있으면 ±20%로 물러선다.
+       ±30만 고집하면 13장 중 2장밖에 안 잡혔다(옆머리가 그 자리를 덮는다).
+       **어느 폭에서 쟀는지 함께 남긴다** — 폭이 다르면 값의 크기도 달라서,
+       섞어서 분포를 내면 두 척도를 한 자에 놓는 것이 된다. */
+    var spans = [[1,7,0.30],[2,6,0.20]];
+    for (var si = 0; si < spans.length; si++) {
+      var L = profile[spans[si][0]], R = profile[spans[si][1]];
+      if (L != null && R != null && profile[4] != null) {
+        arch = +((profile[4] - (L + R) / 2)).toFixed(4);
+        archSpan = spans[si][2];
+        break;
+      }
+    }
+  }catch(e){}
+
+  /* 헤어 연출 조언의 뼈대 두 값 — 형태 판정이 아니라 **지금 이 사람의 이마가 어떻게 가려져
+     있는가**다. 예시 13장 117점에서 "경계를 못 찾음"이 0점이고 41%가 "덮임"이었다.
+     즉 예전에 검출 실패로 본 것이 전부 관측이었고, 이 둘은 지금 바로 잴 수 있다.
+       forehead_open = 이마가 드러난 지점 비율. 낮으면 머리가 이마를 많이 덮는다.
+       forehead_bias = 좌우 쏠림. 부호가 가르마 쪽을 가리킨다(+면 오른쪽이 더 열림).
+     형태(M자·계단형)는 여전히 판정하지 않는다 — 바깥쪽이 덮여 있으면 형태가 없다. */
+  /* 헤어라인 유형 판별 재료 — 대표가 준 4유형 기준(2026-08-29, 모발이식 자료 참조).
+       넓은 이마      얼굴에서 이마가 차지하는 비율이 큼   → f_upper (이미 있음)
+       M자           양쪽 라인이 깊고 앞머리 올리면 양옆이 빔 → arch + 바깥 덮임
+       불규칙         앞라인이 울퉁불퉁, 좌우 높이가 다름     → irregular + lr_diff
+       옆머리 빈 공간  관자·귀 앞쪽이 비어 보임              → 바깥 점 상태
+     확인 항목 중 '앞라인 곡선(너무 직선적이지 않은 자연스러운 흐름)'은 straight로 잰다.
+     ※ 참조 자료가 모발이식용이라 '기존 모발 방향'·'잔머리 표현'은 우리 대상이 아니다.
+     ⚠ 유형 이름은 붙이지 않는다 — 경계는 실측 분포를 보고 이론팀이 정한다. */
+  var irregular = null, lrDiff = null, straight = null;
+  if (profile) {
+    // 요철 — 이웃한 점끼리의 높이 차. 클수록 울퉁불퉁하다
+    var steps = [];
+    for (var i = 1; i < profile.length; i++)
+      if (profile[i] != null && profile[i-1] != null) steps.push(Math.abs(profile[i] - profile[i-1]));
+    if (steps.length >= 3) {
+      var mu = steps.reduce(function(a,b){return a+b;},0) / steps.length;
+      var vr = steps.reduce(function(a,b){return a + (b-mu)*(b-mu);},0) / steps.length;
+      irregular = +Math.sqrt(vr).toFixed(4);
+    }
+    // 좌우 높이차 — 거울 위치끼리 비교(−40↔+40, −30↔+30, −20↔+20, −10↔+10)
+    var pairs = [[0,8],[1,7],[2,6],[3,5]], ds = [];
+    for (var j = 0; j < pairs.length; j++) {
+      var a = profile[pairs[j][0]], b = profile[pairs[j][1]];
+      if (a != null && b != null) ds.push(Math.abs(a - b));
+    }
+    if (ds.length >= 2) lrDiff = +(ds.reduce(function(x,y){return x+y;},0) / ds.length).toFixed(4);
+    // 앞라인 직선성 — 가운데 5점(−20~+20)이 직선에서 얼마나 벗어나나. 작을수록 직선적이다
+    var mid = [2,3,4,5,6].map(function(k){ return profile[k]; });
+    if (mid.every(function(v){ return v != null; })) {
+      var a0 = mid[0], b0 = mid[4], dev = 0;
+      for (var k = 1; k <= 3; k++) dev += Math.abs(mid[k] - (a0 + (b0-a0)*k/4));
+      straight = +(dev/3).toFixed(4);
+    }
+  }
+
+  var openCnt = null, bias = null;
+  if (profState) {
+    var f = profState.filter(function(v){ return v === "found"; }).length;
+    openCnt = +(f / profState.length).toFixed(3);
+    var lf = 0, rf = 0;
+    for (var i = 0; i < profState.length; i++) {
+      if (profState[i] !== "found") continue;
+      if (i < 4) lf++; else if (i > 4) rf++;
+    }
+    bias = +((rf - lf) / 4).toFixed(3);
+  }
+
+  return {y, detected:true, arch, profile, profState,
+          forehead_open: openCnt, forehead_bias: bias,
+          hair_irregular: irregular, hair_lr_diff: lrDiff, hair_straight: straight,
+          arch_span: archSpan};
+}
+
+/* 머리 폭(측두부 볼륨) — 대표 지시 2026-08-29: "역삼각형은 사진에서는 잘 안드러날수도있지만
+   옆짱구 그러니까 이마 양 옆의 머리 볼륨이 큰경우가많아."
+
+   예시 13장으로 시험했다. **방향은 맞고 분리력은 없다** —
+   역삼각 평균 1.399로 네 형태 중 최대이고 상위 2명이 역삼각이지만,
+   역삼각 최소(1.154)가 하위권이고 각진형 하나가 1.447로 상위권이다.
+   **헤어스타일이 두개골보다 크게 작용한다**(묶음/풂/볼륨). 대표도 사진에서 잘 안 드러난다고 했다.
+
+   그래서 판정에 쓰지 않고 로깅만 한다. 지금 안 남기면 영영 못 얻는 값이고(헌법 §6-1 ①),
+   나중에 헤어스타일이 통제된 표본이 생기면 그때 다시 본다.
+   같은 성질을 얼굴 **안에서** 재는 cheek_out(광대폭/눈썹옆폭)이 더 깨끗하다 — 그쪽이 판정 후보다.
+
+   게이트: 좌우 경계를 둘 다 찾고, 이미지 가장자리에 닿지 않았을 때만 값을 낸다.
+   배경이 복잡하면 null이다. 지어내지 않는다. */
+/* 두상 높이 — 대표 지시 2026-08-29: "두상 최정점(탑)과 헤어라인 시작점 높이 차이.
+   이게 높은 사람들은 가르마 또렷하게 타면안됨."
+
+   헤어라인 y는 이미 있다. 두상 꼭대기는 얼굴 랜드마크 밖이라 픽셀로 찾는다 —
+   얼굴 중앙 x에서 위로 훑어 배경이 나오는 첫 지점이다(머리 폭과 같은 방식).
+
+   ⚠ 한계를 그대로 적는다. 이 값은 **머리 모양을 함께 잰다** —
+   묶거나 볼륨을 주면 커지고, 눌러 넘기면 작아진다. head_w와 같은 성질이다.
+   그래서 판정에 넣지 않고 헤어 처방 후보로만 둔다. 사진이 머리 위를 자르면 null이다. */
+function crownHeight(ctx, lm, W, H, faceW, hairY){
+  try{
+    const px=(x,y)=>{ const d=ctx.getImageData(
+      Math.max(0,Math.min(W-1,x|0)), Math.max(0,Math.min(H-1,y|0)),1,1).data; return [d[0],d[1],d[2]]; };
+    const diff=(a,b)=>Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])+Math.abs(a[2]-b[2]);
+    const cx = P(lm,10,W,H).x;
+    /* 배경 기준은 모서리 네 곳의 중앙값으로 잡는다. 한 점만 쓰면 그 자리에 소품이나
+       그림자가 있을 때 통째로 어긋난다(첫 판에서 13장 중 2장이 머리 바로 위를
+       배경으로 오판해 0.03·0.05가 나왔다). */
+    const corners = [px(3,3), px(W-4,3), px(3,H-4), px(W-4,H-4)];
+    const med = i => corners.map(c=>c[i]).sort((a,b)=>a-b)[1];
+    const bg = [med(0), med(1), med(2)];
+    /* 연속 3회 배경이어야 인정한다 — 머리카락 사이 틈이나 하이라이트 한 줄에
+       걸려 멈추지 않게. 헤어라인 검출이 쓰는 것과 같은 규칙이다. */
+    let top = null, run = 0;
+    for(let y = hairY; y > 1; y -= 2){
+      if(diff(px(cx, y), bg) < 40){ run++; if(run >= 3){ top = y + 4; break; } }
+      else run = 0;
+    }
+    if(top === null) return null;              // 끝까지 머리 — 사진이 정수리를 잘랐다
+    if(top <= 5) return null;                  // 화면 위에 닿음 — 실제 꼭대기가 아니다
+    const h = (hairY - top) / faceW;
+    /* 사람의 정수리는 헤어라인에서 얼굴폭의 0.1보다는 위에 있다. 그보다 작으면
+       머리 안에서 멈춘 것이라 값이 아니라 오검출이다. 지어내지 않고 null을 돌려준다. */
+    if(h < 0.10) return null;
+    return +h.toFixed(3);
+  }catch(e){ return null; }
+}
+
+function headWidth(ctx, lm, W, H, faceW, browY){
+  try{
+    const px=(x,y)=>{ const d=ctx.getImageData(
+      Math.max(0,Math.min(W-1,x|0)), Math.max(0,Math.min(H-1,y|0)),1,1).data; return [d[0],d[1],d[2]]; };
+    const diff=(a,b)=>Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])+Math.abs(a[2]-b[2]);
+    const xl=P(lm,234,W,H).x, xr=P(lm,454,W,H).x;
+    const scan=(from,dir,bg)=>{
+      for(let d=0; d<faceW*0.9; d+=2){
+        const x=from+dir*d;
+        if(x<2 || x>W-3) return null;              // 화면 밖 — 머리가 잘렸다
+        if(diff(px(x,browY),bg) < 40) return x;
+      }
+      return null;
+    };
+    const l=scan(xl,-1,px(3,browY)), r=scan(xr,1,px(W-4,browY));
+    if(l==null || r==null) return null;
+    return +(Math.abs(r-l)/faceW).toFixed(3);
+  }catch(e){ return null; }
 }
 
 
@@ -249,6 +441,10 @@ function detectHairline(ctx, lm, W, H, faceW, brow, cheek){
   // 게이트는 '어두운 오염'(앞머리 가림)일 때만 — 밝은 차이(번들거림)는 v3가 볼 기준으로 처리하므로 검출 진행
   const hairTop = (browDelta>18 && brow.L < cheekAvg.L - 12) ? {y:P(lm,10,W,H).y, detected:false}
                 : detectHairline(ctx, lm, W, H, faceW, brow, cheekAvg);
+  // 머리 폭 — 로깅 전용(위 headWidth 주석 참고). 배경이 복잡하면 null.
+  const headW = headWidth(ctx, lm, W, H, faceW, (P(lm,105,W,H).y + P(lm,334,W,H).y)/2);
+  // 두상 높이 — 헤어라인 위로 머리가 얼마나 솟았나 (대표 지시 2026-08-29)
+  const crownH = crownHeight(ctx, lm, W, H, faceW, hairTop.y);
   // 쌍꺼풀 라인(B3) — eyeOpen0가 나온 뒤라야 게이트를 걸 수 있어 여기서 부른다.
   const lid = lidCrease(ctx, lm, W, H, faceW, eyeOpen0);
 
@@ -259,7 +455,7 @@ function detectHairline(ctx, lm, W, H, faceW, brow, cheek){
              eyeOpen0, cheekAvg, browDelta, skinPts, skin2,
              a_corr, b_corr, hue, chroma, muteness,
              skinL, hairL, browL, irisLm, skinL_A, skinClipMax, ita,
-             c_hair, c_brow, c_iris, DYED, irisOK, contrast, cbasis, hairTop };
+             c_hair, c_brow, c_iris, DYED, irisOK, contrast, cbasis, hairTop, headW, crownH };
   }
 
   root.CZM = root.CZM || {};

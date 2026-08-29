@@ -400,12 +400,12 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=52df0ad"></script>
+<script src="modules/czm-core.js?v=fe9e0db"></script>
 <!-- 스탯 산식 정본(theory/산식_RPG스탯성장_v1_2026-08-24.md). 표시 층 전용 — 좌표·판정은 손대지 않는다. -->
-<script src="modules/czm-stats.js?v=52df0ad"></script>
+<script src="modules/czm-stats.js?v=fe9e0db"></script>
 <!-- 리포트 해설(theory/리포트해설_확충_v1_2026-08-24.md). czm-core의 판정기를 유저 문장으로 인출한다.
      일반 스크립트인 이유: 캐릭터 시트 해설은 사진이 없어도 나오므로 첫 페인트에 동기로 있어야 한다. -->
-<script src="modules/report-explain.js?v=52df0ad"></script>
+<script src="modules/report-explain.js?v=fe9e0db"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -473,7 +473,7 @@ const FLOW_WANT = new URLSearchParams(location.search).get("flow")==="want";
 const WANT_PARAM = new URLSearchParams(location.search).get("want");
 let WANT_PICK = null, WANT_SRC = null;   // 문항 점수 없이 물려받은 추구미(타입만)와 그 출처
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.35+52df0ad"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.35+fe9e0db"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -1198,6 +1198,115 @@ const STEP_LINE = {
 };
 const stepLine = st => (STEP_LINE[st.category]||{})[st.direction.axis + st.direction.sign]
                     || `${st.category}에서 아주 조금만 변화를 줘보세요`;
+/* 헤어 미션은 측정값이 있으면 그것으로 덮는다 (대표 지시 2026-08-29).
+   위 STEP_LINE의 헤어 네 줄은 축 방향만 보고 고른 것이라 누구에게나 같은 말이 나간다.
+   이마 노출을 알면 **그 사람이 지금 어떤 상태인지**에서 출발할 수 있다 —
+   이마를 다 드러낸 사람에게 "이마를 열어보세요"라고 하지 않게 된다.
+   측정이 없거나 스위치가 꺼져 있으면 기존 축 기반 문장을 그대로 쓴다. */
+/* 눈 미션도 측정값이 있으면 상태를 보고 고른다 (대표 승인 2026-08-29 · 리서치 A등급).
+   문제는 헤어와 같았다 — 축 방향만 보면 이미 눈꼬리가 뚜렷하게 올라간 사람에게
+   "더 올려보세요"가 나간다.
+
+   ⚠ 새 문구를 지어내지 않는다. 마케팅 검수 통과본(STEP_LINE 눈 4문구, 2026-08-21) 안에서
+   **선택만** 측정 기반으로 바꾼다 — 이미 그 방향인 사람에게는 각도 대신 선명도 문구를 준다.
+   상태×방향 6칸 문구는 마케팅 작성 중이며, 오면 이 함수만 교체한다.
+
+   상태 판정은 부위 해설과 같은 기준을 쓴다(이론 v3 ref): 중앙값 2.305 · SD_w 0.4288.
+   기준이 갈리면 해설은 "뚜렷하게 올라가 있어요"라는데 미션은 올리라고 하는 모순이 생긴다. */
+function eyeAngleState(){
+  try{
+    const r = JSON.parse(localStorage.getItem("chugu_photo_result")||"null");
+    const v = r && r.line ? r.line.eye_angle : null;
+    if(typeof v !== "number" || !isFinite(v)) return null;
+    if(v < 0) return "lo0";                        // 실제로 내려간 눈
+    if(Math.abs(v - 2.305) < 0.4288) return "mid"; // 중간대 — 수평~보통
+    return v >= 2.305 ? "hi" : "lo";
+  }catch(e){ return null; }
+}
+/* 눈 미션 문구 — 마케팅 확정본 (brand/문구확정_눈미션_v1_2026-08-29.md · 5칸).
+   기존 T− 문구("꼬리를 내려보세요")는 전 칸 폐기 — 실제로 내려 그리라는 조언은
+   리서치 어디에도 없고, 눕혀 연장이 검증된 기법이다.
+   D축(또렷/흐리게)은 눈꼬리 각도와 무관해 기존 축 문구를 그대로 쓴다. */
+const EYE_STEP = {
+  hi_Tp:  { mission:"아이라인 꼬리를 지금 각도 그대로, 끝에서 2~3mm만 얇게 이어 그려보세요.",
+            why:"눈꼬리 각이 이미 또렷한 쪽에 있어서 더 올릴 필요가 없고, 얇은 연장만으로 선명해집니다." },
+  hi_Tm:  { mission:"아이라인 꼬리를 올리지 말고, 눈꼬리 끝에서 일자로 눕혀 이어보세요.",
+            why:"올라간 눈꼬리에 각을 더하지 않고 일자로 연장하면 눈이 길어 보이면서 인상이 한결 부드러워집니다." },
+  mid_Tp: { mission:"아이라인 꼬리를 아주 살짝만 올려 그려보세요.",
+            why:"눈꼬리가 수평에 가까워서 조금만 올려도 또렷한 쪽으로 움직입니다." },
+  soft_Tm:{ mission:"아이라인 꼬리를 내리지 말고, 눈 끝에서 일자로 짧게 이어 그려보세요.",
+            why:"꼬리를 내려 그리면 오히려 무거워 보일 수 있어서, 일자로 연장하는 쪽이 부드러운 인상을 만드는 확실한 방법입니다." },
+  lo0_Tp: { mission:"아이라인 꼬리를 눈매 곡선을 따라가면서 살짝만 올려 그려보세요.",
+            why:"눈매와 다른 각도로 갑자기 올리면 라인만 떠 보이고, 따라가듯 올려야 자연스럽게 또렷해집니다." },
+};
+function eyeStep(st){
+  if(!st || st.category !== "눈") return null;
+  const state = eyeAngleState();
+  if(!state) return null;                          // 측정 없으면 기존 축 문구 그대로
+  const dir = st.direction.axis + st.direction.sign;
+  if(dir !== "T+" && dir !== "T-") return null;    // D축은 각도와 무관 — 손대지 않는다
+  let key = null;
+  if(dir === "T+") key = state === "hi" ? "hi_Tp" : state === "lo0" ? "lo0_Tp" : "mid_Tp";
+  else             key = state === "hi" ? "hi_Tm" : "soft_Tm";
+  const c = EYE_STEP[key];
+  return c ? { key, mission:c.mission, why:c.why } : null;
+}
+
+/* 미션 → 콘텐츠 열쇠(field_dir) — 대표 지시 2026-08-29:
+   "메이크업 조언들은 실제 관련 콘텐츠를 트래킹하여 전달할수있다면 가장 베스트".
+   콘텐츠 파이프라인(content_keywords → content_items, 일일 자동 수집)이 이미 돌고 있어
+   미션과 열쇠만 이으면 된다. 앱 콘텐츠 탭(home.html renderContent)과 같은 1단 키 체계다.
+
+   ⚠ 눈썹은 부호가 뒤집힌다 — 미션 T+(산 낮춰=일자)가 콘텐츠로는 brow_arch_deg−다.
+   ⚠ 색·입술은 잇지 않는다. 그 미션은 want 팔레트 칩 기반이라 방향 하나로 못 줄인다. */
+function stepFieldDir(st){
+  if(!st) return null;
+  const dir = st.direction.axis + st.direction.sign;
+  if(st.category === "눈"){
+    const e = eyeStep(st);
+    // 일자 눕히기 계열(hi_Tm·soft_Tm)은 내리는 방향 콘텐츠가 가장 가깝다
+    if(e) return (e.key === "hi_Tm" || e.key === "soft_Tm") ? "eye_angle-" : "eye_angle+";
+    return dir === "T+" ? "eye_angle+" : dir === "T-" ? "eye_angle-" : null;
+  }
+  if(st.category === "눈썹")
+    return dir === "T+" ? "brow_arch_deg-" : dir === "T-" ? "brow_arch_deg+" : null;
+  if(st.category === "헤어"){
+    const h = hairStep(st);
+    if(h) return h.key === "hair_open" ? "forehead_open-"
+              : h.key === "hair_covered" ? "forehead_open+" : "forehead_open~";
+    return null;
+  }
+  return null;
+}
+/* 미션 화면 하단에 그 미션의 콘텐츠를 붙인다. 실패하면 조용히 비운다 —
+   콘텐츠는 덤이지 미션의 조건이 아니다. */
+async function fillStepContent(fd){
+  const box = $("stepContent");
+  if(!box || !fd) return;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/content_items?select=video_id,title,channel,thumb_url,`
+      + `content_keywords!inner(field_dir)&content_keywords.field_dir=eq.${encodeURIComponent(fd)}&limit=3`,
+      {headers:{apikey:SB_KEY, Authorization:`Bearer ${SB_KEY}`}});
+    const rows = r.ok ? await r.json() : [];
+    track("step_content_shown", {field_dir:fd, n:rows.length});
+    if(!rows.length) return;   // 어휘는 있는데 수집 전이면 0편 — 자리 자체를 안 만든다
+    box.innerHTML = `<p class="small" style="margin:18px 0 8px;color:var(--sub)">이 미션에 참고할 영상</p>`
+      + rows.map(v => `<a href="https://www.youtube.com/watch?v=${encodeURIComponent(v.video_id)}"
+          target="_blank" rel="noopener"
+          style="display:flex;gap:10px;align-items:flex-start;text-decoration:none;color:inherit;margin-bottom:10px">
+          ${v.thumb_url ? `<img src="${v.thumb_url}" alt="" style="width:96px;border-radius:8px;flex:0 0 auto">` : ``}
+          <span style="font-size:13.5px;line-height:1.45">${v.title}</span></a>`).join("");
+  }catch(e){}
+}
+
+function hairStep(st){
+  if(!HAIR_ADVICE_ON || !st || st.category !== "헤어") return null;
+  let v = null;
+  try{ const r = JSON.parse(localStorage.getItem("chugu_photo_result")||"null");
+       v = r ? r.forehead_open : null; }catch(e){}
+  const b = hairBandOf(v);
+  return b ? b : null;
+}
 
 // 색을 말로 설명하면 사람마다 다른 색을 떠올린다. 칩으로 보여준다.
 const COLOR_STEPS = ["색·대비", "입술"];
@@ -1294,7 +1403,9 @@ function renderStep(){
   app.innerHTML=`
    <div class="screen"><div class="screen-body">
      <div class="q-part">오늘의 미션 · ${nth}번째</div>
-     <h2 style="margin-top:6px">${stepLine(STEP)}</h2>
+     <h2 style="margin-top:6px">${(hairStep(STEP)||eyeStep(STEP)||{}).mission || stepLine(STEP)}</h2>
+     ${(hairStep(STEP)||eyeStep(STEP)) ? `<p class="small" style="margin-top:8px;color:var(--sub)">${(hairStep(STEP)||eyeStep(STEP)).why}</p>` : ""}
+     <div id="stepContent"></div>
      ${col ? `<div class="step-chip" style="background:${col}"></div>
        <p class="small" style="margin-top:10px;color:var(--sub)">${W.name} 매력이 자주 쓰는 색이에요</p>
        <div class="pal" style="margin-top:14px">${pal.map(c=>`<span class="pal-c" style="background:${c}"></span>`).join("")}</div>
@@ -1322,7 +1433,8 @@ function renderStep(){
     STEP._id = (crypto.randomUUID ? crypto.randomUUID() : 'p'+Date.now()+Math.random().toString(36).slice(2));
     sbInsert("prescriptions", {id:STEP._id, user_id:UID, week_no:STEP.week_no, category:STEP.category,
       direction:STEP.direction, target_delta:STEP.target_delta, status:"issued"});
-    track("prescription_issued", {category:STEP.category, axis:STEP.direction.axis+STEP.direction.sign, week_no:STEP.week_no, pid:STEP._id});
+    track("prescription_issued", {category:STEP.category, axis:STEP.direction.axis+STEP.direction.sign, week_no:STEP.week_no, pid:STEP._id, variant:((hairStep(STEP)||eyeStep(STEP)||{}).key||null)});
+    fillStepContent(stepFieldDir(STEP));   // 콘텐츠는 덤 — 실패해도 미션은 선다
   }
 }
 
@@ -1720,13 +1832,63 @@ function bandKeyOf(id, d, one){
   }catch(e){ /* 값 모양이 예상과 다르면 칸을 안 정한다 */ }
   return null;
 }
+/* 헤어 연출 조언 — 마케팅 확정 문구(brand/문구확정_헤어연출조언_v1_2026-08-29.md).
+   **표본 30건 전에는 켜지 않는다.** 경계가 잠정이라, 실측 분포를 보고 상·하 1/3 분위로
+   다시 자른 뒤에 켠다. 각 밴드에 20%가 안 차면 밴드를 줄인다(늘리지 않는다).
+   켤 때 이 상수만 true로 바꾸면 된다 — 자동 게이트를 만들지 않는 이유는
+   30건 확인이 어차피 사람이 하는 판단이고, 자동화하면 켜지는 시점을 아무도 모르게 되기 때문이다.
+
+   forehead_bias는 문구를 쓰지 않는다(마케팅 판정). 자기 가르마 방향은 유저가 이미 알고,
+   "반대로 넘겨보세요"를 말하려면 얼굴 상부축이 필요한데 그 축은 보류 상태다.
+   값은 계속 쌓되 말하지 않는다. */
+const HAIR_ADVICE_ON = false;
+const HAIR_BANDS = [
+  { min: 0.75, key:"hair_open",
+    /* 관찰 — 얼굴형 장에 붙는다. **상태만 말하고 시키지 않는다.**
+       조언은 뒤쪽 미션에서 나온다(대표 지시 2026-08-29:
+       "헤어라인은 이런저런 특징이있다 는 것만 얼굴형 부분에서 같이짚어주고
+        헤어에대한 조언 은 뒷쪽에서 오늘 해볼것 에서 나올수있으면 좋지않을까"). */
+    title: "드러난 이마",
+    obs: "이마가 거의 다 보이는 상태로 찍혔습니다. 얼굴 위쪽이 열려 있으면 이목구비가 또렷하게 읽혀요.",
+    // 미션 — 오늘의 한 걸음에서 쓴다
+    mission: "앞머리를 조금만 내려보세요",
+    why: "얼굴 길이가 짧아 보이고 인상이 한결 부드러워집니다." },
+  { min: 0.40, key:"hair_half",
+    title: "반쯤 열린 이마",
+    obs: "가운데는 드러나 있고 옆쪽은 머리가 덮은 상태예요. 어느 쪽으로도 갈 수 있는 자리입니다.",
+    mission: "가르마를 넘기는 쪽을 바꿔보세요",
+    why: "조금만 옮겨도 인상이 꽤 움직입니다. 두 장 찍어두면 뭐가 맞는지 비교하기 좋아요." },
+  { min: 0, key:"hair_covered",
+    title: "이마를 덮은 머리",
+    obs: "머리가 이마를 대부분 덮은 상태로 찍혔어요. 이마가 가려지면 시선이 눈·코·입으로 모입니다.",
+    mission: "이마를 조금만 열어보세요",
+    why: "얼굴이 위아래로 길어 보이고 윤곽이 또렷해져요. 어느 쪽이 나은지에 정답은 없고, 두 가지를 다 가진 사람이 선택지가 많습니다." },
+];
+function hairBandOf(v){
+  if(typeof v !== "number" || !isFinite(v)) return null;
+  return HAIR_BANDS.find(x => v >= x.min) || null;
+}
+/* 얼굴형 장에 붙는 관찰 — 조언을 담지 않는다. */
+function hairAdviceHTML(d){
+  if(!HAIR_ADVICE_ON) return "";
+  const b = hairBandOf(d && d.forehead_open);
+  if(!b) return "";
+  return `<div class="card" style="margin-top:14px">
+    <h3>${b.title}</h3><p>${b.obs}</p>
+    <p class="small" style="opacity:.62;margin-top:8px">머리 모양은 그날의 연출에 따라 달라지므로,
+    위 안내는 촬영 당시의 상태를 기준으로 합니다.</p></div>`;
+}
+
 const FACE_SECS = [
   { id:"face",  t:"얼굴형",     parts:["윤곽","볼·입체"], f:"얼굴형" },
   { id:"ratio", t:"얼굴 비율",   parts:[],                 f:"비율"   },
   { id:"eye",   t:"눈",         parts:["눈"],             f:"눈"     },
   { id:"brow",  t:"눈썹",       parts:["눈썹"],           f:"눈썹"   },
-  { id:"nose",  t:"코",         parts:["코"],             f:null     },
-  { id:"mouth", t:"입",         parts:["입"],             f:"입"     },
+  /* 코·입은 한 장이다 — 두 장으로 나뉘어 있을 때 체류가 각 5.3초·5.1초로
+     나머지 장의 절반이었다(분석팀 2026-08-29 ③). 이탈은 4장 이후 0명이라
+     리포트가 길어서가 아니라 이 둘이 각자 한 장을 채울 만큼 할 말이 없었던 것이다.
+     장을 줄이는 것이지 내용을 줄이는 것이 아니다 — 두 부위 해설은 그대로 다 나간다. */
+  { id:"nosemouth", t:"코와 입", parts:["코","입"],       f:"입"     },
   { id:"skin",  t:"피부톤",     parts:["색·피부"],        f:null     },
   { id:"asym",  t:"좌우 균형",   parts:[],                 f:"좌우"   },
   { id:"expr",  t:"표현 방식",   parts:["표현"],           f:null     },
@@ -1978,10 +2140,13 @@ function buildFacePages(d, hKey, bg){
   FACE_SECS.forEach(s=>{
     const body = faceSecHTML(d, hKey, s, cache);
     if(body) pages.push({ t: s.t, body: body });
+    // 헤어 조언은 얼굴형 장 아래 붙인다 — 얼굴 길이·윤곽 이야기 바로 다음이라야
+    // "앞머리를 내리면 얼굴이 짧아 보인다"가 앞 문장과 이어진다.
+    if(s.id === "face" && body){ const h = hairAdviceHTML(d); if(h) pages[pages.length-1].body += h; }
   });
   if(!pages.length) return;
   // 3D 스캔이 있으면 코 장에서만 말한다 — 스캔이 실제로 더하는 값이 콧대 돌출 하나다.
-  const nose = pages.find(p=>p.t==="코");
+  const nose = pages.find(p=>p.t==="코와 입");
   if(nose && loadScan())
     nose.body += `<p class="small" style="margin-top:10px">3D 스캔이 더해진 측정입니다 — 사진으로는 못 하는 콧대 입체감까지 봤어요.</p>`;
   // 결측 고지 — **빼지 않는다.** 안 한 판정을 한 것처럼 보이게 되기 때문이다.
@@ -3150,12 +3315,12 @@ if(FLOW_LECTURE){
 <script type="module">
   try{
     const [AS, PR, SE, PM, snapRes, shapeRes] = await Promise.all([
-      import("./modules/asset-score.js?v=52df0ad"),
-      import("./modules/part-report.js?v=52df0ad"),
-      import("./modules/step-engine.js?v=52df0ad"),
+      import("./modules/asset-score.js?v=fe9e0db"),
+      import("./modules/part-report.js?v=fe9e0db"),
+      import("./modules/step-engine.js?v=fe9e0db"),
       // 「어떻게 쟀나」·「이런 기준으로 봤어요」 — VLAS 양식 반영(2026-08-26 대표 지시).
       // 못 뜨면 그 두 블록만 빠지고 부위 장의 나머지는 그대로 선다.
-      import("./modules/part-method.js?v=52df0ad").catch(()=>null),
+      import("./modules/part-method.js?v=fe9e0db").catch(()=>null),
       fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
       // 관측 분포 — 「선과 좌우」의 밴드 라벨이 여기서 나온다. 없으면 그 장을 안 만든다.
       // 현 밴드 상수(jaw 7/19 등)는 14명 전원을 같은 칸에 넣어 표시용으로 못 쓴다.
@@ -3169,14 +3334,14 @@ if(FLOW_LECTURE){
     // import를 못 쓰므로 여기서 window에 얹는다(czm-core·PART와 같은 방식).
     // ⚠ 여기서 buildFriendPage를 부르지 않는다. 앵커는 renderResult가 그린 뒤에야 생긴다 —
     //   부위 장과 같은 이유로 __onPartEngineReady 쪽에서 부른다.
-    try{ window.__SESSION = await import("./modules/session.js?v=52df0ad"); }
+    try{ window.__SESSION = await import("./modules/session.js?v=fe9e0db"); }
     catch(e){ console.warn("session 모듈 로드 실패", e); }
     if (typeof window.__onPartEngineReady === "function") window.__onPartEngineReady();
     // 「나의 4주」 — 홈과 같은 엔진·같은 사전을 쓴다. 여기서 목록을 따로 만들면
     // 결과지가 약속한 것과 홈이 내는 것이 갈린다(이론 §5-2 "미리보기가 곧 대기열").
     try{
       const [QE, dict, quiz] = await Promise.all([
-        import("./modules/quest-engine.js?v=52df0ad"),
+        import("./modules/quest-engine.js?v=fe9e0db"),
         fetch("./modules/quest-dict.json").then(r=>r.json()),
         fetch("./modules/quest-quiz.json").then(r=>r.ok?r.json():null).catch(()=>null),
       ]);
