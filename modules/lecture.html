@@ -182,7 +182,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=fa53926"></script>
+<script src="czm-core.js?v=980d896"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -211,12 +211,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "fa53926";
+const BUILD = "980d896";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=fa53926";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=980d896";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -869,8 +869,12 @@ function renderReport(){
                                        .replace(/\{여성스러움\}/g, gender==="m"?"남성스러움":"여성스러움"); }                       // 설문에서 받은 값(index.html이 chugu_diag에 넣는다)
   const part=partSection(s.face, s.diag.have);
   const col=colorSection(s.diag.want, pcLabel), tips=pickTips(g, wantName, pcLabel, gender);
+  // 이마 노출값 — 앱 rec은 최상위, 강의 저장분(chugu_lecture_face)은 quality 안에 있다.
+  // 어제(09-01) 이식이 앱 모양만 보고 s.face.forehead_open을 읽어 강의에서 조용히 침묵했다(검수 발견 09-02).
+  const FOPEN = s.face.forehead_open!=null ? s.face.forehead_open
+              : (s.face.quality ? s.face.quality.forehead_open : null);
   // 헤어 미션 — 이마 노출 밴드에서 (앱 「오늘의 한 걸음」과 같은 정본 문구)
-  { const hb=CZM.hairBandOf&&CZM.hairBandOf(s.face.forehead_open);
+  { const hb=CZM.hairBandOf&&CZM.hairBandOf(FOPEN);
     if(hb && !tips.some(t=>String(t.area||"").startsWith("hair")))
       tips.push({tip:hb.mission, why:hb.why, caution:null, cost:"free", area:"hair.style", id:"hair."+hb.key}); }
   const vs=verdicts(r,l,s.face.quality);
@@ -993,7 +997,7 @@ function renderReport(){
 
   /* 헤어 관찰·미션 — 앱과 같은 정본(CZM.HAIR_BANDS, 2026-09-02 강의판 이식).
      관찰은 얼굴형 장에서 상태만, 미션은 「오늘 해볼 것」에서 (대표 원칙 2026-08-29). */
-  const HB=CZM.hairBandOf&&CZM.hairBandOf(s.face.forehead_open);
+  const HB=CZM.hairBandOf&&CZM.hairBandOf(FOPEN);
   const PART_PAGES=[
     {t:"얼굴형", rows:pick("얼굴형","얼굴 가로 : 세로","상 : 중 : 하","턱선","턱끝","좌우 균형"), line:P["윤곽"],
      extra:HB?{h:HB.title, text:HB.obs}:null},
@@ -1169,7 +1173,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=fa53926"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=980d896"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
