@@ -182,7 +182,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=f3dd3fe"></script>
+<script src="czm-core.js?v=72bbb47"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -211,12 +211,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "f3dd3fe";
+const BUILD = "72bbb47";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=f3dd3fe";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=72bbb47";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -957,30 +957,10 @@ function renderReport(){
     ${th_&&s.diag.have!==s.diag.want?`<div class="card"><h2>지금 나의 매력 — ${esc(haveName)}</h2>
       <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8">${esc(gsub(th_.desc))}</p></div>`:``}`});
 
-  // ⑤ 지금 가진 매력요소와 추구미의 비교 — 두 좌표가 어느 축에서 얼마나 벌어졌는지.
-  //    "격차"를 결핍으로 읽히게 두지 않는다. 이미 가진 것을 먼저 적고 방향을 뒤에 붙인다.
-  const AXROW=[["부드러움 ↔ 또렷함", g.D, "또렷한 쪽으로", "부드러운 쪽으로"],
-               ["따뜻함 ↔ 시원함",   g.T, "시원한 쪽으로", "따뜻한 쪽으로"],
-               ["어려 보임 ↔ 성숙함", g.M, "성숙한 쪽으로", "어려 보이는 쪽으로"]]
-    .filter(a=>Number.isFinite(a[1]))
-    .map(a=>({k:a[0], v:Math.abs(a[1])<0.15?"이미 가까워요":(a[1]>0?a[2]:a[3]),
-              s:Math.abs(a[1])<0.15?"이 축은 손댈 게 없어요":""}));
-  if(AXROW.length) PAGES.push({t:"지금과 추구미, 벌어진 곳",
-    draw:{title:"지금과 추구미, 벌어진 곳",
-          rows:[{k:"지금",v:haveName},{k:"추구미",v:wantName}].concat(AXROW),
-          paras:[gapLine, "벌어진 축이 곧 오늘 손볼 자리예요. 이미 가까운 축은 그대로 두면 돼요."].filter(Boolean)},
-    html:`
-    <div class="card">
-      <div class="vs2 small">
-        <div class="vs2-col"><img src="${HAVE_SRC}" alt="" onerror="this.style.visibility='hidden'">
-          <p class="vs2-name">${esc(haveName)}</p></div>
-        <div class="vs2-arrow">→</div>
-        <div class="vs2-col"><img src="${WANT_SRC}" alt="" onerror="this.style.visibility='hidden'">
-          <p class="vs2-name">${esc(wantName)}</p></div>
-      </div>
-      ${AXROW.map(vRow).join("")}
-      <p class="note">벌어진 축이 곧 오늘 손볼 자리예요. 이미 가까운 축은 그대로 두면 돼요.</p>
-    </div>`});
+  /* 「지금과 추구미, 벌어진 곳」(축별 비교) 장은 뺐다 — 대표 지시 2026-09-01:
+     "축에 대한 개념도 없는데 이걸 보여줘봤자 사람들한테 의미가 없어."
+     축(T·D·M) 격차는 pickTips의 재료로만 쓰고 화면에는 내지 않는다.
+     격차를 말하는 자리는 첫 장의 gapLine 한 줄과 「오늘 해볼 것」(격차에서 나온 행동)으로 충분하다. */
 
   // ③ 부위별 페이지 — 얼굴형 / 눈 / 코 / 입을 각각 한 쪽씩. 관련된 것끼리 모으고
   //    그 부위의 해설을 같은 쪽에 붙인다(대표 지시 2026-08-18 ④).
@@ -1109,7 +1089,7 @@ function renderReport(){
   // 대표 확정 순서(2026-08-18): 오늘의 진단 → 퍼스널컬러 → 얼굴·이목구비 → 추구미 → 비교 → 오늘 해볼 것
   // ⚠ 새 페이지를 만들면 여기에도 제목을 넣어야 한다. 없으면 조용히 맨 뒤로 밀린다.
   const ORDER=["지금 나의 매력과 추구미","내 퍼스널컬러","이렇게 측정했어요","얼굴형","눈","코","입","부위별로 보면",
-               "내 추구미","지금과 추구미, 벌어진 곳","색 이야기","오늘 해볼 것","오늘 해볼 것 2","오늘 해볼 것 3","색은 이렇게"];
+               "내 추구미","색 이야기","오늘 해볼 것","오늘 해볼 것 2","오늘 해볼 것 3","색은 이렇게"];
   PAGES.sort((a,b)=>{ const i=ORDER.indexOf(a.t), j=ORDER.indexOf(b.t);
     return (i<0?99:i)-(j<0?99:j); });
 
@@ -1176,7 +1156,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=f3dd3fe"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=72bbb47"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
