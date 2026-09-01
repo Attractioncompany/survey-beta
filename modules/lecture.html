@@ -182,7 +182,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=72bbb47"></script>
+<script src="czm-core.js?v=fa53926"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -211,12 +211,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "72bbb47";
+const BUILD = "fa53926";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=72bbb47";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=fa53926";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -589,13 +589,13 @@ function drawPage(d, idx, total){
       if(t.why) push(t.why,{size:24,color:"#6E6478",gap:t.caution?6:20});
       if(t.caution) push(t.caution,{size:22,color:"#8A6D3B",gap:20});
     } }
+  if(d.paras&&d.paras.length){ if(d.rows&&d.rows.length) rule();
+    for(const t of d.paras) push(t,{size:26,color:"#3A342F",gap:14}); }
   if(d.sections) for(const sec of d.sections){
     rule(); push(sec.h,{size:30,weight:700,gap:10}); chips(sec.chips);
     if(sec.text) push(sec.text,{size:24,color:"#6E6478",gap:16});
     if(sec.texts) for(const tx of sec.texts) push(tx,{size:24,color:"#6E6478",gap:8});
   }
-  if(d.paras&&d.paras.length){ if(d.rows&&d.rows.length||d.sections) rule();
-    for(const t of d.paras) push(t,{size:26,color:"#3A342F",gap:14}); }
   rule();
   push("attractioncompany.github.io/survey-beta",{size:20,color:"#8E82A0",gap:0});
 
@@ -792,7 +792,9 @@ function verdicts(r, l, q){
       else if(typeof jd==="number" && jd<=0.257) label="각진 얼굴형에 가까워요";
       else                                       label="계란형에 가까워요";
     }
-    out.push({group:"얼굴형", k:"얼굴형", v:label});   // 시범 고지 없음 (대표 지시 2026-08-29)
+    // 계측은 앱과 같은 원문 라벨, 화면은 합니다체 (index.html 결과 화면과 같은 변환)
+    out.push({group:"얼굴형", k:"얼굴형",
+      v:label.replace(/가까워요$/,"가깝습니다").replace(/사이예요$/,"사이입니다")});   // 시범 고지 없음 (대표 지시 2026-08-29)
     lecTrack("face_shape_shown",{label, ss:+ss.toFixed(3),
       hw:typeof hw==="number"?+hw.toFixed(2):null,
       gn:typeof gn==="number"?+gn.toFixed(1):null,
@@ -801,7 +803,7 @@ function verdicts(r, l, q){
 
   const th = hairOK ? CZM.thirdsGolden(r.upper, r.mid, r.lower) : null;
   if(th) out.push({group:"얼굴형", k:"상 : 중 : 하", v:th.relLine,
-                   s:`${th.label} · 이상적 비율은 1 : 1 : 1이에요`});
+                   s:`${th.label} · 이상적 비율은 1 : 1 : 1입니다`});
   // 중·하안부 또래 평균 대조는 없다(2026-08-18 대표 판단: 평균 비교는 곧 타인 비교다).
   // 좌우 대칭 (대표 지시 2026-08-18). 사람 구분력 확인됨(사람간SD/사람안SD = 3.0).
   const D2=SHAPE&&SHAPE.dist, L2=SHAPE&&SHAPE.labels;
@@ -811,18 +813,18 @@ function verdicts(r, l, q){
     const KO={eye_outer:"눈꼬리",eye_inner:"눈머리",brow:"눈썹",nose_wing:"콧방울",
               mouth_corner:"입꼬리",jaw:"턱선",temple:"관자놀이"};
     out.push({group:"좌우 대칭", k:"좌우 균형", v:av.label,
-      s: worst&&KO[worst] ? `가장 차이가 큰 곳은 ${KO[worst]}${jong(KO[worst])?"이에요":"예요"}` : "얼굴 중앙선을 기준으로 좌우를 견줬어요"});
+      s: worst&&KO[worst] ? `가장 차이가 큰 곳은 ${KO[worst]}입니다` : "얼굴 중앙선을 기준으로 좌우를 견준 값입니다"});
   }
   // 턱선(jaw_angular_deg)·눈썹 모양(brow_arch_deg)은 뺐다 (2026-08-25, 앱과 같은 선).
   // jaw_angular_deg는 SD_b 0.7533 vs SD_w 1.4679 — 인물 간 차이보다 한 사람의 촬영 간 변동이
   // 2배 크다. 그런 값으로 만든 문장은 그 사람의 얼굴이 아니라 그날의 조명과 각도를 서술한다.
   // 강의장은 조명이 제각각이라 더 그렇다. 나머지 line 3종은 앱과 동일하게 [잠정] 유지.
   if(l.chin_angle_deg!=null) push("얼굴형","턱끝",l.chin_angle_deg,"chin_angle_deg",
-    `${l.chin_angle_deg}° — 턱 끝이 모이는 각도예요`);
+    `${l.chin_angle_deg}° — 턱 끝이 모이는 각도입니다`);
   if(l.eye_angle!=null) push("눈","눈매",l.eye_angle,"eye_angle",
-    "눈꼬리가 눈머리보다 얼마나 올라가 있는지 본 값이에요");
+    "눈꼬리가 눈머리보다 얼마나 올라가 있는지 본 값입니다");
   if(l.mouth_corner!=null) push("입","입꼬리",l.mouth_corner,"mouth_corner",
-    "입꼬리가 향하는 쪽이에요");
+    "입꼬리가 향하는 쪽입니다");
   return out;
 }
 
@@ -854,8 +856,8 @@ function renderReport(){
      예전에는 빈 문자열이라 이 자리가 그냥 비었고, 유저에게는 "할 게 없다"로 읽혔다.
      대표 지시 2026-08-27: 방향이 같으면 바꿀 게 없는 것이 아니라 **더 또렷하게 드러낼 차례**다. */
   const gapLine = gp.length
-    ? `${wantName} 매력과 비교하면 지금은 ${gp.map((w,i)=>w[i===gp.length-1?1:0]).join(" ")} 쪽이에요.`
-    : `${wantName} 쪽에 이미 서 있어요. 방향을 바꾸는 게 아니라 ${wantName}가 더 또렷하게 드러나게 하면 됩니다.`;
+    ? `${wantName} 매력과 비교하면 지금은 ${gp.map((w,i)=>w[i===gp.length-1?1:0]).join(" ")} 쪽입니다.`
+    : `${wantName} 쪽에 이미 서 있습니다. 방향을 바꾸는 게 아니라 ${wantName}가 더 또렷하게 드러나게 하면 됩니다.`;
 
   const gender=s.diag.gender||null;
   // 한 사람의 결과를 한 줄로 묶어 남긴다 — 퍼스널컬러·성별·추구미·현재 매력·얼굴 측정 유무.
@@ -867,6 +869,10 @@ function renderReport(){
                                        .replace(/\{여성스러움\}/g, gender==="m"?"남성스러움":"여성스러움"); }                       // 설문에서 받은 값(index.html이 chugu_diag에 넣는다)
   const part=partSection(s.face, s.diag.have);
   const col=colorSection(s.diag.want, pcLabel), tips=pickTips(g, wantName, pcLabel, gender);
+  // 헤어 미션 — 이마 노출 밴드에서 (앱 「오늘의 한 걸음」과 같은 정본 문구)
+  { const hb=CZM.hairBandOf&&CZM.hairBandOf(s.face.forehead_open);
+    if(hb && !tips.some(t=>String(t.area||"").startsWith("hair")))
+      tips.push({tip:hb.mission, why:hb.why, caution:null, cost:"free", area:"hair.style", id:"hair."+hb.key}); }
   const vs=verdicts(r,l,s.face.quality);
   const _av=CZM.asymVerdict(r.asym_score, SHAPE&&SHAPE.dist&&SHAPE.dist.asym_score,
                             SHAPE&&SHAPE.labels&&SHAPE.labels.asym_score);
@@ -888,8 +894,8 @@ function renderReport(){
   const IMG_WANT=new Image(); IMG_WANT.src=WANT_SRC;
   PAGES.push({t:"지금 나의 매력과 추구미",
     draw:{title:"지금 나의 매력과 추구미", imgs:[IMG_HAVE,IMG_WANT],
-          rows:[{k:"지금 나의 매력",v:haveName,s:"퍼스널컬러와 이목구비, 행동까지 종합한 결과예요"},
-                {k:"추구미",v:wantName,s:"설문으로 알아본, 내가 가지고 싶은 매력이에요"}],
+          rows:[{k:"지금 나의 매력",v:haveName,s:"퍼스널컬러와 이목구비, 행동까지 종합한 결과입니다"},
+                {k:"추구미",v:wantName,s:"설문으로 알아본, 내가 가지고 싶은 매력입니다"}],
           paras:gapLine?[gapLine]:[]},
     html:`
     <div class="twin">
@@ -897,14 +903,14 @@ function renderReport(){
         <p class="stack-lab">지금 나의 매력</p>
         <img src="${HAVE_SRC}" alt="" onerror="this.style.visibility='hidden'">
         <p class="stack-name">${esc(haveName)}</p>
-        <p class="stack-desc">퍼스널컬러와 이목구비, 행동까지 종합한 결과예요.</p>
+        <p class="stack-desc">퍼스널컬러와 이목구비, 행동까지 종합한 결과입니다.</p>
       </div>
       <div class="twin-arrow">↓</div>
       <div class="cover twin-box">
         <p class="stack-lab">추구미</p>
         <img src="${WANT_SRC}" alt="" onerror="this.style.visibility='hidden'">
         <p class="stack-name">${esc(wantName)}</p>
-        <p class="stack-desc">설문으로 알아본, 내가 가지고 싶은 매력이에요.</p>
+        <p class="stack-desc">설문으로 알아본, 내가 가지고 싶은 매력입니다.</p>
       </div>
     </div>`});
 
@@ -913,12 +919,12 @@ function renderReport(){
   const pcType=pcKey?N[pcKey]:null, pcTd=pcKey?(TDESC&&TDESC.types||{})[pcKey]:null;
   PAGES.push({t:"내 퍼스널컬러",
     draw:{title:"내 퍼스널컬러", big:pcLabel,
-          cap:pcType?pcLabel+(jong(pcLabel)?"은 ":"는 ")+pcType+" 매력의 색이에요":"",
+          cap:pcType?pcLabel+(jong(pcLabel)?"은 ":"는 ")+pcType+" 매력의 색입니다":"",
           chips:col&&col.mineHex?col.mineHex:[],
           paras:[col&&col.mine?col.mine.best:null,
                  pcTd?gsubLater(pcTd.one):null,
                  pcTd?gsubLater(pcTd.desc):null,
-                 pcType?"퍼스널컬러 8가지는 매력 8가지와 하나씩 짝을 이뤄요.":null].filter(Boolean)},
+                 pcType?"퍼스널컬러 8가지는 매력 8가지와 하나씩 짝을 이룹니다.":null].filter(Boolean)},
     html:`
     <div class="card">
       <h2>오늘 서로 봐준 퍼스널컬러</h2>
@@ -926,11 +932,11 @@ function renderReport(){
       ${col&&col.mineChips?col.mineChips:""}
       ${col&&col.mine?`<p class="note">${esc(col.mine.best)}</p>`:``}
     </div>
-    ${pcType?`<div class="card"><h2>${esc(pcLabel)}${jong(pcLabel)?"은":"는"} 어떤 매력인가요</h2>
+    ${pcType?`<div class="card"><h2>${esc(pcLabel)}${jong(pcLabel)?"이":"가"} 만드는 매력</h2>
       <p class="lead" style="font-size:24px;margin-bottom:var(--sp-2)">${esc(pcType)}</p>
       ${pcTd?`<p style="font-size:var(--fs-body);line-height:1.8">${esc(gsubLater(pcTd.one))}</p>
       <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8;margin-top:var(--sp-3)">${esc(gsubLater(pcTd.desc))}</p>`:``}
-      <p class="note">퍼스널컬러 8가지는 매력 8가지와 하나씩 짝을 이뤄요.</p></div>`:``}`});
+      <p class="note">퍼스널컬러 8가지는 매력 8가지와 하나씩 짝을 이룹니다.</p></div>`:``}`});
 
   // ② 내 추구미가 뭔지 — 설문 결과를 설명 없이 이름만 던지면 아무 뜻도 안 된다(대표 지적 2026-08-18).
   //    문구는 이론 자산(index.html TYPES 전사본)에서만 가져온다. 여기서 새로 쓰지 않는다.
@@ -950,7 +956,7 @@ function renderReport(){
       <p style="font-size:var(--fs-body);line-height:1.8">${esc(gsub(tw.one))}</p>
       <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8;margin-top:var(--sp-3)">${esc(gsub(tw.desc))}</p>
     </div>
-    <div class="card"><h2>${esc(wantName)} 쪽으로 가려면</h2>
+    <div class="card"><h2>${esc(wantName)} 쪽으로 가는 방법</h2>
       <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8">
       · <b>지키면 좋은 것</b> — ${esc(gender==="m"&&tw.keepM?tw.keepM:tw.keep)}<br>
       · <b>스타일</b> — ${esc(gender==="m"&&tw.styleM?tw.styleM:tw.style)}</p></div>
@@ -972,33 +978,40 @@ function renderReport(){
   let SHOT=null;
   try{ const _src=sessionStorage.getItem("chugu_lecture_shot");
        if(_src){ SHOT=new Image(); SHOT.src=_src;
-         PAGES.push({t:"이렇게 측정했어요",
-           draw:{title:"이렇게 측정했어요", img:SHOT,
-                 paras:["사진에 선을 그어 얼굴을 상·중·하로 나눴어요. 다음 쪽부터 나오는 수치는 전부 이 선에서 나온 값이에요."]},
+         PAGES.push({t:"이렇게 측정했습니다",
+           draw:{title:"이렇게 측정했습니다", img:SHOT,
+                 paras:["사진에 선을 그어 얼굴을 상·중·하로 나눴습니다. 다음 쪽부터 나오는 수치는 전부 이 선에서 나온 값입니다."]},
            html:`
            <div class="card" style="text-align:center">
              <img src="${_src}" alt="측정선이 그려진 내 얼굴" style="max-width:100%;border-radius:14px;display:block;margin:0 auto">
            </div>
            <div class="card"><p style="font-size:var(--fs-body);line-height:1.8">
-             사진에 선을 그어 얼굴을 상·중·하로 나눴어요.<br>
-             다음 쪽부터 나오는 수치는 전부 이 선에서 나온 값이에요.
+             사진에 선을 그어 얼굴을 상·중·하로 나눴습니다.<br>
+             다음 쪽부터 나오는 수치는 전부 이 선에서 나온 값입니다.
            </p></div>`});
        } }catch(e){}
 
+  /* 헤어 관찰·미션 — 앱과 같은 정본(CZM.HAIR_BANDS, 2026-09-02 강의판 이식).
+     관찰은 얼굴형 장에서 상태만, 미션은 「오늘 해볼 것」에서 (대표 원칙 2026-08-29). */
+  const HB=CZM.hairBandOf&&CZM.hairBandOf(s.face.forehead_open);
   const PART_PAGES=[
-    {t:"얼굴형", rows:pick("얼굴형","얼굴 가로 : 세로","상 : 중 : 하","턱선","턱끝","좌우 균형"), line:P["윤곽"]},
+    {t:"얼굴형", rows:pick("얼굴형","얼굴 가로 : 세로","상 : 중 : 하","턱선","턱끝","좌우 균형"), line:P["윤곽"],
+     extra:HB?{h:HB.title, text:HB.obs}:null},
     {t:"눈",     rows:pick("눈매","눈 길이 : 눈 사이","눈썹 모양"), line:[P["눈"],P["눈썹"]].filter(Boolean).join(" ")},
     {t:"코",     rows:pick("코 : 입 너비"), line:P["코"]},
     {t:"입",     rows:pick("입꼬리","윗입술 : 아랫입술"), line:P["입"]},
   ];
   for(const pg of PART_PAGES){
-    if(!pg.rows.length && !pg.line) continue;
+    if(!pg.rows.length && !pg.line && !pg.extra) continue;
     PAGES.push({t:pg.t,
-      draw:{title:pg.t, rows:pg.rows.map(x=>({k:x.k,v:x.v,s:x.s})), paras:pg.line?[pg.line]:[]},
+      draw:{title:pg.t, rows:pg.rows.map(x=>({k:x.k,v:x.v,s:x.s})), paras:pg.line?[pg.line]:[],
+            sections:pg.extra?[{h:pg.extra.h, text:pg.extra.text}]:null},
       html:`
       ${pg.rows.length?`<div class="card">${pg.rows.map(vRow).join("")}</div>`:``}
       ${pg.line?`<div class="card"><h2>${esc(pg.t)}${jong(pg.t)?"이":"가"} 주는 인상</h2>
-        <p style="font-size:var(--fs-body);line-height:1.8">${pg.line}</p></div>`:``}`});
+        <p style="font-size:var(--fs-body);line-height:1.8">${pg.line}</p></div>`:``}
+      ${pg.extra?`<div class="card"><h2>${esc(pg.extra.h)}</h2>
+        <p style="font-size:var(--fs-body);line-height:1.8">${esc(pg.extra.text)}</p></div>`:``}`});
   }
 
   // ⑤ 색
@@ -1017,7 +1030,7 @@ function renderReport(){
     if(col.mine.second){ const {main,foot}=splitNote(col.mine.second);
       t.push("곁들이면 좋은 색: "+main); if(foot) t.push(foot); }
     if(col.mine.accessory) t.push("소품: "+col.mine.accessory);
-    if(sameColor) t.push("두 색이 같은 칸이에요. 색은 이미 맞춰져 있으니 다른 데를 손보면 돼요.");
+    if(sameColor) t.push("두 색이 같은 칸입니다. 색은 이미 맞춰져 있으니 다른 데를 손보면 됩니다.");
     return t; })() : null;
   if(col&&(col.mine||col.want)) PAGES.push({t:"색 이야기",
     draw:{title:"색 이야기",
@@ -1028,7 +1041,7 @@ function renderReport(){
     html:`
     ${sameColor?`<div class="card"><h2>${esc(pcLabel)}에 잘 받는 색 = ${esc(wantName)} 매력을 만드는 색</h2>${col.mineChips}
       <p class="note">${esc(col.mine.best)}${secondLine(col.mine.second)}${col.mine.accessory?`<br>소품: ${esc(col.mine.accessory)}`:``}</p>
-      <p class="note">두 색이 같은 칸이에요. 색은 이미 맞춰져 있으니 다른 데를 손보면 돼요.</p></div>`
+      <p class="note">두 색이 같은 칸입니다. 색은 이미 맞춰져 있으니 다른 데를 손보면 됩니다.</p></div>`
     :`${col.mine?`<div class="card"><h2>${esc(pcLabel)}에 잘 받는 색</h2>${col.mineChips}
       <p class="note">${esc(col.mine.best)}${secondLine(col.mine.second)}${col.mine.accessory?`<br>소품: ${esc(col.mine.accessory)}`:``}</p></div>`:``}
     ${col.want?`<div class="card"><h2>${esc(wantName)} 매력을 만드는 색</h2>${col.wantChips}
@@ -1088,7 +1101,7 @@ function renderReport(){
 
   // 대표 확정 순서(2026-08-18): 오늘의 진단 → 퍼스널컬러 → 얼굴·이목구비 → 추구미 → 비교 → 오늘 해볼 것
   // ⚠ 새 페이지를 만들면 여기에도 제목을 넣어야 한다. 없으면 조용히 맨 뒤로 밀린다.
-  const ORDER=["지금 나의 매력과 추구미","내 퍼스널컬러","이렇게 측정했어요","얼굴형","눈","코","입","부위별로 보면",
+  const ORDER=["지금 나의 매력과 추구미","내 퍼스널컬러","이렇게 측정했습니다","얼굴형","눈","코","입","부위별로 보면",
                "내 추구미","색 이야기","오늘 해볼 것","오늘 해볼 것 2","오늘 해볼 것 3","색은 이렇게"];
   PAGES.sort((a,b)=>{ const i=ORDER.indexOf(a.t), j=ORDER.indexOf(b.t);
     return (i<0?99:i)-(j<0?99:j); });
@@ -1104,7 +1117,7 @@ function paint(CARD){
      몇 장인지 미리 알리는 것은 마케팅 확정본이 PIPELINE 제목에 쓴 논리 그대로다 —
      끝이 보이면 사람은 끝까지 읽는다. 강의 리포트는 11장이라 더 그렇다. */
   const lead = PAGE === 0
-    ? `<p class="plead">오늘 측정한 것을 ${PAGES.length}장으로 풀었습니다. 넘기면서 봐주세요.</p>` : ``;
+    ? `<p class="plead">오늘 측정한 것을 ${PAGES.length}장으로 풀었습니다. 한 장씩 넘겨 보시면 됩니다.</p>` : ``;
   app.innerHTML = `<div class="shell">
     <div class="shell-top">
       <div class="hd"><h1>추구미즘</h1><small>${PAGE+1} / ${PAGES.length}</small></div>
@@ -1156,7 +1169,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=72bbb47"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=fa53926"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))

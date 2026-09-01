@@ -401,8 +401,36 @@
     }).join("\n");
   }
 
+  /* 헤어 관찰·미션 3밴드 (forehead_open) — 대표 확정 2026-08-29.
+     관찰(obs)은 리포트 얼굴형 장에서 상태만 말하고, 미션(mission·why)은 「오늘 해볼 것」에서 나온다.
+     index.html에 있던 정의를 2026-09-02 계약층으로 옮겼다 — 강의판(lecture.html)도 같은 문구를
+     읽어야 하는데 사본을 두면 한쪽만 고쳐지는 사고(전파 체크리스트)가 재발한다. */
+  var HAIR_BANDS = [
+    { min: 0.75, key:"hair_open",
+      title: "드러난 이마",
+      obs: "이마가 거의 다 보이는 상태로 찍혔습니다. 얼굴 위쪽이 열려 있으면 이목구비가 또렷하게 읽힙니다.",
+      mission: "앞머리를 조금만 내려보세요",
+      why: "얼굴 길이가 짧아 보이고 인상이 한결 부드러워집니다." },
+    { min: 0.40, key:"hair_half",
+      title: "반쯤 열린 이마",
+      obs: "가운데는 드러나 있고 옆쪽은 머리가 덮은 상태입니다. 어느 쪽으로도 갈 수 있는 자리입니다.",
+      mission: "가르마를 넘기는 쪽을 바꿔보세요",
+      why: "조금만 옮겨도 인상이 꽤 움직입니다. 두 장 찍어두면 뭐가 맞는지 비교하기 좋아요." },
+    { min: 0, key:"hair_covered",
+      title: "이마를 덮은 머리",
+      obs: "머리가 이마를 대부분 덮은 상태로 찍혔습니다. 이마가 가려지면 시선이 눈·코·입으로 모입니다.",
+      mission: "이마를 조금만 열어보세요",
+      why: "얼굴이 위아래로 길어 보이고 윤곽이 또렷해져요. 어느 쪽이 나은지에 정답은 없고, 두 가지를 다 가진 사람이 선택지가 많습니다." },
+  ];
+  function hairBandOf(v){
+    if(typeof v !== "number" || !isFinite(v)) return null;
+    for(var i=0;i<HAIR_BANDS.length;i++) if(v >= HAIR_BANDS[i].min) return HAIR_BANDS[i];
+    return null;
+  }
+
   root.CZM = {
-    BANDS: BANDS, bandOf: bandOf, midLowerVerdict: midLowerVerdict, thirdsVerdict: thirdsVerdict,
+    BANDS: BANDS, bandOf: bandOf,
+    HAIR_BANDS: HAIR_BANDS, hairBandOf: hairBandOf, midLowerVerdict: midLowerVerdict, thirdsVerdict: thirdsVerdict,
     PHI: PHI, GOLDEN: GOLDEN, goldenOf: goldenOf, goldenSummary: goldenSummary, thirdsGolden: thirdsGolden, asymVerdict: asymVerdict,
     STAGES: STAGES, trace: trace, diagnose: diagnose, diagnoseText: diagnoseText,
     KEYS: KEYS, store: store,
