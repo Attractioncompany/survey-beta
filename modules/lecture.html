@@ -182,7 +182,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=f7a6212"></script>
+<script src="czm-core.js?v=f3dd3fe"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -211,12 +211,12 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "f7a6212";
+const BUILD = "f3dd3fe";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=f7a6212";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=f3dd3fe";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -255,7 +255,7 @@ function pickTips(gapAxis, wantName, myPC, gender){
     const v=row && real(row[k]); return v ? short(v) : "\u0000";  // 채울 값이 없으면 표식을 남겨 그 팁을 버린다
   });
 
-  const out=[];
+  const out=[]; const usedAreas=new Set();
   for(const c of cells){
     // makeup=메이크업 전제(여성) · gender=그 성별 전용. 성별을 모르면 전용 팁은 내지 않는다.
     const cand=TIPS.tips.filter(t=>t.cell===c.id
@@ -268,7 +268,11 @@ function pickTips(gapAxis, wantName, myPC, gender){
     for(const t of cand){
       const tip=fill(t.tip);
       if(tip.includes("\u0000")) continue;               // 자리표시자(겨울 딥 등) → 내지 않는다
+      // 같은 부위(area)는 통틀어 1건 — 문장이 달라도 같은 행동이면 참석자에겐 중복이다
+      // (대표 지적 2026-09-01: brow.M+ 칸의 추구미 전용·공통 팁이 나란히 나와 "컨실러로 눈썹 위 덮기"가 두 번 나갔다)
+      if(t.area && usedAreas.has(t.area)) continue;
       if(t.cost==="paid" && out.some(o=>o.cost==="paid")) continue;  // 유과금은 통틀어 1건까지
+      if(t.area) usedAreas.add(t.area);
       out.push({...t, tip, why:fill(t.why||""), caution:t.caution?fill(t.caution):null, step:c.copy});
       if(++taken>=2) break;                              // 칸당 2건까지
     }
@@ -555,6 +559,13 @@ function drawPage(d, idx, total){
   const image=im=>{ if(!im||!im.naturalWidth) return;
     const w=Math.min(W-PAD*2, 520), h=Math.round(w*im.naturalHeight/im.naturalWidth);
     runs.push({kind:"img",im,x:Math.round((W-w)/2),y,w,h}); y+=h+24; };
+  // 캐릭터 둘을 나란히 — 화면의 twin 레이아웃과 같은 그림이 저장본에도 실리게 (대표 지적 2026-09-01: 화면과 저장본이 다르다)
+  const imagePair=ims=>{ ims=(ims||[]).filter(im=>im&&im.naturalWidth); if(!ims.length) return;
+    const gapX=40, w=Math.min(Math.floor((W-PAD*2-gapX*(ims.length-1))/ims.length), 380);
+    let x=Math.round((W-(w*ims.length+gapX*(ims.length-1)))/2), maxH=0;
+    for(const im of ims){ const h=Math.round(w*im.naturalHeight/im.naturalWidth);
+      runs.push({kind:"img",im,x,y,w,h}); maxH=Math.max(maxH,h); x+=w+gapX; }
+    y+=maxH+24; };
 
   y=PAD;
   push("추구미즘",{size:30,weight:800,color:"#B76BA3",gap:4});
@@ -563,15 +574,25 @@ function drawPage(d, idx, total){
   if(d.big){ push(d.big,{size:64,weight:800,gap:6}); if(d.cap) push(d.cap,{size:24,color:"#6E6478",gap:18}); }
   if(d.chips&&d.chips.length) chips(d.chips);
   if(d.img) image(d.img);
+  if(d.imgs) imagePair(d.imgs);
   if(d.rows&&d.rows.length){ rule();
     for(const r of d.rows){
       push(r.k,{size:23,color:"#6E6478",gap:2});
       push(r.v,{size:34,weight:700,gap:r.s?2:16});
       if(r.s) push(r.s,{size:23,color:"#6E6478",gap:16});
     } }
+  // 팁: 화면의 tip 카드와 같은 3층(본문/이유/주의)을 그대로 싣는다.
+  // 예전에는 "본문 (이유)" 한 줄로 접어 넣어 주의 문구가 통째로 빠졌다 (대표 지적 2026-09-01).
+  if(d.tips&&d.tips.length){ rule();
+    for(const t of d.tips){
+      push(t.tip,{size:30,weight:700,gap:6});
+      if(t.why) push(t.why,{size:24,color:"#6E6478",gap:t.caution?6:20});
+      if(t.caution) push(t.caution,{size:22,color:"#8A6D3B",gap:20});
+    } }
   if(d.sections) for(const sec of d.sections){
     rule(); push(sec.h,{size:30,weight:700,gap:10}); chips(sec.chips);
     if(sec.text) push(sec.text,{size:24,color:"#6E6478",gap:16});
+    if(sec.texts) for(const tx of sec.texts) push(tx,{size:24,color:"#6E6478",gap:8});
   }
   if(d.paras&&d.paras.length){ if(d.rows&&d.rows.length||d.sections) rule();
     for(const t of d.paras) push(t,{size:26,color:"#3A342F",gap:14}); }
@@ -598,14 +619,19 @@ function drawPage(d, idx, total){
 
 // 리포트 각 페이지를 한 장씩 이미지로 저장한다.
 // iOS는 공유 시트에 여러 파일을 한 번에 넘길 수 있고, 나머지는 순차 다운로드.
-async function savePages(pcLabel, btn){
+async function savePages(CARD, btn){
   // 이미지가 아직 안 읽혔으면 그 페이지가 빈 칸으로 저장된다. 한 번만 기다린다.
   const savable=PAGES.filter(pg=>!pg.skipSave&&pg.draw);
-  for(const pg of savable){ const im=pg.draw&&pg.draw.img;
-    if(im && !im.naturalWidth){ try{ await im.decode(); }catch(e){} } }
+  for(const pg of savable){ const ims=[].concat(pg.draw&&pg.draw.img||[], pg.draw&&pg.draw.imgs||[]);
+    for(const im of ims){ if(im && !im.naturalWidth){ try{ await im.decode(); }catch(e){} } } }
   const pages=PAGES.filter(p=>p.draw && !p.skipSave);
   if(!pages.length){ btn.textContent="저장할 게 없어요"; return; }
   const files=[];
+  // 공유 카드도 같은 묶음의 맨 앞에 — 버튼이 하나가 되면서(저장/공유 이원화 폐지, 대표 2026-09-01)
+  // 카드는 별도 문이 아니라 저장 묶음의 첫 장이 된다. 친구에게 보낼 땐 이 한 장만 고르면 된다.
+  try{ const cc=drawCard(CARD); const cb=await new Promise(r=>cc.toBlob(r,"image/png"));
+    if(cb) files.push(new File([cb],"추구미즘_0_매력카드.png",{type:"image/png"})); }
+  catch(e){ console.warn("카드 그리기 실패", e); }
   for(let i=0;i<pages.length;i++){
     let cv; try{ cv=drawPage(pages[i].draw, i+1, pages.length); }
     catch(e){ console.warn("페이지 그리기 실패", i, e); continue; }
@@ -614,7 +640,8 @@ async function savePages(pcLabel, btn){
   }
   if(!files.length){ btn.textContent="저장이 안 되네요"; return; }
   if(navigator.canShare && navigator.canShare({files})){
-    try{ await navigator.share({files, title:"추구미즘 리포트"}); btn.textContent=`${files.length}장 저장했어요`; return; }
+    try{ await navigator.share({files, title:"추구미즘 리포트"}); btn.textContent=`${files.length}장 저장했어요`;
+      lecTrack("result_shared",{via:"share",n:files.length}); return; }
     catch(e){ if(e && e.name==="AbortError") return; }
   }
   for(const f of files){
@@ -625,8 +652,11 @@ async function savePages(pcLabel, btn){
     await new Promise(r=>setTimeout(r,250));   // 연속 다운로드가 브라우저에 막히지 않게
   }
   btn.textContent=`${files.length}장 저장했어요`;
+  lecTrack("result_shared",{via:"download",n:files.length});
 }
 
+// saveCard는 통합 버튼(savePages가 카드를 첫 장으로 포함) 이후 단독 호출처가 없다.
+// 지우지 않고 둔다 — 공유 전용 문을 되살릴 때 그대로 쓴다.
 async function saveCard(data, btn){
   let cv;
   try{ cv=drawCard(data); }
@@ -854,8 +884,10 @@ function renderReport(){
   // ① 오늘의 진단 — 지금 나의 매력과 추구미를 **구미 둘로 나란히** 보여준다.
   //    이름만 두 줄 적으면 뭐가 다른지 안 읽힌다. 각각이 어디서 나온 판정인지도 밝힌다.
   const HAVE_SRC="../bg/char_"+s.diag.have+".png", WANT_SRC="../bg/char_"+s.diag.want+".png";
+  const IMG_HAVE=new Image(); IMG_HAVE.src=HAVE_SRC;
+  const IMG_WANT=new Image(); IMG_WANT.src=WANT_SRC;
   PAGES.push({t:"지금 나의 매력과 추구미",
-    draw:{title:"지금 나의 매력과 추구미",
+    draw:{title:"지금 나의 매력과 추구미", imgs:[IMG_HAVE,IMG_WANT],
           rows:[{k:"지금 나의 매력",v:haveName,s:"퍼스널컬러와 이목구비, 행동까지 종합한 결과예요"},
                 {k:"추구미",v:wantName,s:"설문으로 알아본, 내가 가지고 싶은 매력이에요"}],
           paras:gapLine?[gapLine]:[]},
@@ -884,7 +916,9 @@ function renderReport(){
           cap:pcType?pcLabel+(jong(pcLabel)?"은 ":"는 ")+pcType+" 매력의 색이에요":"",
           chips:col&&col.mineHex?col.mineHex:[],
           paras:[col&&col.mine?col.mine.best:null,
-                 pcTd?gsubLater(pcTd.one):null].filter(Boolean)},
+                 pcTd?gsubLater(pcTd.one):null,
+                 pcTd?gsubLater(pcTd.desc):null,
+                 pcType?"퍼스널컬러 8가지는 매력 8가지와 하나씩 짝을 이뤄요.":null].filter(Boolean)},
     html:`
     <div class="card">
       <h2>오늘 서로 봐준 퍼스널컬러</h2>
@@ -999,10 +1033,16 @@ function renderReport(){
     return `<br>곁들이면 좋은 색: ${esc(main)}`
          + (foot?`</p><p class="note" style="opacity:.75;font-size:.92em">${esc(foot)}`:``); };
   const sameColor = col && col.mine && col.want && col.mine.best===col.want.best;
+  const mineTexts = col&&col.mine ? (()=>{ const t=[col.mine.best];
+    if(col.mine.second){ const {main,foot}=splitNote(col.mine.second);
+      t.push("곁들이면 좋은 색: "+main); if(foot) t.push(foot); }
+    if(col.mine.accessory) t.push("소품: "+col.mine.accessory);
+    if(sameColor) t.push("두 색이 같은 칸이에요. 색은 이미 맞춰져 있으니 다른 데를 손보면 돼요.");
+    return t; })() : null;
   if(col&&(col.mine||col.want)) PAGES.push({t:"색 이야기",
     draw:{title:"색 이야기",
           sections:[col.mine?{h:(sameColor?pcLabel+"에 잘 받는 색 = "+wantName+" 매력을 만드는 색":pcLabel+"에 잘 받는 색"),
-                              chips:col.mineHex, text:col.mine.best}:null,
+                              chips:col.mineHex, texts:mineTexts}:null,
                     (!sameColor&&col.want)?{h:wantName+" 매력을 만드는 색", chips:col.wantHex, text:col.want.best}:null
                    ].filter(Boolean)},
     html:`
@@ -1019,29 +1059,36 @@ function renderReport(){
   for(let i=TIPS_PER_PAGE;i<tips.length;i+=TIPS_PER_PAGE){
     const chunk=tips.slice(i,i+TIPS_PER_PAGE);
     PAGES.push({t:"오늘 해볼 것 "+(Math.floor(i/TIPS_PER_PAGE)+1),
-      draw:{title:"오늘 해볼 것", paras:chunk.map(t=>"· "+t.tip+(t.why?" ("+t.why+")":""))},
+      draw:{title:"오늘 해볼 것", tips:chunk},
       html:chunk.map(t=>`<div class="tip"><div class="tip-t">${esc(t.tip)}</div>
         ${t.why?`<div class="tip-w">${esc(t.why)}</div>`:``}
         ${t.caution?`<div class="tip-c">${esc(t.caution)}</div>`:``}</div>`).join("")});
   }
   const tipsHead=tips.slice(0,TIPS_PER_PAGE);
+  /* "한 번에 하나만 바꿔보세요" 문구는 뺐다 — 대표 지시 2026-09-01. */
+  const nearSpot = gender&&gender!=="f" ? "셔츠 목선·스카프·모자" : "립·스카프·상의 목선";
+  const colorHow=[
+    col&&col.mine?{b:"얼굴 가까이", rest:`(${nearSpot})엔 잘 받는 색을 두세요. 얼굴이 사는 자리예요.`}:null,
+    col&&col.want&&!sameColor?{b:"얼굴에서 먼 곳", rest:`(하의·가방·신발)엔 ${wantName} 색을 써보세요. 얼굴은 편하고, 전체 느낌은 ${wantName} 쪽으로 가요.`}:null
+  ].filter(Boolean);
+  const asymHow=["한쪽으로만 씹거나, 턱을 괴거나, 늘 같은 쪽으로 자는 습관이 있는지 한번 살펴보세요.",
+                 "정면으로 한 번 더 찍어보면 더 정확해요.",
+                 "좌우가 완전히 같은 얼굴은 없어요."];
   PAGES.push({t:tips.length?"오늘 해볼 것":"색은 이렇게",
     draw:{title:tips.length?"오늘 해볼 것":"색은 이렇게",
-          paras:tipsHead.map(t=>"· "+t.tip+(t.why?" ("+t.why+")":""))},
+          tips:tipsHead,
+          sections:[colorHow.length?{h:"색은 이렇게", texts:colorHow.map(x=>"· "+x.b+x.rest)}:null,
+                    asymCare?{h:"좌우 균형은 이렇게", texts:asymHow.map(x=>"· "+x)}:null].filter(Boolean)},
     html:`
     ${tipsHead.map(t=>`<div class="tip"><div class="tip-t">${esc(t.tip)}</div>
       ${t.why?`<div class="tip-w">${esc(t.why)}</div>`:``}
       ${t.caution?`<div class="tip-c">${esc(t.caution)}</div>`:``}</div>`).join("")}
-    <div class="card"><h2>색은 이렇게</h2>
+    ${colorHow.length?`<div class="card"><h2>색은 이렇게</h2>
       <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8">
-      ${col&&col.mine?`· <b>얼굴 가까이</b>(${gender&&gender!=="f"?"셔츠 목선·스카프·모자":"립·스카프·상의 목선"})엔 잘 받는 색을 두세요. 얼굴이 사는 자리예요.<br>`:``}
-      ${col&&col.want&&!sameColor?`· <b>얼굴에서 먼 곳</b>(하의·가방·신발)엔 ${esc(wantName)} 색을 써보세요. 얼굴은 편하고, 전체 느낌은 ${esc(wantName)} 쪽으로 가요.<br>`:``}
-      · 한 번에 하나만 바꿔보세요. 여러 개를 같이 바꾸면 어느 게 통했는지 몰라요.</p></div>
+      ${colorHow.map(x=>`· <b>${esc(x.b)}</b>${esc(x.rest)}`).join("<br>")}</p></div>`:``}
     ${asymCare?`<div class="card"><h2>좌우 균형은 이렇게</h2>
       <p class="note" style="font-size:14.5px;color:var(--ink);line-height:1.8">
-      · 한쪽으로만 씹거나, 턱을 괴거나, 늘 같은 쪽으로 자는 습관이 있는지 한번 살펴보세요.<br>
-      · 정면으로 한 번 더 찍어보면 더 정확해요.<br>
-      · 좌우가 완전히 같은 얼굴은 없어요.</p></div>`:``}
+      ${asymHow.map(x=>"· "+esc(x)).join("<br>")}</p></div>`:``}
     `});
   /* 「다만 이건 주의하세요」(촬영환경 고지) 카드는 뺐다 — 대표 지시 2026-08-27.
      이유 둘. ① 강의는 퍼스널컬러를 현장 상호진단으로 받고 사진 색 판정을 쓰지 않는다
@@ -1089,8 +1136,7 @@ function paint(CARD){
     <div class="shell-btm">
       <div class="nav">
         ${PAGE>0?`<button class="btn ghost" id="prev">이전</button>`:`<span></span>`}
-        ${last?`<button class="btn" id="share">내 매력 카드 공유하기</button>
-              <button class="btn ghost" id="save">리포트 전체 저장하기</button>`
+        ${last?`<button class="btn" id="save">리포트 저장하기</button>`
               :`<button class="btn" id="next">다음</button>`}
       </div>
       ${last?`<button class="btn quiet" id="back">처음부터 다시</button>`:``}
@@ -1111,16 +1157,14 @@ function paint(CARD){
   $("next")&&($("next").onclick=()=>go(1));
   $("prev")&&($("prev").onclick=()=>go(-1));
   $("back")&&($("back").onclick=resetAll);
-  $("save")&&($("save").onclick=e=>{ const b=e.currentTarget; b.textContent="만드는 중…"; savePages(CARD.pc,b); });
-  /* 공유 카드 (2026-08-27 신설). drawCard·saveCard는 만들어져 있었는데 **부르는 곳이 없었다** —
-     7월 공유 48건이 8월 0건이 된 원인이다(8월 유입의 주 경로가 강의 리포트로 바뀌었는데
-     그 화면에 공유하는 문이 없었다). 마케팅팀이 데이터에서 찾았다.
-     saveCard는 이미 navigator.share를 먼저 시도하므로 폰에서는 그대로 공유 시트가 뜬다. */
-  $("share")&&($("share").onclick=e=>{
-    const b=e.currentTarget; b.textContent="만드는 중…";
-    lecTrack("share_card_click",{src:SRC||null});
-    saveCard(CARD, b);
-  });
+  /* 저장·공유 한 문으로 (대표 지시 2026-09-01: "공유하기와 저장하기가 오히려 헷갈린다, 하나로 통일").
+     공유 카드는 저장 묶음의 첫 장으로 들어간다 — 공유 시트가 어차피 같은 문이라
+     친구에게 보낼 사람은 거기서 카드 한 장을 고르면 된다.
+     ⚠ 계측: share_card_click은 이 화면에서 더 안 나온다. 공유 추적은 report_save_click(진입) +
+     result_shared(via=share/download, n=장수)로 잇는다 — 분석팀 대시보드 대응 필요. */
+  $("save")&&($("save").onclick=e=>{ const b=e.currentTarget; b.textContent="만드는 중…";
+    lecTrack("report_save_click",{src:SRC||null});
+    savePages(CARD,b); });
   // 좌우로 쓸어 넘기기 — 폰에서 버튼까지 내려가지 않아도 된다
   let x0=null;
   app.ontouchstart=e=>{ x0=e.touches[0].clientX; };
@@ -1132,7 +1176,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=f7a6212"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=f3dd3fe"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
