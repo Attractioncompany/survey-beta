@@ -438,9 +438,110 @@
   var SHAPE_CUTS = { ss:0.808, gn:137.0, jd:0.265, hw_long:1.43, hw_round:1.24,
                      v:"v2_2026-09-03_n14" };
 
+  /* ── 리포트 viz 팩토리 (강화안 v1.1 §4) — 앱·강의 공용 정본 ──────────────
+     lecture.html에 있던 것을 이동(2026-09-03). SVG 문자열 한 벌을 화면(inline)과
+     저장본(Image 래스터)이 같이 쓴다. 수치·경계값은 그리지 않는다(C4 수치 없는 판). */
+  var vizEsc=function(s){return String(s).replace(/[<&]/g,function(c){return c==='<'?'&lt;':'&amp;';});};
+var VIZ={ink:"#2B2233",sub:"#6E6478",accent:"#9C4680",deep:"#4A2B5C",
+  band0:"#EFE7F4",band1:"#DCC9E6",band2:"#BC8FCB",warn:"#B98A3C"};
+var VIZ_FONT='font-family="-apple-system, Apple SD Gothic Neo, Pretendard, sans-serif"';
+function vizWrap(w,h,inner){
+  // width/height 속성은 저장본 래스터 해상도(2.8배). 화면은 CSS(width:100%)가 이긴다.
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${Math.round(w*2.8)}" height="${Math.round(h*2.8)}">${inner}</svg>`;
+}
+function svgToImg(svg){ const im=new Image();
+  im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); return im; }
+
+// C1(a) 분포형 — 3칸 강조. 위치 점 없음(분포 n=14 — 점을 찍으면 그림이 백분위를 주장한다).
+function c1aSVG(labels, idx){
+  if(!Array.isArray(labels)||labels.length!==3||idx==null||idx<0||idx>2) return null;
+  const W=340,H=46,gap=3,segW=(W-gap*2)/3; let r="";
+  for(let i=0;i<3;i++){
+    const x=i*(segW+gap), on=i===idx, long=labels[i].length>9;
+    r+=`<rect x="${x}" y="4" width="${segW}" height="14" rx="7" fill="${on?VIZ.band2:VIZ.band0}"${on?` stroke="${VIZ.deep}" stroke-width="1.5"`:""}/>`;
+    r+=`<text x="${x+segW/2}" y="34" text-anchor="middle" font-size="10.5" ${VIZ_FONT} fill="${on?VIZ.deep:VIZ.sub}"${on?' font-weight="800"':''}${long?` textLength="${Math.round(segW-4)}" lengthAdjust="spacingAndGlyphs"`:""}>${vizEsc(labels[i])}</text>`;
+  }
+  return vizWrap(W,H,r);
+}
+// C1(b) φ 대비형 — 내 값 ↔ φ 두 점. 관측 분포와 같은 축에 올리지 않는다(기하학적 이상 화법 금지).
+function c1bSVG(g){
+  if(!g||typeof g.value!=="number"||!isFinite(g.value)) return null;
+  const W=340,H=64,y=18,padL=30,padR=30;
+  const lo=Math.min(g.value,g.ideal), hi=Math.max(g.value,g.ideal);
+  const span=(hi-lo)||Math.abs(g.ideal)*0.1||1, a=lo-span*0.35, b=hi+span*0.35;
+  const X=v=>padL+(v-a)/(b-a)*(W-padL-padR);
+  const xm=X(g.value), xi=X(g.ideal);
+  let r=`<rect x="${padL-8}" y="${y-1.5}" width="${W-padL-padR+16}" height="3" rx="1.5" fill="${VIZ.band1}"/>`;
+  r+=`<circle cx="${xi}" cy="${y}" r="6" fill="none" stroke="${VIZ.accent}" stroke-width="2.5"/>`;
+  r+=`<text x="${xi}" y="${y-11}" text-anchor="middle" font-size="10" font-weight="800" ${VIZ_FONT} fill="${VIZ.accent}">φ</text>`;
+  r+=`<circle cx="${xm}" cy="${y}" r="7.5" fill="${VIZ.deep}"/>`;
+  r+=`<text x="${Math.min(Math.max(xm,44),W-44)}" y="${y+27}" text-anchor="middle" font-size="10.5" font-weight="800" ${VIZ_FONT} fill="${VIZ.deep}">내 값 ${vizEsc(g.myPair)}</text>`;
+  r+=`<text x="${Math.min(Math.max(xi,52),W-52)}" y="${y+43}" text-anchor="middle" font-size="10" ${VIZ_FONT} fill="${VIZ.sub}">황금비 자리 ${vizEsc(g.idealPair)}</text>`;
+  return vizWrap(W,H,r);
+}
+// C4 판정 경로 — 갈림길 질문·답만. 경계값·측정값 비노출(이론 경계 확정 후 병기).
+function c4SVG(steps, final){
+  if(!steps||!steps.length||!final) return null;
+  const W=340; let y=4, r="";
+  for(const st of steps){
+    const qw=Math.min(206, st.q.length*11.5+22);
+    r+=`<rect x="0" y="${y}" width="${qw}" height="24" rx="8" fill="${VIZ.band1}"/>`;
+    r+=`<text x="11" y="${y+16.5}" font-size="11.5" ${VIZ_FONT} fill="${VIZ.ink}">${vizEsc(st.q)}</text>`;
+    r+=`<text x="${qw+10}" y="${y+16.5}" font-size="12" font-weight="800" ${VIZ_FONT} fill="${VIZ.deep}">→ ${vizEsc(st.a)}</text>`;
+    y+=30;
+    if(st.note){ r+=`<text x="16" y="${y+3}" font-size="10.5" ${VIZ_FONT} fill="${VIZ.sub}">↓ ${vizEsc(st.note)}</text>`; y+=20; }
+  }
+  y+=8;
+  r+=`<text x="1" y="${y+13}" font-size="16.5" font-weight="800" ${VIZ_FONT} fill="${VIZ.accent}">${vizEsc(final)}</text>`;
+  return vizWrap(W,y+24,r);
+}
+// C5 상:중:하 — 숫자 대신 칸. 옆의 회색 기둥이 이상적 비율(1:1:1).
+function c5SVG(pct, label){
+  if(!Array.isArray(pct)||pct.length!==3||pct.some(v=>typeof v!=="number"||!isFinite(v)||v<=0)||!label) return null;
+  const W=340,H=150,colX=8,colW=50,idX=70,idW=8,total=H-14;
+  const hs=pct.map(v=>Math.max(16,v)), sum=hs[0]+hs[1]+hs[2], k=(total-4)/sum;
+  const cols=["#C9A8D8","#A87BBE","#7E568F"], nm=["상","중","하"];
+  let y=7, r="";
+  for(let i=0;i<3;i++){ const h=hs[i]*k;
+    r+=`<rect x="${colX}" y="${y.toFixed(1)}" width="${colW}" height="${h.toFixed(1)}" rx="6" fill="${cols[i]}"/>`;
+    r+=`<text x="${colX+colW/2}" y="${(y+h/2+4).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="800" ${VIZ_FONT} fill="#fff">${nm[i]}</text>`;
+    y+=h+2; }
+  y=7; const ih=(total-4)/3;
+  for(let i=0;i<3;i++){ r+=`<rect x="${idX}" y="${y.toFixed(1)}" width="${idW}" height="${ih.toFixed(1)}" rx="3" fill="${VIZ.sub}" opacity="0.3"/>`; y+=ih+2; }
+  r+=`<text x="98" y="${H/2-6}" font-size="13.5" font-weight="800" ${VIZ_FONT} fill="${VIZ.deep}">${vizEsc(label)}</text>`;
+  r+=`<text x="98" y="${H/2+13}" font-size="10.5" ${VIZ_FONT} fill="${VIZ.sub}">옆의 회색 기둥이 이상적 비율(1 : 1 : 1)입니다</text>`;
+  return vizWrap(W,H,r);
+}
+// 얼굴형 갈림길 — verdicts()와 같은 경계(§8-2 예시 13장). 경계 숫자는 답으로만 쓰고 그리지 않는다.
+function faceShapePath(r){
+  var ss=r.side_straight, hw=r.face_HW, gn=r.gonial_ang, jd=r.jaw_drop;
+  if(typeof ss!=="number"||!isFinite(ss)) return null;
+  var C=SHAPE_CUTS;
+  const S=[];
+  if(ss > C.ss){
+    S.push({q:"옆선이 일자로 떨어지나", a:"그렇다"});
+    if(typeof hw!=="number"||!isFinite(hw)) return null;
+    if(hw>=C.hw_long){ S.push({q:"세로가 확연히 긴가", a:"그렇다"}); return {steps:S, final:"긴 얼굴형에 가깝습니다"}; }
+    S.push({q:"세로가 확연히 긴가", a:"아니다"});
+    if(hw<=C.hw_round){ S.push({q:"가로와 세로가 비슷한가", a:"그렇다"}); return {steps:S, final:"둥근형에 가깝습니다"}; }
+    S.push({q:"가로와 세로가 비슷한가", a:"아니다"});
+    return {steps:S, final:"둥근형과 긴 얼굴형 사이입니다"};
+  }
+  S.push({q:"옆선이 일자로 떨어지나", a:"아니다", note:"볼에서 턱으로 좁아지는 계열"});
+  if(typeof gn==="number" && isFinite(gn) && gn>=C.gn){
+    S.push({q:"하악 꺾임이 급한가", a:"그렇다"}); return {steps:S, final:"역삼각형에 가깝습니다"}; }
+  if(typeof gn==="number" && isFinite(gn)) S.push({q:"하악 꺾임이 급한가", a:"아니다"});
+  if(typeof jd==="number" && isFinite(jd) && jd<=C.jd){
+    S.push({q:"턱에 수평감이 있나", a:"그렇다"}); return {steps:S, final:"각진 얼굴형에 가깝습니다"}; }
+  if(typeof jd==="number" && isFinite(jd)) S.push({q:"턱에 수평감이 있나", a:"아니다"});
+  return {steps:S, final:"계란형에 가깝습니다"};
+}
+
   root.CZM = {
     BANDS: BANDS, bandOf: bandOf,
     SHAPE_CUTS: SHAPE_CUTS,
+    vizWrap: vizWrap, svgToImg: svgToImg, faceShapePath: faceShapePath,
+    c1aSVG: c1aSVG, c1bSVG: c1bSVG, c4SVG: c4SVG, c5SVG: c5SVG,
     HAIR_BANDS: HAIR_BANDS, hairBandOf: hairBandOf, midLowerVerdict: midLowerVerdict, thirdsVerdict: thirdsVerdict,
     PHI: PHI, GOLDEN: GOLDEN, goldenOf: goldenOf, goldenSummary: goldenSummary, thirdsGolden: thirdsGolden, asymVerdict: asymVerdict,
     STAGES: STAGES, trace: trace, diagnose: diagnose, diagnoseText: diagnoseText,
