@@ -94,7 +94,7 @@ export const PIPELINE = {
     ["이번 주 한 가지", "되고 싶은 모습과 지금이 얼마나 다른지 보고, 거기서 이번 주에 바꿀 하나를 정합니다."],
   ],
   // 이 한 문단이 이 장의 이유다. 측정을 자랑하는 게 아니라 뺀 것을 밝히는 자리.
-  trust: "같은 사람이 다시 찍어도 값이 흔들리지 않는지 열두 명이 스물한 번씩 찍어 확인했습니다. 그 시험을 통과하지 못한 측정 다섯 가지는 이 리포트에서 뺐습니다.",
+  /* trust 문구 삭제(대표 09-03 #9) — 방법 서술은 남기고 시험 서사는 걷는다. */
   caution: "배경, 조명 등 촬영환경에 따라 측정결과가 달라질 수 있습니다. 더 정확한 결과를 원하신다면 전문컨설턴트를 통한 대면진단을 권장합니다.",
 };
 
@@ -104,7 +104,7 @@ export function pipelineBlock(){
   return `<div class="pm-pipe">${P.steps.map(([k, v], i) =>
     `<div class="pm-step"><b>${String(i + 1).padStart(2, "0")}</b>
        <div><strong>${k}</strong><p>${v}</p></div></div>`).join("")}
-    <div class="pm-trust"><p>${P.trust}</p></div>
+
     <p class="pm-caution">${P.caution}</p></div>`;
 }
 
