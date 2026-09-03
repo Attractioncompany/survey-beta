@@ -381,6 +381,12 @@ function headWidth(ctx, lm, W, H, faceW, browY){
   const browDark=sampleBrowDark(ctx,lm,W,H,[70,63,105,66,107,300,293,334,296,336]);
   const browCol={L: isFinite(browDark)? browDark : sampleLab(ctx, P(lm,105,W,H).x, P(lm,105,W,H).y,3).L};
   const lipCol =sampleLab(ctx, (P(lm,13,W,H).x+P(lm,14,W,H).x)/2, (P(lm,13,W,H).y+P(lm,14,W,H).y)/2,3);
+  // 하순(아랫입술) 몸통 — 설계_대비신호_보완_v1 §3c (대표 재가 09-03). 위 lipCol 1점은
+  // 입을 벌리면 치아를 찍는 취약 지점이라 판정·적재에 못 쓴다(그대로 보존 — 기존 용처 불변).
+  // 랜드마크 14(하순 상단)~17(하순 하단) 중앙, 반경은 하순 두께의 35%(치아·입술선 회피).
+  const _lp14=P(lm,14,W,H), _lp17=P(lm,17,W,H);
+  const lipBody=sampleRegionLab(ctx,(_lp14.x+_lp17.x)/2,(_lp14.y+_lp17.y)/2,
+                                Math.max(3, Math.abs(_lp17.y-_lp14.y)*0.35));
   const hairPts=[[P(lm,10,W,H).x, Math.max(6,P(lm,10,W,H).y-faceW*0.18)],[P(lm,10,W,H).x-faceW*0.28, Math.max(6,P(lm,10,W,H).y-faceW*0.08)],[P(lm,10,W,H).x+faceW*0.28, Math.max(6,P(lm,10,W,H).y-faceW*0.08)]];
   const hairCol=hairPts.map(([hx,hy])=>sampleLab(ctx,hx,hy,6)).sort((p,q)=>p.L-q.L)[0]; // 최암값
   const irisCol={L:(sampleLab(ctx,irisL.x,irisL.y,3).L + sampleLab(ctx,irisR.x,irisR.y,3).L)/2};
@@ -447,6 +453,11 @@ function headWidth(ctx, lm, W, H, faceW, browY){
   const skinL_A = Lc(_skinPtsA.length ? _skinPtsA.reduce((s,p)=>s+p.L,0)/_skinPtsA.length : skin2.L);
   const skinClipMax = Math.max(cheekL.clip||0, cheekR.clip||0, brow.clip||0);
   const ita = Math.atan2(skinL-50, b_corr)*180/Math.PI; // ITA 피부톤 각도(밝기 계열)
+  // 립 산출 3종 — 분포 수집 전용. 판정·축·해설 어디에도 투입 금지(설계 §3c·§4).
+  // lip_chroma 상위 극단 = 립스틱·틴트 착용 의심 → 편입 검증(§3d)의 층화 변수.
+  const lip_L = Lc(lipBody.L);
+  const lip_chroma = Math.hypot(lipBody.a, lipBody.b);
+  const c_lip = Math.abs(skinL - lip_L);
   // 대비 (전문 판정 표준: 모발·눈썹·눈동자 vs 피부)
   const c_hair = Math.abs(skinL - hairL);
   const c_brow = Math.abs(skinL - browL);
@@ -479,7 +490,8 @@ function headWidth(ctx, lm, W, H, faceW, browY){
              eyeOpen0, cheekAvg, browDelta, skinPts, skin2,
              a_corr, b_corr, hue, chroma, muteness,
              skinL, hairL, browL, irisLm, skinL_A, skinClipMax, ita,
-             c_hair, c_brow, c_iris, DYED, irisOK, contrast, cbasis, hairTop, headW, crownH };
+             c_hair, c_brow, c_iris, DYED, irisOK, contrast, cbasis, hairTop, headW, crownH,
+             lip_L, lip_chroma, c_lip };
   }
 
   root.CZM = root.CZM || {};
