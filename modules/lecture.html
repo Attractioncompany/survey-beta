@@ -183,7 +183,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=f28fce4"></script>
+<script src="czm-core.js?v=5adb0ae"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -331,12 +331,19 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "f28fce4";
+const BUILD = "5adb0ae";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
-const SRC = new URLSearchParams(location.search).get("src") || "";
+const SRC = (()=>{ // 첫 진입의 ?src를 회차 동안 유지. 촬영 왕복의 귀환 URL이 쿼리를 떨궈
+  // 오늘(09-02) 강의 리포트 이벤트 전원이 src=null로 적재됐다(측정만 src 보존 — 실측 발견).
+  // 시간창 판독은 되지만 이벤트-코호트 직결이 끊긴다. sessionStorage는 왕복에 살아남고
+  // 새 링크로 열면 새 값으로 덮인다.
+  const q = new URLSearchParams(location.search).get("src");
+  try{ if(q){ sessionStorage.setItem("czm_lec_src", q); return q; }
+       return sessionStorage.getItem("czm_lec_src") || ""; }catch(e){ return q || ""; }
+})();
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=f28fce4";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=5adb0ae";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -1141,46 +1148,61 @@ function renderReport(){
   /* 헤어 관찰·미션 — 앱과 같은 정본(CZM.HAIR_BANDS, 2026-09-02 강의판 이식).
      관찰은 얼굴형 장에서 상태만, 미션은 「오늘 해볼 것」에서 (대표 원칙 2026-08-29). */
   const HB=CZM.hairBandOf&&CZM.hairBandOf(FOPEN);
-  /* P0(대표 재가 09-02): 얼굴형 장을 표 텍스트에서 컴포넌트로.
+  /* P0·P1(대표 재가 09-02): 부위 4장을 표 텍스트에서 컴포넌트로.
      각 viz는 SVG 문자열(화면)과 Image(저장본)를 같이 들고 다닌다 — 한 벌 구현.
      재료가 없는 행은 viz를 만들지 않고 기존 vRow로 남긴다(옛 측정·검출 실패 안전망). */
-  const FACE_VIZ=(()=>{
-    const list=[], covered=new Set();
-    const add=(cover, klab, verdict, svg, cap)=>{ if(!svg) return;
-      const m=svg.match(/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/);
-      list.push({klab, verdict, svg, cap, img:svgToImg(svg), vw:+m[1], vh:+m[2]});
-      cover.forEach(k=>covered.add(k)); };
-    // C4 — 얼굴형 갈림길 (수치 없음)
+  const VIZQ=(()=>{
+    const mk=()=>{ const list=[], covered=new Set();
+      const add=(cover, klab, verdict, svg, cap)=>{ if(!svg) return;
+        const m=svg.match(/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/);
+        list.push({klab, verdict, svg, cap, img:svgToImg(svg), vw:+m[1], vh:+m[2]});
+        cover.forEach(k=>covered.add(k)); };
+      // C1(b) — 황금비 두 점 (자기 얼굴 안 비율이라 참조집단 불요)
+      const gold=(key, v)=>{ const g=CZM.goldenOf(key, v); if(!g) return;
+        add([g.name], g.name, g.label+"입니다", c1bSVG(g), "황금비는 목표가 아니라 자리 표시입니다."); };
+      // C1(a) — 분포 3칸 강조 (n=14라 위치 점 없음) + 참조집단 꼬리표
+      const D3=SHAPE&&SHAPE.dist, L3=SHAPE&&SHAPE.labels;
+      const band=(cover, klab, v, key)=>{
+        if(!(D3&&L3&&D3[key]&&L3[key])||typeof v!=="number"||!isFinite(v)) return;
+        const b=CZM.bandOf(D3[key], v, L3[key]); if(!b) return;
+        const idx=v<b.low?0:v<b.high?1:2;
+        add(cover, klab, b.label+"입니다", c1aSVG(L3[key], idx),
+          "같은 방식으로 촬영한 측정 데이터 기준입니다."); };
+      return {list, covered, add, gold, band}; };
+    // 얼굴형 장 (P0)
+    const F=mk();
     const fp=faceShapePath(r);
-    if(fp) add(["얼굴형"], "얼굴형", null, c4SVG(fp.steps, fp.final), null);
-    // C1(b) — 얼굴 가로:세로 (황금비 두 점)
-    const gHW=CZM.goldenOf("face_HW", r.face_HW);
-    if(gHW) add([gHW.name], gHW.name, gHW.label+"입니다", c1bSVG(gHW),
-      "황금비는 목표가 아니라 자리 표시입니다.");
-    // C5 — 상:중:하 (헤어라인 검출 실패 시 상안부가 짧게 나와 침묵 — verdicts와 같은 게이트)
+    if(fp) F.add(["얼굴형"], "얼굴형", null, c4SVG(fp.steps, fp.final), null);
+    F.gold("face_HW", r.face_HW);
     const hairOK2 = !s.face.quality || s.face.quality.hairline_detected !== false;
     const th2 = hairOK2 ? CZM.thirdsGolden(r.upper, r.mid, r.lower) : null;
-    if(th2 && th2.pct) add(["상 : 중 : 하"], "상 : 중 : 하", null, c5SVG(th2.pct, th2.label+"입니다"), null);
-    // C1(a) — 턱끝·좌우 균형 (분포 3칸 강조. n=14라 위치 점 없음)
-    const D3=SHAPE&&SHAPE.dist, L3=SHAPE&&SHAPE.labels;
-    const bandViz=(cover, klab, v, key)=>{
-      if(!(D3&&L3&&D3[key]&&L3[key])||typeof v!=="number"||!isFinite(v)) return;
-      const b=CZM.bandOf(D3[key], v, L3[key]); if(!b) return;
-      const idx=v<b.low?0:v<b.high?1:2;
-      add(cover, klab, b.label+"입니다", c1aSVG(L3[key], idx),
-        "같은 방식으로 촬영한 측정 데이터 기준입니다."); };
-    bandViz(["턱끝"], "턱끝", l.chin_angle_deg, "chin_angle_deg");
-    bandViz(["좌우 균형"], "좌우 균형", r.asym_score, "asym_score");
-    return {list, covered};
+    if(th2 && th2.pct) F.add(["상 : 중 : 하"], "상 : 중 : 하", null, c5SVG(th2.pct, th2.label+"입니다"), null);
+    F.band(["턱끝"], "턱끝", l.chin_angle_deg, "chin_angle_deg");
+    F.band(["좌우 균형"], "좌우 균형", r.asym_score, "asym_score");
+    // 눈 장 (P1)
+    const E=mk();
+    E.band(["눈매"], "눈매", l.eye_angle, "eye_angle");
+    E.gold("interocular", r.interocular);
+    // 코 장 (P1) — 코:입 너비는 두 값의 비
+    const N2=mk();
+    if(r.mouth_w && r.nose_w) N2.gold("mouth_nose", r.mouth_w/r.nose_w);
+    // 입 장 (P1)
+    const M2=mk();
+    M2.band(["입꼬리"], "입꼬리", l.mouth_corner, "mouth_corner");
+    M2.gold("lip_ul", r.lip_ul_ratio);
+    return {face:F, eye:E, nose:N2, mouth:M2};
   })();
+  const vizOf=(q,rows)=>({ rows:rows.filter(x=>!q.covered.has(x.k)),
+                           vizList:q.list.length?q.list:null });
+  const VF=vizOf(VIZQ.face, pick("얼굴형","얼굴 가로 : 세로","상 : 중 : 하","턱선","턱끝","좌우 균형"));
+  const VE=vizOf(VIZQ.eye,  pick("눈매","눈 길이 : 눈 사이","눈썹 모양"));
+  const VN=vizOf(VIZQ.nose, pick("코 : 입 너비"));
+  const VM=vizOf(VIZQ.mouth,pick("입꼬리","윗입술 : 아랫입술"));
   const PART_PAGES=[
-    {t:"얼굴형", rows:pick("얼굴형","얼굴 가로 : 세로","상 : 중 : 하","턱선","턱끝","좌우 균형")
-                    .filter(x=>!FACE_VIZ.covered.has(x.k)),
-     vizList:FACE_VIZ.list.length?FACE_VIZ.list:null,
-     line:P["윤곽"], extra:HB?{h:HB.title, text:HB.obs}:null},
-    {t:"눈",     rows:pick("눈매","눈 길이 : 눈 사이","눈썹 모양"), line:[P["눈"],P["눈썹"]].filter(Boolean).join(" ")},
-    {t:"코",     rows:pick("코 : 입 너비"), line:P["코"]},
-    {t:"입",     rows:pick("입꼬리","윗입술 : 아랫입술"), line:P["입"]},
+    {t:"얼굴형", rows:VF.rows, vizList:VF.vizList, line:P["윤곽"], extra:HB?{h:HB.title, text:HB.obs}:null},
+    {t:"눈",     rows:VE.rows, vizList:VE.vizList, line:[P["눈"],P["눈썹"]].filter(Boolean).join(" ")},
+    {t:"코",     rows:VN.rows, vizList:VN.vizList, line:P["코"]},
+    {t:"입",     rows:VM.rows, vizList:VM.vizList, line:P["입"]},
   ];
   // viz 카드 — svg는 esc하지 않는다(우리가 방금 만든 마크업). klab 등 텍스트만 esc.
   const vizCard=v=>`<div class="card">
@@ -1359,7 +1381,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=f28fce4"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=5adb0ae"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
