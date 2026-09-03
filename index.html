@@ -442,12 +442,12 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=8f06ff0"></script>
+<script src="modules/czm-core.js?v=243e017"></script>
 <!-- 스탯 산식 정본(theory/산식_RPG스탯성장_v1_2026-08-24.md). 표시 층 전용 — 좌표·판정은 손대지 않는다. -->
-<script src="modules/czm-stats.js?v=8f06ff0"></script>
+<script src="modules/czm-stats.js?v=243e017"></script>
 <!-- 리포트 해설(theory/리포트해설_확충_v1_2026-08-24.md). czm-core의 판정기를 유저 문장으로 인출한다.
      일반 스크립트인 이유: 캐릭터 시트 해설은 사진이 없어도 나오므로 첫 페인트에 동기로 있어야 한다. -->
-<script src="modules/report-explain.js?v=8f06ff0"></script>
+<script src="modules/report-explain.js?v=243e017"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -515,7 +515,7 @@ const FLOW_WANT = new URLSearchParams(location.search).get("flow")==="want";
 const WANT_PARAM = new URLSearchParams(location.search).get("want");
 let WANT_PICK = null, WANT_SRC = null;   // 문항 점수 없이 물려받은 추구미(타입만)와 그 출처
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.35+8f06ff0"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.35+243e017"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -1703,7 +1703,7 @@ function pickExtra(i){
 /* 두 점 지도(P1, 제안 v1.1 §6) — 격차(BRIDGE)가 리포트에서 유일하게 그림 없는 장이었다.
    좌표는 계약층(CZM.coordOf) 그대로: 가로 T(따뜻↔시원), 세로 D(부드러움↔또렷함). M축은 평면에서 생략.
    여덟 타입 자리를 옅게 깔고 지금(Hv)·추구미(W) 두 점만 색으로 세운다. 숫자·격자 없음. */
-function twoDotMap(wKey, hKey, W, Hv){
+function twoDotSVG(wKey, hKey, W, Hv){
   const co=k=>{ const c=CZM.COORD&&CZM.COORD[k]; return Array.isArray(c)?{T:c[0],D:c[1]}:null; };
   const a=co(hKey), b=co(wKey); if(!a||!b) return "";
   const Wd=320, Hd=170, pad=34;
@@ -1713,7 +1713,7 @@ function twoDotMap(wKey, hKey, W, Hv){
     if(k!==hKey&&k!==wKey) dots+=`<circle cx="${X(c.T).toFixed(1)}" cy="${Y(c.D).toFixed(1)}" r="3.5" fill="${TYPES[k].color}" opacity="0.28"/>`; }
   const ax=X(a.T),ay=Y(a.D),bx=X(b.T),by=Y(b.D);
   const F='font-family="inherit"';
-  return `<div class="sec" style="width:100%"><svg viewBox="0 0 ${Wd} ${Hd}" style="width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg">
+  return `<svg viewBox="0 0 ${Wd} ${Hd}" width="${Wd*2.6}" height="${Hd*2.6}" style="width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg">
     <line x1="${pad-14}" y1="${Hd-24}" x2="${Wd-pad+14}" y2="${Hd-24}" stroke="rgba(0,0,0,.10)" stroke-width="1"/>
     <line x1="${pad-14}" y1="${(Hd-52)/2+28}" x2="${pad-14}" y2="28" stroke="rgba(0,0,0,0)" stroke-width="0"/>
     ${dots}
@@ -1725,7 +1725,11 @@ function twoDotMap(wKey, hKey, W, Hv){
     <text x="${pad-14}" y="${Hd-8}" font-size="9.5" ${F} fill="#8C8296">따뜻함</text>
     <text x="${Wd-pad+14}" y="${Hd-8}" text-anchor="end" font-size="9.5" ${F} fill="#8C8296">시원함</text>
     <text x="${Wd/2}" y="${Hd-8}" text-anchor="middle" font-size="9.5" ${F} fill="#8C8296">↑ 또렷함 · ↓ 부드러움</text>
-  </svg></div>`;
+  </svg>`;
+}
+function twoDotMap(wKey, hKey, W, Hv){
+  const sv=twoDotSVG(wKey, hKey, W, Hv);
+  return sv?`<div class="sec" style="width:100%">${sv}</div>`:"";
 }
 function gapSection(wKey, hKey, W, Hv, photo){
   if(wKey===hKey)
@@ -3570,7 +3574,12 @@ async function saveSheet(){
   let c0=null; try{ c0=(await buildSplitCard()).c; }catch(e){ console.warn("공유 카드 생성 실패", e); }
   // 시트2 — 추구미 (캐릭터)
   const c2=await drawCharSheet("내가 되고 싶은 모습은", M.W, M.wKey, "이 매력이 자주 쓰는 색 · "+M.W.pc);
-  // 시트3 — 분포 + 지금의 나 + 방향 제안 + (재미있는 발견) + 첫걸음 (화면 3페이지와 동일, 3·4 통합)
+  // 시트3 — 분포 + 두 점 지도(P2 이식) + 지금의 나 + 방향 제안 + 첫걸음
+  // 지도는 본문(추구미에 가까워지는 길 장)과 같은 SVG를 래스터로 — 화면·저장본 한 벌 원칙.
+  let mapIm=null;
+  try{ const sv=twoDotSVG(M.wKey, M.hKey, M.W, M.Hv);
+       if(sv && CZM.svgToImg){ mapIm=CZM.svgToImg(sv); await mapIm.decode(); } }
+  catch(e){ mapIm=null; }
   const c3=makeSheet(x=>{
     let y=sheetHeader(x,"추구미 분포와 방향","");
     x.textAlign="left"; x.fillStyle="#9C4680"; x.font="700 34px Pretendard,sans-serif"; x.fillText("추구미 분포",90,y); y+=64;
@@ -3578,6 +3587,8 @@ async function saveSheet(){
       x.fillStyle="#ECE6F1"; if(x.roundRect){x.beginPath();x.roundRect(320,y+6,560,30,15);x.fill();} else x.fillRect(320,y+6,560,30);
       x.fillStyle=b.color; const w=Math.max(30,Math.round(560*Math.min(1,b.pct/100*2.2))); if(x.roundRect){x.beginPath();x.roundRect(320,y+6,w,30,15);x.fill();} else x.fillRect(320,y+6,w,30);
       x.textAlign="right"; x.fillStyle="#6B6475"; x.font="600 28px Pretendard,sans-serif"; x.fillText(b.pct+"%",990,y+30); y+=56; });
+    if(mapIm && mapIm.naturalWidth){ const mw=900, mh=Math.round(mw*mapIm.naturalHeight/mapIm.naturalWidth);
+      try{ x.drawImage(mapIm,90,y+10,mw,mh); y+=mh+26; }catch(e){} }
     y+=30; y=sheetSec(x,"지금의 나",`지금 스타일은 ${M.Hv.name}에 가깝습니다. `+g_plain(M.Hv.desc),y);   // desc가 합니다체가 되며 어미를 맞췄다(검수 2026-08-31)
     y=sheetSec(x,"방향 제안",M.bridge,y);
     if(M.gap) y=sheetSec(x,"재미있는 발견",M.gap,y);
@@ -3709,12 +3720,12 @@ if(FLOW_LECTURE){
 <script type="module">
   try{
     const [AS, PR, SE, PM, snapRes, shapeRes, colorRes] = await Promise.all([
-      import("./modules/asset-score.js?v=8f06ff0"),
-      import("./modules/part-report.js?v=8f06ff0"),
-      import("./modules/step-engine.js?v=8f06ff0"),
+      import("./modules/asset-score.js?v=243e017"),
+      import("./modules/part-report.js?v=243e017"),
+      import("./modules/step-engine.js?v=243e017"),
       // 「어떻게 쟀나」·「이런 기준으로 봤어요」 — VLAS 양식 반영(2026-08-26 대표 지시).
       // 못 뜨면 그 두 블록만 빠지고 부위 장의 나머지는 그대로 선다.
-      import("./modules/part-method.js?v=8f06ff0").catch(()=>null),
+      import("./modules/part-method.js?v=243e017").catch(()=>null),
       fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
       // 관측 분포 — 「선과 좌우」의 밴드 라벨이 여기서 나온다. 없으면 그 장을 안 만든다.
       // 현 밴드 상수(jaw 7/19 등)는 14명 전원을 같은 칸에 넣어 표시용으로 못 쓴다.
@@ -3730,14 +3741,14 @@ if(FLOW_LECTURE){
     // import를 못 쓰므로 여기서 window에 얹는다(czm-core·PART와 같은 방식).
     // ⚠ 여기서 buildFriendPage를 부르지 않는다. 앵커는 renderResult가 그린 뒤에야 생긴다 —
     //   부위 장과 같은 이유로 __onPartEngineReady 쪽에서 부른다.
-    try{ window.__SESSION = await import("./modules/session.js?v=8f06ff0"); }
+    try{ window.__SESSION = await import("./modules/session.js?v=243e017"); }
     catch(e){ console.warn("session 모듈 로드 실패", e); }
     if (typeof window.__onPartEngineReady === "function") window.__onPartEngineReady();
     // 「나의 4주」 — 홈과 같은 엔진·같은 사전을 쓴다. 여기서 목록을 따로 만들면
     // 결과지가 약속한 것과 홈이 내는 것이 갈린다(이론 §5-2 "미리보기가 곧 대기열").
     try{
       const [QE, dict, quiz] = await Promise.all([
-        import("./modules/quest-engine.js?v=8f06ff0"),
+        import("./modules/quest-engine.js?v=243e017"),
         fetch("./modules/quest-dict.json").then(r=>r.json()),
         fetch("./modules/quest-quiz.json").then(r=>r.ok?r.json():null).catch(()=>null),
       ]);

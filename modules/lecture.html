@@ -178,12 +178,14 @@ body.intro-mode .wrap{max-width:none;padding:0}
 .intro p{font-size:var(--fs-body);line-height:1.75;color:var(--ink);margin:0}
 .intro .btn{flex-shrink:0;max-width:440px;margin-top:0}
 .vizbox svg{width:100%;height:auto;display:block}
+.tip-dir{display:inline-block;font-size:11px;font-weight:800;color:var(--accent);
+  background:rgba(156,70,128,.09);border-radius:12px;padding:1px 9px;margin-bottom:6px}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=8f06ff0"></script>
+<script src="czm-core.js?v=243e017"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -242,7 +244,7 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "8f06ff0";
+const BUILD = "243e017";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = (()=>{ // 첫 진입의 ?src를 회차 동안 유지. 촬영 왕복의 귀환 URL이 쿼리를 떨궈
@@ -254,7 +256,7 @@ const SRC = (()=>{ // 첫 진입의 ?src를 회차 동안 유지. 촬영 왕복�
        return sessionStorage.getItem("czm_lec_src") || ""; }catch(e){ return q || ""; }
 })();
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=8f06ff0";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=243e017";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -293,6 +295,8 @@ function pickTips(gapAxis, wantName, myPC, gender){
     const v=row && real(row[k]); return v ? short(v) : "\u0000";  // 채울 값이 없으면 표식을 남겨 그 팁을 버린다
   });
 
+  // 축·부호 → 유저어 (gap 문구 AX와 같은 계열 — 여기서 새 말을 만들지 않는다)
+  const AXKO={T:{ "+":"시원함", "-":"따뜻함"}, D:{"+":"또렷함","-":"부드러움"}, M:{"+":"성숙함","-":"어려 보임"}};
   const out=[]; const usedAreas=new Set();
   for(const c of cells){
     // makeup=메이크업 전제(여성) · gender=그 성별 전용. 성별을 모르면 전용 팁은 내지 않는다.
@@ -311,7 +315,8 @@ function pickTips(gapAxis, wantName, myPC, gender){
       if(t.area && usedAreas.has(t.area)) continue;
       if(t.cost==="paid" && out.some(o=>o.cost==="paid")) continue;  // 유과금은 통틀어 1건까지
       if(t.area) usedAreas.add(t.area);
-      out.push({...t, tip, why:fill(t.why||""), caution:t.caution?fill(t.caution):null, step:c.copy});
+      out.push({...t, tip, why:fill(t.why||""), caution:t.caution?fill(t.caution):null, step:c.copy,
+                dirKo:(t.axis&&t.dir&&AXKO[t.axis])?AXKO[t.axis][t.dir]||null:null});
       if(++taken>=2) break;                              // 칸당 2건까지
     }
     if(out.length>=4) break;                             // 통틀어 4건 — 더 늘면 "다 바꾸라"가 된다
@@ -631,6 +636,7 @@ function drawPage(d, idx, total){
   // 예전에는 "본문 (이유)" 한 줄로 접어 넣어 주의 문구가 통째로 빠졌다 (대표 지적 2026-09-01).
   if(d.tips&&d.tips.length){ rule();
     for(const t of d.tips){
+      if(t.dirKo) push(t.dirKo+" 쪽",{size:20,weight:800,color:"#9C4680",gap:4});
       push(t.tip,{size:30,weight:700,gap:6});
       if(t.why) push(t.why,{size:24,color:"#6E6478",gap:t.caution?6:20});
       if(t.caution) push(t.caution,{size:22,color:"#8A6D3B",gap:20});
@@ -1046,7 +1052,8 @@ function renderReport(){
        if(_src){ SHOT=new Image(); SHOT.src=_src;
          PAGES.push({t:"이렇게 측정했습니다",
            draw:{title:"이렇게 측정했습니다", img:SHOT,
-                 paras:["사진에 선을 그어 얼굴을 상·중·하로 나눴습니다. 다음 쪽부터 나오는 수치는 전부 이 선에서 나온 값입니다."]},
+                 paras:["사진에 선을 그어 얼굴을 상·중·하로 나눴습니다. 다음 쪽부터 나오는 수치는 전부 이 선에서 나온 값입니다.",
+                        "※ 배경, 조명 등 촬영환경에 따라 측정결과가 달라질 수 있습니다."]},
            html:`
            <div class="card" style="text-align:center">
              <img src="${_src}" alt="측정선이 그려진 내 얼굴" style="max-width:100%;border-radius:14px;display:block;margin:0 auto">
@@ -1054,7 +1061,9 @@ function renderReport(){
            <div class="card"><p style="font-size:var(--fs-body);line-height:1.8">
              사진에 선을 그어 얼굴을 상·중·하로 나눴습니다.<br>
              다음 쪽부터 나오는 수치는 전부 이 선에서 나온 값입니다.
-           </p></div>`});
+           </p>
+           <!-- 규범형 고지 — 근거 장 옆(P7). 행동 처방 장 끝에는 두지 않는다(08-27 결정과 양립). -->
+           <p class="note" style="margin-top:10px">배경, 조명 등 촬영환경에 따라 측정결과가 달라질 수 있습니다.</p></div>`});
        } }catch(e){}
 
   /* 헤어 관찰·미션 — 앱과 같은 정본(CZM.HAIR_BANDS, 2026-09-02 강의판 이식).
@@ -1176,7 +1185,7 @@ function renderReport(){
     const chunk=tips.slice(i,i+TIPS_PER_PAGE);
     PAGES.push({t:"오늘 해볼 것 "+(Math.floor(i/TIPS_PER_PAGE)+1),
       draw:{title:"오늘 해볼 것", tips:chunk},
-      html:chunk.map(t=>`<div class="tip"><div class="tip-t">${esc(t.tip)}</div>
+      html:chunk.map(t=>`<div class="tip">${t.dirKo?`<span class="tip-dir">${esc(t.dirKo)} 쪽</span>`:``}<div class="tip-t">${esc(t.tip)}</div>
         ${t.why?`<div class="tip-w">${esc(t.why)}</div>`:``}
         ${t.caution?`<div class="tip-c">${esc(t.caution)}</div>`:``}</div>`).join("")});
   }
@@ -1196,7 +1205,7 @@ function renderReport(){
           sections:[colorHow.length?{h:"색은 이렇게", texts:colorHow.map(x=>"· "+x.b+x.rest)}:null,
                     asymCare?{h:"좌우 균형은 이렇게", texts:asymHow.map(x=>"· "+x)}:null].filter(Boolean)},
     html:`
-    ${tipsHead.map(t=>`<div class="tip"><div class="tip-t">${esc(t.tip)}</div>
+    ${tipsHead.map(t=>`<div class="tip">${t.dirKo?`<span class="tip-dir">${esc(t.dirKo)} 쪽</span>`:``}<div class="tip-t">${esc(t.tip)}</div>
       ${t.why?`<div class="tip-w">${esc(t.why)}</div>`:``}
       ${t.caution?`<div class="tip-c">${esc(t.caution)}</div>`:``}</div>`).join("")}
     ${colorHow.length?`<div class="card"><h2>색은 이렇게</h2>
@@ -1293,7 +1302,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=8f06ff0"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=243e017"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
