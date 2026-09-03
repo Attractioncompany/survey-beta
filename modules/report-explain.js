@@ -150,13 +150,15 @@
     // 같은 값에서 나온 폭 서술이 그 장에 있어 나란히 놓여야 서로 어긋나지 않는다.
     /* face_HW는 「얼굴형」 장으로 옮겼다(대표 D 2026-08-29 — 얼굴형 장에 face_HW 수치).
        lip_ul은 「입」 장으로(같은 지시 — 윗입술:아랫입술 행 이동). */
-    var GPART = { face_HW: "얼굴형", mouth_nose: "입", lip_ul: "입", interocular: "눈" };
+    /* mouth_nose는 「코」 장으로(2026-09-03 대표 — 코·입 분리 복원, 강의판 배속과 통일). */
+    var GPART = { face_HW: "얼굴형", mouth_nose: "코", lip_ul: "입", interocular: "눈" };
     for (var i = 0; i < golds.length; i++) {
       var g = golds[i];
       // n = 큰 타이포로 서는 값 / v = 값 밑 한 줄 해설 / s = 기준 각주 (대표 C 2026-08-29)
       out.push({ k: g.name, v: g.label, p: GPART[g.key] || "비율", key: g.key,
                  n: "1 : " + g.value,
-                 s: g.a + " 1 : " + g.b + " 기준 · 황금비율은 1 : " + (+g.ideal.toFixed(2)) });
+                 s: g.a + " 1 : " + g.b + " 기준 · 황금비율은 1 : " + (+g.ideal.toFixed(2)),
+                 g: g });   // C1b 두 점 바 재료(표시 층 전용 — 판정·산식 불변, 2026-09-03 앱 격차 해소)
     }
     /* 「상 : 중 : 하」 — 대표 판정 2026-08-27로 유지한다(강의 리포트와 같은 판단).
        안면 3분할의 1:1:1은 φ(1:1.618)와 별개의 기준이다 — 신고전 안면 규범이
@@ -170,7 +172,7 @@
     var hairOK = !quality || quality.hairline_detected !== false;
     var th = hairOK ? CZM.thirdsGolden(ratio.upper, ratio.mid, ratio.lower) : null;
     if (th) out.push({ k: "상 : 중 : 하", n: th.relLine, v: th.label, p: "비율",
-                       s: "이상적 비율은 1 : 1 : 1" });
+                       s: "이상적 비율은 1 : 1 : 1", th: th });   // C5 기둥 재료(표시 층 전용)
     return out;
   }
 
