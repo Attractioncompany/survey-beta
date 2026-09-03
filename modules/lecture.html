@@ -177,12 +177,13 @@ body.intro-mode .wrap{max-width:none;padding:0}
 .intro h1{font-size:34px;font-weight:800;letter-spacing:-.04em;color:var(--deep);margin:0}
 .intro p{font-size:var(--fs-body);line-height:1.75;color:var(--ink);margin:0}
 .intro .btn{flex-shrink:0;max-width:440px;margin-top:0}
+.vizbox svg{width:100%;height:auto;display:block}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=1d2471e"></script>
+<script src="czm-core.js?v=f28fce4"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -206,17 +207,136 @@ function lecTrack(event, props){
   }catch(e){}
 }
 const K=CZM.KEYS, LS=CZM.store;
+/* ── P0 얼굴형 장 시각 컴포넌트 (제안 v1.1 §4, 대표 재가 09-02) ─────────────
+   SVG 문자열 한 벌을 화면(inline)과 저장본(Image 래스터)이 같이 쓴다 —
+   화면·저장본 분기 사고(이 파일에서 3회)의 구조적 재발 방지.
+   수치·경계값은 그리지 않는다(C4 수치 없는 판 — 잠정 경계의 저장본 박제 금지). */
+const VIZ={ink:"#2B2233",sub:"#6E6478",accent:"#9C4680",deep:"#4A2B5C",
+  band0:"#EFE7F4",band1:"#DCC9E6",band2:"#BC8FCB",warn:"#B98A3C"};
+const VIZ_FONT='font-family="-apple-system, Apple SD Gothic Neo, Pretendard, sans-serif"';
+function vizWrap(w,h,inner){
+  // width/height 속성은 저장본 래스터 해상도(2.8배). 화면은 CSS(width:100%)가 이긴다.
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${Math.round(w*2.8)}" height="${Math.round(h*2.8)}">${inner}</svg>`;
+}
+function svgToImg(svg){ const im=new Image();
+  im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); return im; }
+
+// C1(a) 분포형 — 3칸 강조. 위치 점 없음(분포 n=14 — 점을 찍으면 그림이 백분위를 주장한다).
+function c1aSVG(labels, idx){
+  if(!Array.isArray(labels)||labels.length!==3||idx==null||idx<0||idx>2) return null;
+  const W=340,H=46,gap=3,segW=(W-gap*2)/3; let r="";
+  for(let i=0;i<3;i++){
+    const x=i*(segW+gap), on=i===idx, long=labels[i].length>9;
+    r+=`<rect x="${x}" y="4" width="${segW}" height="14" rx="7" fill="${on?VIZ.band2:VIZ.band0}"${on?` stroke="${VIZ.deep}" stroke-width="1.5"`:""}/>`;
+    r+=`<text x="${x+segW/2}" y="34" text-anchor="middle" font-size="10.5" ${VIZ_FONT} fill="${on?VIZ.deep:VIZ.sub}"${on?' font-weight="800"':''}${long?` textLength="${Math.round(segW-4)}" lengthAdjust="spacingAndGlyphs"`:""}>${esc(labels[i])}</text>`;
+  }
+  return vizWrap(W,H,r);
+}
+// C1(b) φ 대비형 — 내 값 ↔ φ 두 점. 관측 분포와 같은 축에 올리지 않는다(기하학적 이상 화법 금지).
+function c1bSVG(g){
+  if(!g||typeof g.value!=="number"||!isFinite(g.value)) return null;
+  const W=340,H=64,y=18,padL=30,padR=30;
+  const lo=Math.min(g.value,g.ideal), hi=Math.max(g.value,g.ideal);
+  const span=(hi-lo)||Math.abs(g.ideal)*0.1||1, a=lo-span*0.35, b=hi+span*0.35;
+  const X=v=>padL+(v-a)/(b-a)*(W-padL-padR);
+  const xm=X(g.value), xi=X(g.ideal);
+  let r=`<rect x="${padL-8}" y="${y-1.5}" width="${W-padL-padR+16}" height="3" rx="1.5" fill="${VIZ.band1}"/>`;
+  r+=`<circle cx="${xi}" cy="${y}" r="6" fill="none" stroke="${VIZ.accent}" stroke-width="2.5"/>`;
+  r+=`<text x="${xi}" y="${y-11}" text-anchor="middle" font-size="10" font-weight="800" ${VIZ_FONT} fill="${VIZ.accent}">φ</text>`;
+  r+=`<circle cx="${xm}" cy="${y}" r="7.5" fill="${VIZ.deep}"/>`;
+  r+=`<text x="${Math.min(Math.max(xm,44),W-44)}" y="${y+27}" text-anchor="middle" font-size="10.5" font-weight="800" ${VIZ_FONT} fill="${VIZ.deep}">내 값 ${esc(g.myPair)}</text>`;
+  r+=`<text x="${Math.min(Math.max(xi,52),W-52)}" y="${y+43}" text-anchor="middle" font-size="10" ${VIZ_FONT} fill="${VIZ.sub}">황금비 자리 ${esc(g.idealPair)}</text>`;
+  return vizWrap(W,H,r);
+}
+// C4 판정 경로 — 갈림길 질문·답만. 경계값·측정값 비노출(이론 경계 확정 후 병기).
+function c4SVG(steps, final){
+  if(!steps||!steps.length||!final) return null;
+  const W=340; let y=4, r="";
+  for(const st of steps){
+    const qw=Math.min(206, st.q.length*11.5+22);
+    r+=`<rect x="0" y="${y}" width="${qw}" height="24" rx="8" fill="${VIZ.band1}"/>`;
+    r+=`<text x="11" y="${y+16.5}" font-size="11.5" ${VIZ_FONT} fill="${VIZ.ink}">${esc(st.q)}</text>`;
+    r+=`<text x="${qw+10}" y="${y+16.5}" font-size="12" font-weight="800" ${VIZ_FONT} fill="${VIZ.deep}">→ ${esc(st.a)}</text>`;
+    y+=30;
+    if(st.note){ r+=`<text x="16" y="${y+3}" font-size="10.5" ${VIZ_FONT} fill="${VIZ.sub}">↓ ${esc(st.note)}</text>`; y+=20; }
+  }
+  y+=8;
+  r+=`<text x="1" y="${y+13}" font-size="16.5" font-weight="800" ${VIZ_FONT} fill="${VIZ.accent}">${esc(final)}</text>`;
+  return vizWrap(W,y+24,r);
+}
+// C5 상:중:하 — 숫자 대신 칸. 옆의 회색 기둥이 이상적 비율(1:1:1).
+function c5SVG(pct, label){
+  if(!Array.isArray(pct)||pct.length!==3||pct.some(v=>typeof v!=="number"||!isFinite(v)||v<=0)||!label) return null;
+  const W=340,H=150,colX=8,colW=50,idX=70,idW=8,total=H-14;
+  const hs=pct.map(v=>Math.max(16,v)), sum=hs[0]+hs[1]+hs[2], k=(total-4)/sum;
+  const cols=["#C9A8D8","#A87BBE","#7E568F"], nm=["상","중","하"];
+  let y=7, r="";
+  for(let i=0;i<3;i++){ const h=hs[i]*k;
+    r+=`<rect x="${colX}" y="${y.toFixed(1)}" width="${colW}" height="${h.toFixed(1)}" rx="6" fill="${cols[i]}"/>`;
+    r+=`<text x="${colX+colW/2}" y="${(y+h/2+4).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="800" ${VIZ_FONT} fill="#fff">${nm[i]}</text>`;
+    y+=h+2; }
+  y=7; const ih=(total-4)/3;
+  for(let i=0;i<3;i++){ r+=`<rect x="${idX}" y="${y.toFixed(1)}" width="${idW}" height="${ih.toFixed(1)}" rx="3" fill="${VIZ.sub}" opacity="0.3"/>`; y+=ih+2; }
+  r+=`<text x="98" y="${H/2-6}" font-size="13.5" font-weight="800" ${VIZ_FONT} fill="${VIZ.deep}">${esc(label)}</text>`;
+  r+=`<text x="98" y="${H/2+13}" font-size="10.5" ${VIZ_FONT} fill="${VIZ.sub}">옆의 회색 기둥이 이상적 비율(1 : 1 : 1)입니다</text>`;
+  return vizWrap(W,H,r);
+}
+// 얼굴형 갈림길 — verdicts()와 같은 경계(§8-2 예시 13장). 경계 숫자는 답으로만 쓰고 그리지 않는다.
+function faceShapePath(r){
+  const ss=r.side_straight, hw=r.face_HW, gn=r.gonial_ang, jd=r.jaw_drop;
+  if(typeof ss!=="number"||!isFinite(ss)) return null;
+  const S=[];
+  if(ss > 0.865){
+    S.push({q:"옆선이 일자로 떨어지나", a:"그렇다"});
+    if(typeof hw!=="number"||!isFinite(hw)) return null;
+    if(hw>=1.43){ S.push({q:"세로가 확연히 긴가", a:"그렇다"}); return {steps:S, final:"긴 얼굴형에 가깝습니다"}; }
+    S.push({q:"세로가 확연히 긴가", a:"아니다"});
+    if(hw<=1.24){ S.push({q:"가로와 세로가 비슷한가", a:"그렇다"}); return {steps:S, final:"둥근형에 가깝습니다"}; }
+    S.push({q:"가로와 세로가 비슷한가", a:"아니다"});
+    return {steps:S, final:"둥근형과 긴 얼굴형 사이입니다"};
+  }
+  S.push({q:"옆선이 일자로 떨어지나", a:"아니다", note:"볼에서 턱으로 좁아지는 계열"});
+  if(typeof gn==="number" && isFinite(gn) && gn>=133.4){
+    S.push({q:"하악 꺾임이 급한가", a:"그렇다"}); return {steps:S, final:"역삼각형에 가깝습니다"}; }
+  if(typeof gn==="number" && isFinite(gn)) S.push({q:"하악 꺾임이 급한가", a:"아니다"});
+  if(typeof jd==="number" && isFinite(jd) && jd<=0.257){
+    S.push({q:"턱에 수평감이 있나", a:"그렇다"}); return {steps:S, final:"각진 얼굴형에 가깝습니다"}; }
+  if(typeof jd==="number" && isFinite(jd)) S.push({q:"턱에 수평감이 있나", a:"아니다"});
+  return {steps:S, final:"계란형에 가깝습니다"};
+}
+// 극단값 자가검증 — 컴포넌트 커밋마다 돌린다(제안 v1.1 §4 저장본 구현 경로).
+window.__vizCheck=function(){
+  const bad=[], chk=(n,sv)=>{ if(!sv){ bad.push(n+":empty"); return; }
+    if(/NaN|undefined|Infinity/.test(sv)) bad.push(n+":dirty"); };
+  try{
+    chk("c1a", c1aSVG(["둥근 편","적당한 편","각진 편"],0));
+    chk("c1a-long", c1aSVG(["좌우가 고른 편","좌우 차이가 조금 있는 편","좌우 차이가 보이는 편"],2));
+    if(c1aSVG(["a","b","c"],5)!==null) bad.push("c1a-oob:not-null");
+    chk("c1b", c1bSVG(CZM.goldenOf("face_HW",1.05)));
+    chk("c1b-far", c1bSVG(CZM.goldenOf("face_HW",2.4)));
+    if(c1bSVG(null)!==null) bad.push("c1b-null:not-null");
+    const p1=faceShapePath({side_straight:0.9,face_HW:1.3}); chk("c4-mid", p1&&c4SVG(p1.steps,p1.final));
+    const p2=faceShapePath({side_straight:0.5,gonial_ang:120,jaw_drop:0.3}); chk("c4-egg", p2&&c4SVG(p2.steps,p2.final));
+    if(faceShapePath({side_straight:NaN})!==null) bad.push("c4-nan:not-null");
+    if(faceShapePath({side_straight:0.9})!==null) bad.push("c4-nohw:not-null");
+    chk("c5", c5SVG([30,40,30],"중안부가 긴 편입니다"));
+    chk("c5-extreme", c5SVG([8,84,8],"중안부가 긴 편입니다"));
+    if(c5SVG([0,50,50],"x")!==null) bad.push("c5-zero:not-null");
+  }catch(e){ bad.push("throw:"+(e&&e.message)); }
+  console.log(bad.length? "vizCheck FAIL: "+bad.join(" | ") : "vizCheck OK");
+  return bad;
+};
 const LKEY="chugu_lecture";            // {pc8:"romantic", age:"20-39", at:"..."}
 const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "1d2471e";
+const BUILD = "f28fce4";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = new URLSearchParams(location.search).get("src") || "";
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=1d2471e";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=f28fce4";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -575,6 +695,14 @@ function drawPage(d, idx, total){
   if(d.chips&&d.chips.length) chips(d.chips);
   if(d.img) image(d.img);
   if(d.imgs) imagePair(d.imgs);
+  // P0 viz — 화면과 같은 SVG를 래스터로. 폭은 본문 폭 그대로(수치·경계 비노출 사양은 SVG 안에서 이미 지켜진다).
+  if(d.vizList) for(const v of d.vizList){
+    if(v.klab) push(v.klab,{size:23,color:"#6E6478",gap:2});
+    if(v.verdict) push(v.verdict,{size:32,weight:700,gap:8});
+    if(v.img&&v.vw&&v.vh){ const w=W-PAD*2, h=Math.round(w*v.vh/v.vw);
+      runs.push({kind:"img",im:v.img,x:PAD,y,w,h}); y+=h+10; }
+    if(v.cap) push(v.cap,{size:20,color:"#8E82A0",gap:16}); else y+=10;
+  }
   if(d.rows&&d.rows.length){ rule();
     for(const r of d.rows){
       push(r.k,{size:23,color:"#6E6478",gap:2});
@@ -622,7 +750,8 @@ function drawPage(d, idx, total){
 async function savePages(CARD, btn){
   // 이미지가 아직 안 읽혔으면 그 페이지가 빈 칸으로 저장된다. 한 번만 기다린다.
   const savable=PAGES.filter(pg=>!pg.skipSave&&pg.draw);
-  for(const pg of savable){ const ims=[].concat(pg.draw&&pg.draw.img||[], pg.draw&&pg.draw.imgs||[]);
+  for(const pg of savable){ const ims=[].concat(pg.draw&&pg.draw.img||[], pg.draw&&pg.draw.imgs||[],
+      (pg.draw&&pg.draw.vizList||[]).map(v=>v.img));
     for(const im of ims){ if(im && !im.naturalWidth){ try{ await im.decode(); }catch(e){} } } }
   const pages=PAGES.filter(p=>p.draw && !p.skipSave);
   if(!pages.length){ btn.textContent="저장할 게 없어요"; return; }
@@ -1012,19 +1141,61 @@ function renderReport(){
   /* 헤어 관찰·미션 — 앱과 같은 정본(CZM.HAIR_BANDS, 2026-09-02 강의판 이식).
      관찰은 얼굴형 장에서 상태만, 미션은 「오늘 해볼 것」에서 (대표 원칙 2026-08-29). */
   const HB=CZM.hairBandOf&&CZM.hairBandOf(FOPEN);
+  /* P0(대표 재가 09-02): 얼굴형 장을 표 텍스트에서 컴포넌트로.
+     각 viz는 SVG 문자열(화면)과 Image(저장본)를 같이 들고 다닌다 — 한 벌 구현.
+     재료가 없는 행은 viz를 만들지 않고 기존 vRow로 남긴다(옛 측정·검출 실패 안전망). */
+  const FACE_VIZ=(()=>{
+    const list=[], covered=new Set();
+    const add=(cover, klab, verdict, svg, cap)=>{ if(!svg) return;
+      const m=svg.match(/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/);
+      list.push({klab, verdict, svg, cap, img:svgToImg(svg), vw:+m[1], vh:+m[2]});
+      cover.forEach(k=>covered.add(k)); };
+    // C4 — 얼굴형 갈림길 (수치 없음)
+    const fp=faceShapePath(r);
+    if(fp) add(["얼굴형"], "얼굴형", null, c4SVG(fp.steps, fp.final), null);
+    // C1(b) — 얼굴 가로:세로 (황금비 두 점)
+    const gHW=CZM.goldenOf("face_HW", r.face_HW);
+    if(gHW) add([gHW.name], gHW.name, gHW.label+"입니다", c1bSVG(gHW),
+      "황금비는 목표가 아니라 자리 표시입니다.");
+    // C5 — 상:중:하 (헤어라인 검출 실패 시 상안부가 짧게 나와 침묵 — verdicts와 같은 게이트)
+    const hairOK2 = !s.face.quality || s.face.quality.hairline_detected !== false;
+    const th2 = hairOK2 ? CZM.thirdsGolden(r.upper, r.mid, r.lower) : null;
+    if(th2 && th2.pct) add(["상 : 중 : 하"], "상 : 중 : 하", null, c5SVG(th2.pct, th2.label+"입니다"), null);
+    // C1(a) — 턱끝·좌우 균형 (분포 3칸 강조. n=14라 위치 점 없음)
+    const D3=SHAPE&&SHAPE.dist, L3=SHAPE&&SHAPE.labels;
+    const bandViz=(cover, klab, v, key)=>{
+      if(!(D3&&L3&&D3[key]&&L3[key])||typeof v!=="number"||!isFinite(v)) return;
+      const b=CZM.bandOf(D3[key], v, L3[key]); if(!b) return;
+      const idx=v<b.low?0:v<b.high?1:2;
+      add(cover, klab, b.label+"입니다", c1aSVG(L3[key], idx),
+        "같은 방식으로 촬영한 측정 데이터 기준입니다."); };
+    bandViz(["턱끝"], "턱끝", l.chin_angle_deg, "chin_angle_deg");
+    bandViz(["좌우 균형"], "좌우 균형", r.asym_score, "asym_score");
+    return {list, covered};
+  })();
   const PART_PAGES=[
-    {t:"얼굴형", rows:pick("얼굴형","얼굴 가로 : 세로","상 : 중 : 하","턱선","턱끝","좌우 균형"), line:P["윤곽"],
-     extra:HB?{h:HB.title, text:HB.obs}:null},
+    {t:"얼굴형", rows:pick("얼굴형","얼굴 가로 : 세로","상 : 중 : 하","턱선","턱끝","좌우 균형")
+                    .filter(x=>!FACE_VIZ.covered.has(x.k)),
+     vizList:FACE_VIZ.list.length?FACE_VIZ.list:null,
+     line:P["윤곽"], extra:HB?{h:HB.title, text:HB.obs}:null},
     {t:"눈",     rows:pick("눈매","눈 길이 : 눈 사이","눈썹 모양"), line:[P["눈"],P["눈썹"]].filter(Boolean).join(" ")},
     {t:"코",     rows:pick("코 : 입 너비"), line:P["코"]},
     {t:"입",     rows:pick("입꼬리","윗입술 : 아랫입술"), line:P["입"]},
   ];
+  // viz 카드 — svg는 esc하지 않는다(우리가 방금 만든 마크업). klab 등 텍스트만 esc.
+  const vizCard=v=>`<div class="card">
+    ${v.klab?`<div style="font-size:12px;font-weight:700;color:var(--sub)">${esc(v.klab)}</div>`:``}
+    ${v.verdict?`<div style="font-size:16.5px;font-weight:800;margin:2px 0 8px">${esc(v.verdict)}</div>`:``}
+    <div class="vizbox">${v.svg}</div>
+    ${v.cap?`<p class="note" style="margin-top:6px">${esc(v.cap)}</p>`:``}</div>`;
   for(const pg of PART_PAGES){
-    if(!pg.rows.length && !pg.line && !pg.extra) continue;
+    if(!pg.rows.length && !pg.line && !pg.extra && !pg.vizList) continue;
     PAGES.push({t:pg.t,
-      draw:{title:pg.t, rows:pg.rows.map(x=>({k:x.k,v:x.v,s:x.s})), paras:pg.line?[pg.line]:[],
+      draw:{title:pg.t, vizList:pg.vizList||null,
+            rows:pg.rows.map(x=>({k:x.k,v:x.v,s:x.s})), paras:pg.line?[pg.line]:[],
             sections:pg.extra?[{h:pg.extra.h, text:pg.extra.text}]:null},
       html:`
+      ${(pg.vizList||[]).map(vizCard).join("")}
       ${pg.rows.length?`<div class="card">${pg.rows.map(vRow).join("")}</div>`:``}
       ${pg.line?`<div class="card"><h2>${esc(pg.t)}${jong(pg.t)?"이":"가"} 주는 인상</h2>
         <p style="font-size:var(--fs-body);line-height:1.8">${pg.line}</p></div>`:``}
@@ -1188,7 +1359,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=1d2471e"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=f28fce4"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
