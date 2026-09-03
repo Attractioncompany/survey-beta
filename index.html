@@ -441,12 +441,12 @@ body{padding-bottom:env(safe-area-inset-bottom);}
 </div>
 <!-- 계약층. 아래 스크립트보다 먼저 와야 한다 — 좌표·저장 키를 여기서 꺼내 쓴다.
      모듈 블록으로 넣으면 늦게 도착해 먼저 실행되는 코드가 빈 값을 본다. -->
-<script src="modules/czm-core.js?v=2dc923b"></script>
+<script src="modules/czm-core.js?v=2721e15"></script>
 <!-- 스탯 산식 정본(theory/산식_RPG스탯성장_v1_2026-08-24.md). 표시 층 전용 — 좌표·판정은 손대지 않는다. -->
-<script src="modules/czm-stats.js?v=2dc923b"></script>
+<script src="modules/czm-stats.js?v=2721e15"></script>
 <!-- 리포트 해설(theory/리포트해설_확충_v1_2026-08-24.md). czm-core의 판정기를 유저 문장으로 인출한다.
      일반 스크립트인 이유: 캐릭터 시트 해설은 사진이 없어도 나오므로 첫 페인트에 동기로 있어야 한다. -->
-<script src="modules/report-explain.js?v=2dc923b"></script>
+<script src="modules/report-explain.js?v=2721e15"></script>
 <script>
 /* ============================================================
    설정 — 구글시트 연동:
@@ -514,7 +514,7 @@ const FLOW_WANT = new URLSearchParams(location.search).get("flow")==="want";
 const WANT_PARAM = new URLSearchParams(location.search).get("want");
 let WANT_PICK = null, WANT_SRC = null;   // 문항 점수 없이 물려받은 추구미(타입만)와 그 출처
 const FORM_ENTRY = {want:"574367992", have:"395118856", dur:"1863591096", gender:"701863111", raw:"1782704335"};
-const APP_VERSION = "beta_v3.35+2dc923b"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
+const APP_VERSION = "beta_v3.35+2721e15"; // userwords:ok (버전 이력 — 유저 비노출) 사용자 대면 변경이 실제 배포될 때만 상승 (계측 단일 출처) — v3.35 B4 염색 분리(탈색/애쉬/웜 5지선다, 천장 불변) · v3.34 B3 죽은 선택지 수리+PAIRS 16쌍 정식화(28/28) · v3.33 좌표도 비율로+WANT 비율 적용+E파트 가산을 정규화 후로(이론팀 판정) · v3.32 HAVE 채점을 천장 대비 비율로(만점이 타입마다 달랐다)+C5 화려함·카리스마 분리 — v3.31 풀스크린 미니멀 다듬기(셸·디자인토큰·세이프에어리어)+비비드A 컬러칩 — v3.11 B7폐지 · v3.12 무드→매력/분위기 용어통일 · v3.13 시작화면 인트로 B안(마케팅 2026-07-23) · v3.16 결과화면3차:저장iOS수정·저장2장분리·공유카드통일레이아웃 · v3.17 저장이미지=결과페이지 미러링(비교·분포·지금의나·방향·첫걸음)·카피점검(기품→기품·"당신의힘" 반복제거·로맨틱설명 개선) · v3.30 프리즘·글라스 UI 전화면 개편(B중간형·배경프리즘+유리카드·결과 타입컬러배경) · v3.19 결과화면 캐러셀 4페이지(현재/추구미/분포/해설·좌우슬라이드)·타입별 구미캐릭터+r1배경·저장4장·시작화면 메인이미지 · v3.20 캐릭터 배경투명화(rembg)·버튼 전용 5페이지 분리·모바일 원페이지 최적화(fitCarousel) · v3.18 고객팀검수 반영:Pretendard실로드·성별/mood/시작버튼 선택피드백 강화·칩 최대개수 안내·keep-all 전역·이미지라벨 스크림 강화
 // ---- 익명 유저 ID (기기 단위, 개인정보 아님) ----
 let UID = null;
 try { UID = localStorage.getItem("czm_uid"); if(!UID){ UID = (crypto.randomUUID ? crypto.randomUUID() : 'u'+Date.now()+Math.random().toString(36).slice(2)); localStorage.setItem("czm_uid", UID); } } catch(e){ UID = 'u'+Date.now(); }
@@ -1794,6 +1794,39 @@ function loadScan(){
 // 「타고난 색」 — **독립 페이지**. 지금 스타일과 한 카드에 두면 둘이 같은 말로 읽힌다.
 // v1은 1절 카드 안에 넣었는데, 만든 사람도 "로맨틱인데 왜 여름 뮤트?"로 헷갈렸다(대표 지적 2026-08-09).
 // 같은 카드 = 같은 축. 다른 축이면 카드를 나눠야 한다.
+/* 퍼컬 근거 밴드(P2, 강화안 §6) — 가장 많이 캡처되는 장에 판정 근거를 그림으로.
+   분포=modules/color-dist.json(사람 단위 68~69명), 문구=마케팅 확정(09-03, 자가검수 통과).
+   설계 결정 둘(마케팅): 웜·쿨 단어는 밴드에서 쓰지 않는다(별도 채널의 판정 월권 방지),
+   값마다 서술어 클래스를 다르게 고정(한 화면 4밴드의 어미 겹침 방지).
+   분포·엔진이 안 뜨면 기존 숫자 행이 그대로 남는다 — 폴백. */
+const COLOR_BANDS={
+  skinL:{name:"밝기", unit:"", labels:["짙은 편","중간","밝은 편"],
+    s:["피부톤이 짙은 쪽으로 측정됐습니다.","피부톤이 짙은 쪽과 밝은 쪽의 가운데 구간으로 측정됐습니다.","피부톤이 밝은 쪽으로 측정됐습니다."]},
+  hue:{name:"따뜻함", unit:"°", labels:["붉은기 도는 편","중간","노란기 도는 편"],
+    s:["측정된 피부색은 붉은기 비중이 큰 쪽입니다.","붉은기와 노란기 비중이 비슷한 가운데 구간입니다.","측정된 피부색은 노란기 비중이 큰 쪽입니다."]},
+  chroma:{name:"맑기", unit:"", labels:["채도 낮은 편","중간","채도 높은 편"],
+    s:["피부색 채도가 낮은 쪽에 있습니다.","피부색 채도가 가운데 구간에 있습니다.","피부색 채도가 높은 쪽에 있습니다."]},
+  contrast:{name:"대비", unit:"", labels:["대비 낮은 편","중간","대비 높은 편"],
+    s:["피부와 눈동자·머리의 밝기 차이가 작은 편입니다.","피부와 눈동자·머리의 밝기 차이가 중간 정도입니다.","피부와 눈동자·머리의 밝기 차이가 큰 편입니다."]},
+};
+function fillColorBands(){
+  const host=document.getElementById("colorBandHost");
+  const D=window.__PART && window.__PART.COLORD && window.__PART.COLORD.dist;
+  if(!host || !D || !window.CZM || !CZM.bandOf) return;
+  let html="";
+  for(const k of ["skinL","hue","chroma","contrast"]){
+    const spec=COLOR_BANDS[k], v=parseFloat(host.dataset[k.toLowerCase()]);
+    if(!spec || !isFinite(v) || !D[k]) continue;
+    const b=CZM.bandOf(D[k], v, spec.labels); if(!b) continue;
+    const idx=v<b.low?0:v<b.high?1:2;
+    html+=`<div style="margin:14px 0 2px"><b style="font-size:13px">${spec.name}</b>
+        <span class="small" style="margin-left:8px;opacity:.65">${v}${spec.unit}</span></div>
+      <p style="margin:0 0 6px;font-size:14px">${spec.s[idx]}</p>
+      <div class="pm-scale">${spec.labels.map((L,i)=>`<div class="pm-seg${i===idx?" on":""}"><i></i><span>${L}</span></div>`).join("")}</div>`;
+  }
+  if(html) host.innerHTML=html
+    +`<p class="small" style="margin-top:10px;opacity:.7">같은 방식으로 촬영한 측정 데이터 기준입니다.</p>`;
+}
 function photoBornPage(d, W){
   if(!d) return "";
   const wc = d.warm_cool && !d.warm_cool.borderline ? (d.warm_cool.v>0?"웜톤":"쿨톤") : null;
@@ -1841,7 +1874,9 @@ function photoBornPage(d, W){
          ${swatchRow(second)}
        </div>`:""}
        ${colorRows?`<div class="sec" style="width:100%">
-         <p class="small" style="margin:0 0 4px">사진에서 측정한 값</p>${colorRows}
+         <p class="small" style="margin:0 0 4px">사진에서 측정한 값</p>
+         <div id="colorBandHost" data-skinl="${c.skinL??""}" data-hue="${c.hue??""}"
+              data-chroma="${c.chroma??""}" data-contrast="${c.contrast??""}">${colorRows}</div>
        </div>`:""}
        <div id="skinExtra" style="width:100%;text-align:left"></div>
        <!-- ⚠ [마케팅 게이트 필요] — 아래 각주 한 줄(-합니다체 교체분).
@@ -3050,6 +3085,7 @@ function renderResult(){
     line:  _n(lineSection(PHOTO), /border-top/g) });
   // 엔진 모듈은 비동기 로드다 — 결과가 먼저 그려지면 3절이 빈 채로 남는다. 로드 완료 시 그 칸만 다시 채운다.
   window.__onPartEngineReady = () => {
+    try{ fillColorBands(); }catch(e){}
     photoScore._k = null;                      // 엔진이 늦게 왔다 — 빈 산출을 캐시로 물고 있지 않게 비운다
     /* 「이렇게 측정하고 판정했습니다」 — part-method.pipelineBlock. 정의만 있고 부르는 곳이
        없어 pipeAnchor가 빈 자리표로만 남아 있었다(검수 2026-08-31 배선).
@@ -3646,19 +3682,21 @@ if(FLOW_LECTURE){
      로드 실패해도 리포트 나머지는 그대로 뜬다 — 3절만 빠진다. -->
 <script type="module">
   try{
-    const [AS, PR, SE, PM, snapRes, shapeRes] = await Promise.all([
-      import("./modules/asset-score.js?v=2dc923b"),
-      import("./modules/part-report.js?v=2dc923b"),
-      import("./modules/step-engine.js?v=2dc923b"),
+    const [AS, PR, SE, PM, snapRes, shapeRes, colorRes] = await Promise.all([
+      import("./modules/asset-score.js?v=2721e15"),
+      import("./modules/part-report.js?v=2721e15"),
+      import("./modules/step-engine.js?v=2721e15"),
       // 「어떻게 쟀나」·「이런 기준으로 봤어요」 — VLAS 양식 반영(2026-08-26 대표 지시).
       // 못 뜨면 그 두 블록만 빠지고 부위 장의 나머지는 그대로 선다.
-      import("./modules/part-method.js?v=2dc923b").catch(()=>null),
+      import("./modules/part-method.js?v=2721e15").catch(()=>null),
       fetch("./modules/dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
       // 관측 분포 — 「선과 좌우」의 밴드 라벨이 여기서 나온다. 없으면 그 장을 안 만든다.
       // 현 밴드 상수(jaw 7/19 등)는 14명 전원을 같은 칸에 넣어 표시용으로 못 쓴다.
       fetch("./modules/shape-dist.json").then(r=>r.ok?r.json():null).catch(()=>null),
+      // 색 4값 분포(사람 단위) — 퍼컬 근거 밴드 재료. 없으면 숫자 행 폴백.
+      fetch("./modules/color-dist.json").then(r=>r.ok?r.json():null).catch(()=>null),
     ]);
-    window.__PART = { AS, PR, PM, SNAP: snapRes, SHAPE: shapeRes };
+    window.__PART = { AS, PR, PM, SNAP: snapRes, SHAPE: shapeRes, COLORD: colorRes };
     /* 친구 설문 결과를 읽으려면 session 모듈이 필요하다 — index.html은 일반 스크립트라
        import를 못 쓰므로 여기서 window에 얹는다(czm-core·PART와 같은 방식).
        실패해도 리포트는 그대로 뜬다 — 「타인이 보는 나의 매력」 장만 안 선다. */
@@ -3666,14 +3704,14 @@ if(FLOW_LECTURE){
     // import를 못 쓰므로 여기서 window에 얹는다(czm-core·PART와 같은 방식).
     // ⚠ 여기서 buildFriendPage를 부르지 않는다. 앵커는 renderResult가 그린 뒤에야 생긴다 —
     //   부위 장과 같은 이유로 __onPartEngineReady 쪽에서 부른다.
-    try{ window.__SESSION = await import("./modules/session.js?v=2dc923b"); }
+    try{ window.__SESSION = await import("./modules/session.js?v=2721e15"); }
     catch(e){ console.warn("session 모듈 로드 실패", e); }
     if (typeof window.__onPartEngineReady === "function") window.__onPartEngineReady();
     // 「나의 4주」 — 홈과 같은 엔진·같은 사전을 쓴다. 여기서 목록을 따로 만들면
     // 결과지가 약속한 것과 홈이 내는 것이 갈린다(이론 §5-2 "미리보기가 곧 대기열").
     try{
       const [QE, dict, quiz] = await Promise.all([
-        import("./modules/quest-engine.js?v=2dc923b"),
+        import("./modules/quest-engine.js?v=2721e15"),
         fetch("./modules/quest-dict.json").then(r=>r.json()),
         fetch("./modules/quest-quiz.json").then(r=>r.ok?r.json():null).catch(()=>null),
       ]);
