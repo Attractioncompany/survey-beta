@@ -428,8 +428,19 @@
     return null;
   }
 
+  /* 얼굴형 잠정 경계 v2 (2026-09-03, 대표 재가 1a) — 현장 실측 n=14로 재보정.
+     v1(예시 13장 유래: ss 0.865 · gn 133.4 · jd 0.257)은 현장 셀카의 계통 편차로
+     첫 강의 9명 전원이 역삼각 판정을 받았다(경계 둘이 실측 분포 꼬리 밖).
+     v2 산정: 실측 14건 격자 탐색 — 6개 카테고리 전부 분산·최대 점유 29%가 되는 값.
+     출처=데이터 도출+목표 역산(한 칸 쏠림 해소). 정답 보장이 아니라 잠정치 —
+     회차 데이터가 쌓일 때마다 재산정한다. 소비처 3곳(index faceShapeLabel ·
+     lecture verdicts · lecture faceShapePath)은 전부 이 정본만 읽는다. */
+  var SHAPE_CUTS = { ss:0.808, gn:137.0, jd:0.265, hw_long:1.43, hw_round:1.24,
+                     v:"v2_2026-09-03_n14" };
+
   root.CZM = {
     BANDS: BANDS, bandOf: bandOf,
+    SHAPE_CUTS: SHAPE_CUTS,
     HAIR_BANDS: HAIR_BANDS, hairBandOf: hairBandOf, midLowerVerdict: midLowerVerdict, thirdsVerdict: thirdsVerdict,
     PHI: PHI, GOLDEN: GOLDEN, goldenOf: goldenOf, goldenSummary: goldenSummary, thirdsGolden: thirdsGolden, asymVerdict: asymVerdict,
     STAGES: STAGES, trace: trace, diagnose: diagnose, diagnoseText: diagnoseText,

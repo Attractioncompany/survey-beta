@@ -183,7 +183,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=6788f97"></script>
+<script src="czm-core.js?v=e39f951"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -285,21 +285,22 @@ function c5SVG(pct, label){
 function faceShapePath(r){
   const ss=r.side_straight, hw=r.face_HW, gn=r.gonial_ang, jd=r.jaw_drop;
   if(typeof ss!=="number"||!isFinite(ss)) return null;
+  const C=CZM.SHAPE_CUTS; if(!C) return null;
   const S=[];
-  if(ss > 0.865){
+  if(ss > C.ss){
     S.push({q:"옆선이 일자로 떨어지나", a:"그렇다"});
     if(typeof hw!=="number"||!isFinite(hw)) return null;
-    if(hw>=1.43){ S.push({q:"세로가 확연히 긴가", a:"그렇다"}); return {steps:S, final:"긴 얼굴형에 가깝습니다"}; }
+    if(hw>=C.hw_long){ S.push({q:"세로가 확연히 긴가", a:"그렇다"}); return {steps:S, final:"긴 얼굴형에 가깝습니다"}; }
     S.push({q:"세로가 확연히 긴가", a:"아니다"});
-    if(hw<=1.24){ S.push({q:"가로와 세로가 비슷한가", a:"그렇다"}); return {steps:S, final:"둥근형에 가깝습니다"}; }
+    if(hw<=C.hw_round){ S.push({q:"가로와 세로가 비슷한가", a:"그렇다"}); return {steps:S, final:"둥근형에 가깝습니다"}; }
     S.push({q:"가로와 세로가 비슷한가", a:"아니다"});
     return {steps:S, final:"둥근형과 긴 얼굴형 사이입니다"};
   }
   S.push({q:"옆선이 일자로 떨어지나", a:"아니다", note:"볼에서 턱으로 좁아지는 계열"});
-  if(typeof gn==="number" && isFinite(gn) && gn>=133.4){
+  if(typeof gn==="number" && isFinite(gn) && gn>=C.gn){
     S.push({q:"하악 꺾임이 급한가", a:"그렇다"}); return {steps:S, final:"역삼각형에 가깝습니다"}; }
   if(typeof gn==="number" && isFinite(gn)) S.push({q:"하악 꺾임이 급한가", a:"아니다"});
-  if(typeof jd==="number" && isFinite(jd) && jd<=0.257){
+  if(typeof jd==="number" && isFinite(jd) && jd<=C.jd){
     S.push({q:"턱에 수평감이 있나", a:"그렇다"}); return {steps:S, final:"각진 얼굴형에 가깝습니다"}; }
   if(typeof jd==="number" && isFinite(jd)) S.push({q:"턱에 수평감이 있나", a:"아니다"});
   return {steps:S, final:"계란형에 가깝습니다"};
@@ -331,7 +332,7 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "6788f97";
+const BUILD = "e39f951";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
 const SRC = (()=>{ // 첫 진입의 ?src를 회차 동안 유지. 촬영 왕복의 귀환 URL이 쿼리를 떨궈
@@ -343,7 +344,7 @@ const SRC = (()=>{ // 첫 진입의 ?src를 회차 동안 유지. 촬영 왕복�
        return sessionStorage.getItem("czm_lec_src") || ""; }catch(e){ return q || ""; }
 })();
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=6788f97";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=e39f951";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -918,20 +919,21 @@ function verdicts(r, l, q){
   (()=>{
     const ss=r.side_straight, hw=r.face_HW, gn=r.gonial_ang, jd=r.jaw_drop;
     if(typeof ss!=="number"||!isFinite(ss)) return;   // 신설값 없는 옛 측정 — 침묵
+    const C=CZM.SHAPE_CUTS; if(!C) return;            // 정본 없으면 침묵(캐시 창 안전)
     let label=null;
-    if(ss > 0.865){
+    if(ss > C.ss){
       if(typeof hw!=="number") return;
-      label = hw>=1.43 ? "긴 얼굴형에 가까워요" : hw<=1.24 ? "둥근형에 가까워요"
+      label = hw>=C.hw_long ? "긴 얼굴형에 가까워요" : hw<=C.hw_round ? "둥근형에 가까워요"
             : "둥근형과 긴 얼굴형 사이예요";
     } else {
-      if(typeof gn==="number" && gn>=133.4)      label="역삼각형에 가까워요";
-      else if(typeof jd==="number" && jd<=0.257) label="각진 얼굴형에 가까워요";
-      else                                       label="계란형에 가까워요";
+      if(typeof gn==="number" && gn>=C.gn)      label="역삼각형에 가까워요";
+      else if(typeof jd==="number" && jd<=C.jd) label="각진 얼굴형에 가까워요";
+      else                                      label="계란형에 가까워요";
     }
     // 계측은 앱과 같은 원문 라벨, 화면은 합니다체 (index.html 결과 화면과 같은 변환)
     out.push({group:"얼굴형", k:"얼굴형",
       v:label.replace(/가까워요$/,"가깝습니다").replace(/사이예요$/,"사이입니다")});   // 시범 고지 없음 (대표 지시 2026-08-29)
-    lecTrack("face_shape_shown",{label, ss:+ss.toFixed(3),
+    lecTrack("face_shape_shown",{label, cut_v:C.v, ss:+ss.toFixed(3),
       hw:typeof hw==="number"?+hw.toFixed(2):null,
       gn:typeof gn==="number"?+gn.toFixed(1):null,
       jd:typeof jd==="number"?+jd.toFixed(3):null});
@@ -1381,7 +1383,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=6788f97"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=e39f951"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))
