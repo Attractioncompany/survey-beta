@@ -537,6 +537,39 @@ function faceShapePath(r){
   return {steps:S, final:"계란형에 가깝습니다"};
 }
 
+  // ── 계측 공용 ────────────────────────────────────────────────
+  // 유입 꼬리표(?src=). 강의 코호트 태깅 규칙(lecture.html, 2026-09-02)을 그대로 올렸다 —
+  // 첫 진입의 ?src를 sessionStorage에 두고, 촬영·설문 왕복의 귀환 URL이 쿼리를 떨궈도
+  // 회차 동안 유지한다. 우선순위: URL ?src > 보관값(새 링크로 열면 새 값으로 덮인다).
+  // 키 이름은 강의가 쓰던 것을 재사용 — 초대 유저(베타 ?src=)와 강의 유저가 같은 규칙으로 잡힌다.
+  function srcTag() {
+    var q = null;
+    try { q = new URLSearchParams(location.search).get("src"); } catch (e) {}
+    try { if (q) { sessionStorage.setItem("czm_lec_src", q); return q; }
+          return sessionStorage.getItem("czm_lec_src") || ""; } catch (e) { return q || ""; }
+  }
+  // 장 체류(dwell). lecture.html의 dwellFlush(P-1, 대표 재가 09-02)를 옮겼다 —
+  // 강의 리포트와 앱 리포트가 한 벌을 쓴다. send({page,title,dwell_ms,reason})는 화면이 준다
+  // (이벤트명·src가 화면마다 다르다). enter(page,title)는 같은 장이면 무시 — 스크롤마다 불러도 된다.
+  // 0.3초 미만은 스와이프 스침, 30분 초과는 방치 — 둘 다 체류가 아니다.
+  // pagehide는 페이지를 떠나는 흐름 — send가 keepalive:true여야 살아남는다(헌법 §6-1).
+  function dwell(send) {
+    var cur = { page: null, title: null, t: 0 };
+    function flush(reason) {
+      if (cur.page == null) return;
+      var ms = Date.now() - cur.t;
+      if (ms >= 300 && ms <= 30 * 60 * 1000)
+        send({ page: cur.page, title: cur.title, dwell_ms: ms, reason: reason });
+      cur.page = null;
+    }
+    function enter(page, title) {
+      if (cur.page === page) return;
+      flush("nav"); cur = { page: page, title: title, t: Date.now() };
+    }
+    if (root.addEventListener) root.addEventListener("pagehide", function () { flush("leave"); });
+    return { enter: enter, flush: flush };
+  }
+
   root.CZM = {
     BANDS: BANDS, bandOf: bandOf,
     SHAPE_CUTS: SHAPE_CUTS,
@@ -546,6 +579,7 @@ function faceShapePath(r){
     PHI: PHI, GOLDEN: GOLDEN, goldenOf: goldenOf, goldenSummary: goldenSummary, thirdsGolden: thirdsGolden, asymVerdict: asymVerdict,
     STAGES: STAGES, trace: trace, diagnose: diagnose, diagnoseText: diagnoseText,
     KEYS: KEYS, store: store,
+    srcTag: srcTag, dwell: dwell,
     TYPE_KEYS: TYPE_KEYS, TYPE_NAMES: TYPE_NAMES, PC8: PC8,
     COORD: COORD, coordOf: coordOf, gapOf: gapOf,
     measure: { flatten: flatten, colorAlias: COLOR_ALIAS },

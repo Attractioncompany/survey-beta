@@ -328,7 +328,11 @@ const DEV = new URLSearchParams(location.search).get("dev")==="1";
 // extra는 fetch 옵션 통로 — 페이지를 떠나는 전송은 {keepalive:true} 필수(데이터 운영규약).
 const sbPost = (table, row, extra={}) => LOCAL ? Promise.resolve(true)
   : sbFetch(table, {method:"POST", headers:{Prefer:"return=minimal"}, body:JSON.stringify(row), ...extra});
-const track = (event, props={}, extra={}) => sbPost("events", {user_id:UID, event, props, app_version:"home_v1"}, extra);
+// 유입 꼬리표(?src=) — 초대 링크 home.html?src=… 로 온 사람을 강의 유저·직접 유입과 가르는 표(베타 계측 공백 ②).
+// 규칙은 계약층 CZM.srcTag(강의 코호트 규칙 재사용: URL > sessionStorage czm_lec_src, 회차 동안 유지).
+// 값이 있을 때만 props.src로 자동 첨부 — 없으면 적재 모양이 그대로다. 옛 czm-core 캐시면 심볼이 없어 빈 값.
+const SRC = CZM.srcTag ? CZM.srcTag() : "";
+const track = (event, props={}, extra={}) => sbPost("events", {user_id:UID, event, props: SRC ? {src:SRC, ...props} : props, app_version:"home_v1"}, extra);
 
 // ── 상태 ─────────────────────────────────────────────────────
 // 서버가 원천이다. 로컬은 조회가 실패했을 때만 쓰는 사본 — 두 벌을 동시에 진실로 삼지 않는다.

@@ -185,7 +185,7 @@ body.intro-mode .wrap{max-width:none;padding:0}
 <body>
 <div class="wrap" id="app"></div>
 
-<script src="czm-core.js?v=63ef803"></script>
+<script src="czm-core.js?v=97fe280"></script>
 <script>
 const $=id=>document.getElementById(id), app=$("app");
 
@@ -244,19 +244,16 @@ const FKEY="chugu_lecture_face";       // photo-module?flow=lecture 산출
 const esc=s=>String(s).replace(/[<&]/g,c=>({"<":"&lt;","&":"&amp;"}[c]));
 // 배포 시 커밋 해시로 치환된다. HTML 문서는 ?v= 없이는 브라우저 디스크 캐시에 그대로 남아,
 // 고친 코드가 배포돼도 유저는 옛 화면을 계속 본다(현장 사고 2026-08-18 — 설문이 건너뛰어진 진짜 원인).
-const BUILD = "63ef803";
+const BUILD = "97fe280";
 // 강의 코호트 태그. 링크(?src=lec_…)로 들어온 값을 촬영·설문까지 그대로 물려준다.
 // 여기서 끊기면 설문이 source=direct로 적재해 참가자만 골라낼 수 없다.
-const SRC = (()=>{ // 첫 진입의 ?src를 회차 동안 유지. 촬영 왕복의 귀환 URL이 쿼리를 떨궈
-  // 오늘(09-02) 강의 리포트 이벤트 전원이 src=null로 적재됐다(측정만 src 보존 — 실측 발견).
-  // 시간창 판독은 되지만 이벤트-코호트 직결이 끊긴다. sessionStorage는 왕복에 살아남고
-  // 새 링크로 열면 새 값으로 덮인다.
-  const q = new URLSearchParams(location.search).get("src");
-  try{ if(q){ sessionStorage.setItem("czm_lec_src", q); return q; }
-       return sessionStorage.getItem("czm_lec_src") || ""; }catch(e){ return q || ""; }
-})();
+// 첫 진입의 ?src를 회차 동안 유지(sessionStorage). 촬영 왕복의 귀환 URL이 쿼리를 떨궈
+// 09-02 강의 리포트 이벤트 전원이 src=null로 적재됐던 것의 수리. 규칙은 계약층(CZM.srcTag)이
+// 소유한다 — 베타 초대 유저(home.html?src=)도 같은 규칙으로 잡힌다(2026-09-04).
+// || 폴백: 옛 czm-core가 캐시에 물려 있으면 심볼이 없다 — 회차가 죽는 것보다 URL 값만이라도 낫다.
+const SRC = CZM.srcTag ? CZM.srcTag() : (new URLSearchParams(location.search).get("src") || "");
 const srcQ = SRC ? "&src=" + encodeURIComponent(SRC) : "";
-const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=63ef803";
+const MODV = /^(localhost|127\.|$)/.test(location.hostname) ? `?t=${Date.now()}` : "?v=97fe280";
 
 // 규준 대조 — docs/규준대조_얼굴계측_norms_v1_2026-08-17.md · face_norms_v1.json
 // 규칙: mapping이 direct·converted인 것만 쓴다. 비율의 SD는 어떤 필드에도 없으므로
@@ -888,17 +885,10 @@ let PAGE=0, PAGES=[];
 /* 장 체류(dwell) — P-1 (제안 v1.1 §11, 대표 재가 09-02).
    lecture_page_view는 장당 첫 도달 1회만 남아 체류·재방문을 잴 수 없었다(적대 검수 지적).
    장을 떠날 때(다른 장으로 이동·페이지 이탈) 직전 장의 머문 시간을 보낸다.
+   컷(0.3s~30min)·pagehide 처리는 계약층(CZM.dwell)으로 옮겼다(2026-09-04) — 앱 리포트와 한 벌.
    pagehide는 페이지를 떠나는 흐름 — lecTrack이 keepalive:true라 전송이 살아남는다(헌법 §6-1). */
-let _dwell={page:null,title:null,t:0};
-function dwellFlush(reason){
-  if(_dwell.page==null) return;
-  const ms=Date.now()-_dwell.t;
-  // 0.3초 미만은 스와이프 스침, 30분 초과는 방치 — 둘 다 체류가 아니다
-  if(ms>=300 && ms<=30*60*1000)
-    lecTrack("lecture_page_dwell",{page:_dwell.page,title:_dwell.title,dwell_ms:ms,reason,src:SRC||null});
-  _dwell.page=null;
-}
-window.addEventListener("pagehide",()=>dwellFlush("leave"));
+const DWELL = CZM.dwell ? CZM.dwell(p=>lecTrack("lecture_page_dwell", Object.assign(p,{src:SRC||null})))
+                        : {enter(){}, flush(){}};   // 옛 czm-core 캐시 폴백 — 체류만 빠지고 리포트는 선다
 function renderReport(){
   // 여기까지 왔으면 이 회차는 끝났다. 다음 진입은 새 사람으로 본다.
   const _first = !sessionStorage.getItem(DONE);
@@ -1271,7 +1261,7 @@ function paint(CARD){
      **어디서 덮는지를 몰랐다.** 11장 중 3장에서 끊기는지 끝까지 보는지에 따라
      리포트를 줄일지 순서를 바꿀지가 갈리는데, 그 판단의 근거가 없었다.
      ⚠ 강의는 하루뿐이라 그날 못 받은 값은 영원히 없다(헌법 §6-1). 내일이 그날이다. */
-  if(_dwell.page!==PAGE+1){ dwellFlush("nav"); _dwell={page:PAGE+1,title:p.t,t:Date.now()}; }
+  DWELL.enter(PAGE+1, p.t);
   if(!paint._seen) paint._seen = new Set();
   if(!paint._seen.has(PAGE)){
     paint._seen.add(PAGE);
@@ -1302,7 +1292,7 @@ function paint(CARD){
 // 복사하면 조사가 갱신돼도 화면은 옛 수치를 계속 보여준다.
 Promise.all([
   // 캐시 무력화 — 054에서 낡은 모듈을 재고 "고쳤다"고 보고하는 사고가 났다.
-  // "?v=63ef803"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
+  // "?v=97fe280"는 배포 시 커밋 해시로 치환되고(deploy_survey.sh), 로컬은 매번 새 값이다.
   import(`./asset-score.js${MODV}`), import(`./part-report.js${MODV}`),
   fetch("dist-snapshot.json").then(r=>r.ok?r.json():null).catch(()=>null),
 ]).then(([AS,PR,SNAP])=>{ window.__PART={AS,PR,SNAP}; }).catch(e=>console.warn("부위 엔진 로드 실패",e))

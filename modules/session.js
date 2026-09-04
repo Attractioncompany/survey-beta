@@ -153,7 +153,10 @@ export async function ensureUser(uid){
   const r = await fetch(`${URL_}/rest/v1/app_users`, {method:"POST",
     headers:{"Content-Type":"application/json", apikey:KEY,
              Authorization:`Bearer ${s.token}`, Prefer:"return=minimal"},
-    body:JSON.stringify({id:uid, source:"app", app_version:"home_v1"})});
+    // source: 초대 링크 ?src= 가 있으면 그 값(계약층 CZM.srcTag, sessionStorage 보관). 이 행이 로그인 때
+    // 먼저 만들어져 index.html의 app_users insert가 409로 끝나므로, 여기서 안 실으면 v_diagnoses_tagged가
+    // 초대 유저를 영영 못 잡는다(2026-09-04). 첫 접촉 기준 — 이미 있는 행은 안 바뀐다.
+    body:JSON.stringify({id:uid, source:(globalThis.CZM && CZM.srcTag && CZM.srcTag()) || "app", app_version:"home_v1"})});
   if (r.ok || r.status === 409) return true;   // app_users엔 FK가 없으므로 409 = 중복키 = 이미 있다
   console.warn("ensureUser", r.status, await r.text());
   return false;
