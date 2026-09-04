@@ -185,6 +185,10 @@ export function selfCheck(dict) {
   t("도착 밴드 안이면 축을 좁히는 걸음은 내지 않는다",
     arrived.status === "arrived" && arrived.cells.every(c => c.axis === null), arrived.status);
   t("도착해도 방향 없는 걸음은 남는다 — 성장이 멈추지 않는다", ids(arrived).length > 0);
+  // 도착 래치 배선(2026-09-04): 소비처(home)가 이 판정에서 milestone(+3) 행을 만든다.
+  // ref가 `arrival:주축`이라 주축이 비면 래치 키가 무너진다.
+  t("도착 판정에는 주축이 실려 있다 — 도착 래치의 ref가 여기서 나온다",
+    arrived.primary_axis != null, String(arrived.primary_axis));
 
   const d = issueOffer(dict, { T: 0.5, D: -0.7 });
   t("주축은 절대값 최대 축", d.primary_axis === "D", `주축=${d.primary_axis}`);

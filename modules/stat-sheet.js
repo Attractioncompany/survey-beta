@@ -11,8 +11,10 @@
 // 숫자는 아래 목록이 맡는다(탭해서 숫자를 켜는 토글이 필요 없어졌다).
 //
 // 계측 (데이터 운영규약 §6-1)
-//   나오는 데이터: 시트 진입 1건당 {has_base, grown}
-//   남길 것: 출발선이 있었는가 · 그 시점 성장 총량 / 안 남길 것: 8타입 값 자체(diagnoses에 이미 있다)
+//   나오는 데이터: 시트 진입 1건당 {has_base, grown, worn}
+//   남길 것: 출발선이 있었는가 · 그 시점 성장 총량 · 착용분 합 — 착용 효과가 실제로 보이는
+//     빈도는 이 worn으로만 알 수 있다(신규 이벤트는 안 만든다 — 기존 sheet_shown에 한 칸)
+//   / 안 남길 것: 8타입 값 자체(diagnoses에 이미 있다) · 착용 슬롯 구성(daily_outfits에 이미 있다)
 //   어디에: events 테이블 `sheet_shown`
 //   대시보드: 성장 0인 채 시트를 보는 비율 — "뭘 하려는지 안다"가 통했는지 여기서 읽힌다
 
@@ -53,9 +55,14 @@ export function renderSheet(ctx) {
   const { app, shell, head, esc, nav, track, CZMStats, TCOLOR, diag, tName, statNow } = ctx;
   const gains = CZMStats.gainsOf(ctx.STATS);
   const up = CZMStats.sum(gains);
+  /* 오늘 확정 차림의 착용분(배선 2026-09-04) — 이 탭만 statNow(equipped)로 받는다.
+     표시 스탯 = 초기 + 영구 가산 + 착용 효과(산식 §3-3). 착용분은 벗으면 빠지는 값이라
+     이력·완료 직후 화면은 계속 영구분만 말한다 — 여기서만 얹고, 얹었다고 아래에서 밝힌다. */
+  const eq = ctx.equipped ? ctx.equipped() : null;
+  const worn = eq ? CZMStats.sum(CZMStats.equipEffect(eq)) : 0;
   // 출발선이 없는 옛 진단에서는 null이 온다 — 그때는 없는 기준선을 지어내지 않는다.
-  const st = statNow();
-  track("sheet_shown", { has_base: st ? 1 : 0, grown: up });
+  const st = statNow(eq);
+  track("sheet_shown", { has_base: st ? 1 : 0, grown: up, worn });
 
   const nm = k => esc(tName(k));
   const row = (k, val, g) => `<div class="trow"><i style="background:${TCOLOR[k] || "var(--prism-purple)"}"></i>
@@ -99,7 +106,8 @@ export function renderSheet(ctx) {
       <p class="lead">지금은 ${peers} 쪽으로 몰려 있어요.</p>
       <p class="note">${up > 0
         ? `점선이 진단 직후 모양입니다. 미션으로 ${up}만큼 밖으로 나갔어요.`
-        : `총 30을 여덟 칸에 나눠 가진 모양입니다. 미션을 하나 마칠 때마다 그쪽 칸이 밖으로 나가요.`}</p>
+        : `총 30을 여덟 칸에 나눠 가진 모양입니다. 미션을 하나 마칠 때마다 그쪽 칸이 밖으로 나가요.`}${
+        worn > 0 ? ` 오늘 차림 몫 +${worn}도 함께 얹힌 그림입니다.` : ``}</p>
     </div>
     <div class="tgrid snap">${order.map(k => row(k, st[k], gains[k])).join("")}</div>`);
 }

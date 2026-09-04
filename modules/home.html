@@ -398,10 +398,12 @@ const GUMI_FILE = {
   gorgeous:"화려한", classic:"클래식", charisma:"카리스마", chic:"세련",
 };
 const gumiOf = k => `../character/${encodeURIComponent(GUMI_FILE[k] ?? "기본형")}.png`;
-// 표시 스탯 = 출발선 + 쌓은 것. 출발선은 진단이 정해 chugu_diag에 남긴다(index.html).
+// 표시 스탯 = 출발선 + 쌓은 것 (+ 착용 효과). 출발선은 진단이 정해 chugu_diag에 남긴다(index.html).
 // 그 값이 없는 옛 진단에서는 숫자 대신 오른 양만 말한다 — 없는 기준선을 지어내지 않는다.
-const statNow = () => diag?.base_stats
-  ? CZMStats.finalStats(diag.base_stats, CZMStats.gainsOf(STATS), null) : null;
+// equipped(오늘 확정 차림)는 **스탯 탭만** 넘긴다 — 이력·완료 직후 "6→7"은 영구분만 말해야
+// 내일 옷을 갈아입어도 숫자가 안 내려간다. 착용분은 표시 층 전용이라 원장(stat_entries)에도 안 싣는다.
+const statNow = (equipped) => diag?.base_stats
+  ? CZMStats.finalStats(diag.base_stats, CZMStats.gainsOf(STATS), equipped ?? null) : null;
 
 /* §6-1 grant — 지급할 것이 있으면 stat_entries 행에 얹을 칸을 돌려준다.
    이미 준 등급 이하면 아무것도 주지 않는다: 중복도 강등도 여기서 막힌다. */
@@ -413,6 +415,23 @@ function gainFor(c, event, stamped){
   if (want <= given) return null;
   return {gain: want - given, evidence: ev, gain_version: "v1",
           gain_type: stamped || CZMStats.targetType(USER(), c)};
+}
+
+/* 도착 래치(+3 milestone, 산식 §3-2 arrival) — 엔진이 "arrived"를 낸 첫 순간에 한 번 준다.
+   가산 크기는 CZMStats.RUNG(evidenceOf)에서 그대로 온다 — 상수 신설 금지.
+   중복은 두 겹으로 막힌다: 기기에서는 아래 STATS 검사, 서버에서는 stat_entries 유니크
+   (user_id,kind,ref,evidence — 2026-08-24_rpg_v1.sql B단계)가 409를 내고 sbFetch가 조용히 삼킨다.
+   이벤트를 따로 안 남긴다 — stat_entries 행 자체가 계측이다(§6-1). */
+function latchArrival(r){
+  const ref = `arrival:${r.primary_axis}`;                  // 래치는 축당 1회 비가역(마이그레이션 B단계)
+  if (STATS.some(s => s.kind === "milestone" && s.ref === ref)) return;
+  const ev = CZMStats.evidenceOf({kind:"milestone"});       // = "arrival"
+  const g  = {gain: CZMStats.RUNG[ev], evidence: ev, gain_version: "v1",
+              gain_type: CZMStats.targetType(USER(), null)};
+  st.add({kind:"milestone", ref, slot:null, at:new Date().toISOString(),
+          attrs:{axis:r.primary_axis, gap:r.gap_value}, ...g});
+  sbPost("stat_entries", {user_id:UID, kind:"milestone", ref, source_kind:"auto_detect",
+                          attrs:{axis:r.primary_axis, gap:r.gap_value}, ...g});
 }
 
 // 해낸 직후 — 무엇이 얼마나 올랐는지 이 자리에서 말한다. st.add 뒤에 부른다.
@@ -1052,7 +1071,8 @@ function renderTools(){
 // sameType: 축이 가까워도 타입이 다르면 도착이 아니다 — 엔진이 그때 방향 없는 걸음을 낸다.
 // 이미 해낸 칸도 excluded로 보낸다 — 안 그러면 방금 마친 미션이 홈에 그대로 다시 선다.
 // (후보 풀은 pack()이 통째로 남기므로 거부율 분모는 그대로다)
-const offerNow = () => issueOffer(DICT, diag.gap_axis, {
+const offerNow = () => {
+  const r = issueOffer(DICT, diag.gap_axis, {
   // 이미 수락한 것도 뺀다 — 안 그러면 진행 가능 칸에 안고 있는 미션이 다시 선다
   excluded: [...new Set([...st.skipped, ...STATS.map(s => s.ref), ...st.actives.map(a => a.id)])],
   sameType: diag.want === diag.have,
@@ -1065,7 +1085,11 @@ const offerNow = () => issueOffer(DICT, diag.gap_axis, {
   // 대개 그것이고, 틀려도 미션이 한 번 더 뜨는 정도로 끝난다.
   filledSlots: [...new Set(STATS.filter(s => s.kind === "item" && !s.removed_at && s.slot)
                                 .map(s => `${s.slot}:${s.gain_type ?? diag.want ?? ""}`))],
-});
+  });
+  // 홈이든 목록이든 모든 발행이 이 문을 지난다 — 도착 판정도 여기서 한 번만 잡는다.
+  if (r.status === "arrived") latchArrival(r);
+  return r;
+};
 
 function postOffer(r, via){
   const offerId = crypto.randomUUID();
@@ -1330,6 +1354,24 @@ const nItems = () => STATS.filter(s => s.kind === "item" && !s.removed_at).lengt
 // 하루의 경계는 사는 사람의 하루다 — UTC로 자르면 아침 9시 전에 어제가 된다
 const kstDate = () => new Date(Date.now() + 9*36e5).toISOString().slice(0, 10);
 
+/* 오늘 확정 차림의 착용분(배선 2026-09-04) — 스탯 탭이 finalStats 3번째 인자로 받는다.
+   표시 층 전용: 원장(stat_entries)에 싣지 않는다 — 탈착되는 상태를 적재하면
+   "한 번 오르면 안 내려감"이 그 자리에서 깨진다(이론팀 경계선 감사 규칙).
+   태그는 저장돼 있지 않으므로(스키마 §2-1) 확정 조합의 아이템 id를 옷장에서 되찾아
+   표시 시점에 만든다 — 정본(태그 매핑) 개정이 자동 반영되는 오버레이 그대로다. */
+let EQUIP = null;                          // {slot:{tag_type,tag_power}} · 오늘 확정이 없으면 null
+async function loadEquip(){
+  const t = LS.get(K.outfitToday, null);
+  if (t?.date !== kstDate() || !t?.items) { EQUIP = null; return; }
+  const items = closet(await palette());
+  const eq = {};
+  for (const [slot, id] of Object.entries(t.items)) {
+    const it = items.find(x => x.id === id && x.slot === slot);
+    if (it?.tag_power) eq[slot] = {tag_type: it.tag_type, tag_power: it.tag_power};
+  }
+  EQUIP = Object.keys(eq).length ? eq : null;
+}
+
 let OUT = null;   // 이 화면에서만 사는 상태 {goal, swap:{slot:itemId}}
 
 // R11 오늘의 착용 (유형 H 조합형). 열자마자 답이 보인다 — 탭 0회가 이 화면의 설계 목표다.
@@ -1444,6 +1486,7 @@ async function renderOutfit(first = true){
       items:chosen, recommended:rec, rec_version:CZMStats.version, source:"app"});
     // 기기에도 남긴다 — 서버 행은 읽는 코드가 없어서 새로고침 한 번에 조합이 사라졌다.
     LS.set(K.outfitToday, {date:kstDate(), goal, items:chosen});
+    await loadEquip();   // 확정 즉시 스탯 탭에 착용분이 얹힌다 — 다음 열람을 기다리지 않는다
     track("outfit_confirmed", {changed_slots:changed, n:filled.length, rec_version:CZMStats.version});
     app.innerHTML = shell({
       top: head("오늘의 착용"),
@@ -2165,6 +2208,8 @@ const CTX = {
   diag, photo, tName, cell, statNow, USER, statsRow, downBanner,
   get STATS(){ return STATS; },
   loadScan: () => LS.get(K.scan, null),
+  // 오늘 확정 차림 — 스탯 탭만 statNow(equipped)로 얹는다. 이력·완료 직후는 영구분만.
+  equipped: () => EQUIP,
 };
 
 const VIEWS = {home:renderHome, tools:renderTools, content:renderContent, askfriend:renderAskFriend,
@@ -2194,6 +2239,8 @@ async function route(){
   if (GATED && SS && !isSignedIn())
     return LS.get(K.previewDone, false) ? renderSignup("up") : renderPreview();
   await bootSession();
+  // 옷장 동기화(bootSession) 뒤에 읽는다 — 확정 조합의 아이템이 서버에만 있을 수 있다.
+  await loadEquip().catch(() => { EQUIP = null; });
   if (tryJudge()) return;
   if (ASK && diag) { track("ask_friend_opened", {from: "report"}); return renderAskFriend(); }
   const v = VIEWS[location.hash.slice(1)];

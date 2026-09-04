@@ -204,6 +204,20 @@
                  { gain: 1 }]).chic !== 3)
       errs.push("가산 합산이 틀렸다(타입 없는 행은 세지 않는다)");
 
+    // 착용 효과 배선(2026-09-04) — 표시 층 전용. base·gains에 스미지 않고 얹히기만 한다.
+    var b0 = initialStats(F);
+    var EQ = { lip: { tag_type: TKEYS[0], tag_power: 2 },
+               top: { tag_type: "없는타입", tag_power: 9 } };   // 모르는 타입은 버려져야 한다
+    if (finalStats(b0, null, EQ)[TKEYS[0]] !== b0[TKEYS[0]] + 2)
+      errs.push("착용 효과가 표시 스탯에 안 얹힌다");
+    if (sum(finalStats(b0, null, EQ)) !== TOTAL + 2)
+      errs.push("착용 효과 합이 틀렸다(모르는 타입이 버려지지 않았다)");
+    if (sum(finalStats(b0, null, null)) !== TOTAL)
+      errs.push("착용이 없는데 표시 스탯이 변한다");
+    // 도착 래치(+3 milestone) — 소비처(home)가 이 두 값으로 행을 만든다. 상수 신설 금지.
+    if (RUNG[evidenceOf({ kind: "milestone" })] !== 3)
+      errs.push("도착 가산이 +3이 아니다");
+
     // 레벨 — 이론 §1-3 페르소나 3건을 그대로 검산한다. 곡선을 손대면 여기서 터진다.
     [[0, 1, 0], [1, 2, 0], [3, 3, 0], [4, 3, 33], [6, 4, 0], [8, 4, 50], [16, 6, 17]]
       .forEach(function (t) {

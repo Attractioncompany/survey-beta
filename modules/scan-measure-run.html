@@ -51,18 +51,24 @@ window.__nativeReply = (id, ok, payload) => {
   ok ? cb.res(payload) : cb.rej(new Error(payload?.error || "native-error"));
 };
 
-const goSurvey = () => { location.href = "../index.html?flow=full"; };
-$("skip").onclick = e => { e.preventDefault(); goSurvey(); };
-$("next").onclick = goSurvey;
+// ?flow=verify — 검증 왕복(홈의 재촬영·차림 기록, 베타 D1). 측정은 같고 끝이 다르다:
+// 설문이 아니라 홈으로 돌아가고, 홈의 tryJudge(home.html)가 저장된 chugu_photo_result로
+// 전/후를 판정한다. 이 쿼리는 AppFlow가 단다 — 허브에서 photo.html?flow=verify로 나간
+// 왕복만 verify로 돈다. 홈 이동은 앱이 가로채 허브(탭바 있는 홈)로 받는다(NativeBridge).
+const VERIFY = new URLSearchParams(location.search).get("flow") === "verify";
+const goNext = () => { location.href = VERIFY ? "home.html" : "../index.html?flow=full"; };
+$("skip").onclick = e => { e.preventDefault(); goNext(); };
+$("next").onclick = goNext;
 
 /** 측정이 실패해도 진단은 계속된다. 여기서 막으면 유저는 아무 결과도 못 받는다.
  *  실패는 조용히 넘기지 않고 화면에 적는다. */
 function fail(msg) {
   $("dot").style.animation = "none"; $("dot").style.opacity = ".15";
   $("t").textContent = "이번엔 측정하지 못했어요";
-  $("s").textContent = "설문 결과는 그대로 나와요. 다음에 다시 찍어볼 수 있어요.";
+  $("s").textContent = VERIFY ? "기록은 그대로 있어요. 다음에 다시 찍어볼 수 있어요."
+                              : "설문 결과는 그대로 나와요. 다음에 다시 찍어볼 수 있어요.";
   $("err").style.display = "block"; $("err").textContent = msg;
-  $("next").style.display = "block"; $("next").textContent = "설문으로";
+  $("next").style.display = "block"; $("next").textContent = VERIFY ? "홈으로" : "설문으로";
 }
 
 /** 측정 실패를 유저에게 알리고 다시 찍을 기회를 준다 (대표 2026-08-24).
@@ -73,11 +79,8 @@ function fail(msg) {
  *  기울어짐·거리·기기각도·얼굴 못 찾음이 전부 거기 있고, 마케팅 검수도 거기서 끝났다.
  *  여기서 다시 쓰면 두 벌이 되고, 임계가 바뀌면 문구만 옛말이 된다(헌법 §3).
  *
- *  ⚠ [다시 찍기]의 한계: 브릿지에 재스캔 method가 없다. 앱은 `/photo.html`로 가는 이동을
- *  가로채 동의→스캔으로 돌리는데(NativeBridge), 그 콜백(onIntercept)이 측정 화면 웹뷰에는
- *  연결돼 있지 않다(AppFlow .measure). 그래서 이동을 시도한 뒤 그대로 남아 있으면
- *  네이티브 '홈' 버튼 안내로 내려간다 — 눌러도 아무 일이 없는 버튼은 만들지 않는다.
- *  ponytail: AppFlow .measure에 onIntercept 한 줄이 붙으면 이 폴백은 안 탄다. */
+ *  [다시 찍기]는 AppFlow .measure의 onIntercept가 받아 재스캔으로 돌린다(2026-09-04 배선).
+ *  아래 setTimeout 안내는 그 배선이 없는 판(구버전 앱)에서만 뜨는 방어선으로 남긴다. */
 function retakeAsk(hint, reason) {
   track("unified_gate_fail", { reason });
   $("dot").style.animation = "none"; $("dot").style.opacity = ".15";
@@ -97,8 +100,8 @@ function retakeAsk(hint, reason) {
       $("err").textContent = "오른쪽 위 홈을 누르고 진단을 다시 시작해 주세요.";
     }, 900);
   };
-  $("skip").style.display = "block"; $("skip").textContent = "이대로 설문 계속";
-  $("skip").onclick = e => { e.preventDefault(); pick("survey"); goSurvey(); };
+  $("skip").style.display = "block"; $("skip").textContent = VERIFY ? "그만하고 홈으로" : "이대로 설문 계속";
+  $("skip").onclick = e => { e.preventDefault(); pick(VERIFY ? "home" : "survey"); goNext(); };
 
   // 여기 있던 30초 자동 이동을 없앴다(2026-08-25). 드레이핑 타이머와 같은 부류다 —
   // 유저가 화면을 읽는 중에 대신 골라 넘겨버린다. "다시 찍기"를 누르려던 사람이
@@ -227,7 +230,8 @@ async function runPhotoPipe(scan) {
 
   const fr = document.createElement("iframe");
   fr.style.display = "none";
-  fr.src = "../photo.html?flow=full";
+  // verify 왕복이면 iframe에도 표식을 단다 — 저장은 full과 같고(photo.html 558행) photo_enter{flow:verify} 계측만 갈린다.
+  fr.src = "../photo.html?flow=" + (VERIFY ? "verify" : "full");
   document.body.appendChild(fr);
   try {
     await new Promise((res, rej) => {
@@ -336,10 +340,10 @@ window.__smr = { runPhotoPipe, retakeAsk };
     // 스캔 지표(scanOk)는 보조라 결측이어도 진행한다 — 색·구조는 이미 손에 있다.
     $("dot").style.animation = "none"; $("dot").style.opacity = ".55";
     $("t").textContent = "측정이 끝났어요";
-    $("s").textContent = "이제 몇 가지만 물어볼게요.";
+    $("s").textContent = VERIFY ? "홈으로 돌아갑니다." : "이제 몇 가지만 물어볼게요.";
     $("next").style.display = "block";
     // 사용자가 버튼을 누르기 전에 넘어가면 "뭐가 지나간 거지"가 된다. 잠깐 보여주고 자동 진행.
-    setTimeout(goSurvey, 1400);
+    setTimeout(goNext, 1400);
   } catch (e) {
     fail(String(e?.message || e));
   }
