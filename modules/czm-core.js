@@ -422,6 +422,8 @@
       mission: "이마를 조금만 열어보세요",
       why: "얼굴이 위아래로 길어 보이고 윤곽이 또렷해져요. 어느 쪽이 나은지에 정답은 없고, 두 가지를 다 가진 사람이 선택지가 많습니다." },
   ];
+  /* 촬영 게이트 경계 — 이마 개방도가 이 값 미만이면 재촬영 요구(photo.html). 대표 확정 2026-09-05 "중간": 0.40~0.75의 중간. */
+  var HAIR_GATE_MIN = 0.58;
   function hairBandOf(v){
     if(typeof v !== "number" || !isFinite(v)) return null;
     for(var i=0;i<HAIR_BANDS.length;i++) if(v >= HAIR_BANDS[i].min) return HAIR_BANDS[i];
@@ -575,7 +577,7 @@ function faceShapePath(r){
     SHAPE_CUTS: SHAPE_CUTS,
     vizWrap: vizWrap, svgToImg: svgToImg, faceShapePath: faceShapePath,
     c1aSVG: c1aSVG, c1bSVG: c1bSVG, c4SVG: c4SVG, c5SVG: c5SVG,
-    HAIR_BANDS: HAIR_BANDS, hairBandOf: hairBandOf, midLowerVerdict: midLowerVerdict, thirdsVerdict: thirdsVerdict,
+    HAIR_BANDS: HAIR_BANDS, HAIR_GATE_MIN: HAIR_GATE_MIN, hairBandOf: hairBandOf, midLowerVerdict: midLowerVerdict, thirdsVerdict: thirdsVerdict,
     PHI: PHI, GOLDEN: GOLDEN, goldenOf: goldenOf, goldenSummary: goldenSummary, thirdsGolden: thirdsGolden, asymVerdict: asymVerdict,
     STAGES: STAGES, trace: trace, diagnose: diagnose, diagnoseText: diagnoseText,
     KEYS: KEYS, store: store,
