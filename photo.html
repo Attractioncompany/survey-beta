@@ -196,7 +196,11 @@ body.cam-open{overflow:hidden;}
          셋을 함께 옮겼다 — 판단 근거를 남긴다. 체크박스 문구는 대표가 준 문장 그대로다.
          ⚠ [마케팅 게이트 필요] · ⚠ 문안 정본(theory/동의문안_원격측정수집_v1_초안_2026-08-08.md §A v1.2)이
          아직 해요체다. 코드가 먼저 바뀌었으므로 이론팀이 정본을 v1.3으로 올려야 두 벌이 안 갈린다. -->
+    <!-- 첫 줄 "왜 필요한지"는 카메라 권한 사전설명(보류대장 A8 · 대표 재가 2026-09-05).
+         강의 흐름은 이 카드의 [동의하고 촬영 시작] 직후 OS 권한 팝업이 뜨므로 이 카드가 사전설명이다.
+         요약 안내라 문안 정본(v1.2)은 그대로다. -->
     <div class="small" style="margin-top:8px;line-height:1.8">
+      · 카메라는 얼굴을 측정하는 데만 사용합니다.<br>
       · <b>얼굴 사진은 서버에 저장하지 않습니다</b> — 기기 안에서 측정 수치로만 바뀝니다.<br>
       · 수치는 익명이며, 진단 정확도 연구에만 쓴 뒤 2년 안에 폐기합니다.<br>
       · 참여 가능 연령은 만 14세 이상입니다.
@@ -364,6 +368,10 @@ body.cam-open{overflow:hidden;}
 <input type="file" id="file" accept="image/*" style="display:none">
     <!-- 입력은 직접촬영 전용 (대표 확정 2026-07-31 — 필터·뷰티앱 원천 차단, 오류대장 040)
          업로드는 검수(?dev=1) 전용 강등: 검증셋 배치 측정 경로 보존 -->
+    <!-- 카메라 권한 사전설명 (보류대장 A8 · 대표 재가 2026-09-05) — 이 버튼이 getUserMedia를 부르고
+         그때 브라우저 권한 팝업이 뜬다. 팝업 직전 화면에 "왜 + 서버엔 수치만"이 있어야 승낙률이 오른다
+         (리서치일보 09-04 고객 §3-①). 문구는 검토_사진보관_마케팅_2026-09-05 §7 초안 [검수 전]. -->
+    <div class="small" id="camPrime" style="margin-bottom:10px;line-height:1.7">카메라는 얼굴을 측정하는 데만 사용합니다. 사진은 서버로 가지 않습니다.</div>
     <button class="btn" id="liveBtn" disabled>준비하고 있어요…</button>
     <button class="btn sub dev-only" id="pickBtn" disabled onclick="document.getElementById('file').click()">사진 업로드 (검수 전용)</button>
     <div id="status">잠깐만요, 구미가 준비하고 있어요</div>
@@ -478,9 +486,9 @@ body.cam-open{overflow:hidden;}
 </main>
 
 <!-- 계약층. 모듈보다 먼저 온다 — 단계 계약·측정값 모양을 여기서 꺼내 쓴다 -->
-<script src="modules/czm-core.js?v=e8c9d11"></script>
-<script src="modules/measure-color.js?v=e8c9d11"></script>
-<script src="modules/measure-structure.js?v=e8c9d11"></script>
+<script src="modules/czm-core.js?v=e148cdf"></script>
+<script src="modules/measure-color.js?v=e148cdf"></script>
+<script src="modules/measure-structure.js?v=e148cdf"></script>
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -529,8 +537,8 @@ window.__pm={ analyze:img=>analyze(img), get state(){ return STATE; } };
 // 개발/검수 모드: 주소 뒤에 ?dev=1 — 출력 JSON·랜드마크 오버레이·엔진 버전 표기 등 순수 개발용만.
 // 지표(수치+해설)는 기본 화면에 항상 표시한다 (대표 2회 확정 07-11·07-20, REQUEST_dev_ux_restore §1).
 // 과거의 "수치는 내부·검증·B2B 전용" 근거는 폐기됨 — 지표를 다시 숨기려면 대표 승인 필요.
-const DEV = new URLSearchParams(location.search).get("e8c9d11")==="1";
-if(DEV) document.body.classList.add("e8c9d11");
+const DEV = new URLSearchParams(location.search).get("e148cdf")==="1";
+if(DEV) document.body.classList.add("e148cdf");
 // 성별 전달 경로 (이론 이목구비앵커 §3, 2026-07-30) — index GENDER를 ?gender=f/m 로 수신. 여성한정 앵커(eye_len F1)·성별밴드(U30) 검증용.
 // ⚠ photo_measurements payload에는 넣지 않음(성별은 app_users.gender 조인, backend 결정 2026-07-30). 현재는 경로만 확보, 실사용은 통합/eye_len 카드 구현 시.
 const GENDER_PM = new URLSearchParams(location.search).get("gender")||null;
@@ -1665,6 +1673,10 @@ const liveWork=document.createElement("canvas");   // 검사용 저해상 프레
 // MediaPipe가 이미 제공하는 상수를 그대로 쓰는 것이라 새로 계산할 게 없다. 모듈 로드 시 1회만 평가해 캐시.
 const MESH_CONNECTIONS = FaceLandmarker.FACE_LANDMARKS_TESSELATION || [];
 // 화면 프리뷰는 비디오 직접 표시로 전환 — livePreviewLoop(캔버스 미러)은 iOS 합성 실패로 폐기.
+// camera_permission{granted} — 사전설명(A8) 효과를 재려면 OS 권한 결과가 있어야 한다. photo_consent 다음 칸.
+// 페이지당 1회: 브라우저는 한 번 허용하면 재촬영에 다시 묻지 않는다.
+let CAM_PERM_SENT=false;
+function trackCamPerm(granted, err){ if(CAM_PERM_SENT) return; CAM_PERM_SENT=true; pmTrack("camera_permission", err?{granted, err}:{granted}); }
 async function liveStart(){
   startTiltSensor();   // iOS 권한은 사용자 제스처 안에서만 — 버튼 클릭으로 들어온 이 지점이 유일한 기회다. await 걸지 않는다(카메라 시작을 막지 않도록)
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
@@ -1672,6 +1684,7 @@ async function liveStart(){
   }
   try{
     liveStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:LIVE_FACING, width:{ideal:4096}, height:{ideal:4096}}, audio:false});
+    trackCamPerm(true);
     // 고정 가능한 변수는 전부 고정 (대표 확정 2026-07-31) — 기기·브라우저가 지원하는 범위 안에서.
     // 목적은 사진마다 색이 흔들리는 적응형(오토) 동작 차단. 지원·적용 내역은 payload에 기록(기기군 분석용).
     LIVE_LOCK={facing:LIVE_FACING, res:null, applied:{}, supported:[]};
@@ -1692,6 +1705,7 @@ async function liveStart(){
       LIVE_LOCK.res=(st.width||0)+"x"+(st.height||0);
     }catch(e){}
   }catch(e){
+    trackCamPerm(false, e && e.name);   // NotAllowedError=거부 · 그 외=기기/브라우저 문제. 갈라야 사전설명 효과만 본다
     $("status").innerHTML=`<div class="warn">카메라를 열지 못했어요 — 브라우저의 카메라 권한을 확인해주세요. 사진 선택으로도 진단할 수 있어요</div>`; return;
   }
   document.body.appendChild($("liveWrap"));   // 글라스 카드(backdrop-filter)가 fixed 기준을 가로채므로 body 직속으로 이동
