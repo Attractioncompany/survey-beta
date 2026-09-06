@@ -12,6 +12,24 @@
     토큰을 아는 사람이 그 한 건만 본다(대표: "사진은 내가 보낸 친구한테 열람권한을 주는 식").
   ⚠ 여기서 측정하지 않는다. 판정도 하지 않는다. 받은 답을 그대로 저장할 뿐이다.
 -->
+<!-- 이 주소의 토큰이 곧 사진 열람권이다(위 주석). 그래서 두 줄을 먼저 건다 —
+     ① noindex: 검색엔진에 색인되면 토큰이 검색 결과로 새어 누구나 남의 사진을 연다.
+     ② no-referrer: 다음으로 이동하는 곳에 "어디서 왔는지"로 토큰을 넘기지 않는다.
+     깨질 것이 없는지 확인함 — 이 화면은 밖으로 나가는 링크가 0개이고, Supabase RPC·서명 URL은
+     apikey 헤더로 인증하지 리퍼러를 보지 않는다. 계측도 같은 경로라 그대로 돈다. -->
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+
+<!-- 링크 미리보기(OG) — 부탁을 카톡으로 보낼 때 회색 박스로 나가던 것을 막는다 (SH-04, 2026-09-06).
+     넣는 값은 전원에게 똑같은 고정 문구뿐이다: 사진·수치·누구인지는 어떤 경우에도 여기 담기지 않는다.
+     og:image는 대기 — 규격(1200×630) 카드가 아직 없다. 없는 파일을 가리키면 회색 박스보다 나쁘다.
+     ⚠ noindex를 존중하는 크롤러라면 미리보기 자체를 걸러낼 수 있다. 그때는 미리보기를 포기한다 — 토큰이 먼저다. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="추구미즘">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="잠깐만 봐주실 수 있나요">
+<meta property="og:description" content="친구가 요즘 모습을 봐 달라고 보냈습니다. 처음 보고 든 느낌이면 충분해요. 1분이면 끝납니다.">
+
 <link rel="stylesheet" href="modules/czm-ui.css">
 <style>
   body{margin:0;background:var(--bg,#FAF7FB);color:var(--ink,#2B2233);

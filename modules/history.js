@@ -354,8 +354,8 @@ export function historyCheck() {
   eq(spanDays(two), 7, "두 시점 간격");
   eq(spanDays(two.slice(0, 1)), 0, "한 장짜리 간격");
   // 1장 = 사실 고지 / 2장 = 내보내기 권유. 문구가 상태와 어긋나면 잃을 것을 못 알린다
-  if (!albumHTML(two).includes("사진첩으로 저장")) errs.push("2장인데 내보내기를 안 권했다");
-  if (albumHTML(two).includes("폰을 바꾸면")) errs.push("2장 화면에 1장용 고지가 남았다");
+  if (!albumHTML(two).includes("사진첩에 저장")) errs.push("2장인데 내보내기를 안 권했다");
+  if (albumHTML(two).includes("폰 안에만 남아요")) errs.push("2장 화면에 1장용 고지가 남았다");
   if (!albumHTML(two.slice(0, 1)).includes("폰을 바꾸면")) errs.push("첫 사진인데 사실 고지가 없다");
   if (!albumHTML(two).includes("서버에 올라가지 않습니다")) errs.push("상시 한 줄이 빠졌다");
   // 서버로 나갈 수 있는 유일한 통로는 track이다. 여기에 경로·세션명이 한 칸이라도

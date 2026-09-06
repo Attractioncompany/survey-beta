@@ -24,12 +24,46 @@ const save = s => { try { localStorage.setItem(SKEY, JSON.stringify(s)) } catch 
 async function authPost(path, body){
   const r = await fetch(`${URL_}/auth/v1/${path}`, {method:"POST",
     headers:{"Content-Type":"application/json", apikey:KEY}, body:JSON.stringify(body)});
-  if (!r.ok) throw new Error(`auth ${path} ${r.status} ${await r.text()}`);
+  // status를 에러에 얹는다 — 실패 사유를 계측할 때 메시지 문자열에서 숫자를 긁어내지 않게.
+  // 메시지 자체는 그대로라 기존 호출부(why:e.message)의 동작이 안 바뀐다.
+  if (!r.ok) { const e = new Error(`auth ${path} ${r.status} ${await r.text()}`); e.status = r.status; throw e; }
   return r.json();
 }
 
 const shape = j => ({ token:j.access_token, refresh:j.refresh_token,
                       uid:j.user?.id, exp:(j.expires_at ?? 0) });
+
+/* ── 인증 복원 실패 계측 (RT-16 · 마스터플랜 §5 T0) ─────────────────────────
+   전에는 아래 갱신 실패가 console.warn 하나로 끝났다. 주간 1건만 나와도 인증 배포를
+   멈춰야 하는 신호인데, 그 1건이 아무에게도 안 보이는 상태였다(§9 결함 9번).
+
+   ⚠ 싣는 것은 **사유 코드 하나뿐**이다. 토큰·리프레시 토큰·이메일·응답 본문은 넣지 않는다(헌법 §4).
+     그래서 실을 것을 만드는 자리를 함수로 뺐다 — 칸이 하나라도 늘면 자체 점검이 잡는다
+     (history.js albumStats와 같은 이유: 여기서 새는 것은 화면에 아무 표시도 안 난다).
+
+   ⚠ sbFetch·getSession을 쓰지 않는다. 로그인이 깨진 자리에서 로그인이 필요한 경로를 부르면
+     그 호출도 같이 죽는다. index.html sbInsert(:527)와 같은 익명 키 직행 경로를 쓴다. */
+const failRow = (uid, e) => ({ user_id: uid, event: "session_restore_fail",
+  // status가 없다는 것은 fetch 자체가 던졌다는 뜻 — 서버 응답이 아니라 회선이 끊긴 경우다
+  props: { reason: (e && e.status) ? `http_${e.status}` : "network" }, app_version: "session_v1" });
+
+/* 한 번만 보낸다. 실패하면 호출부가 SKEY를 지우므로 다음 getSession은 refresh가 없어
+   네트워크를 안 탄다 — 남는 중복은 첫 실패를 동시에 맞은 병렬 호출뿐이라 이 표식이 막는다.
+   그래야 이 이벤트 1건이 "실패한 세션 1개"로 읽힌다(릴리즈 게이트가 세는 단위). */
+let failSent = false;
+function trackRestoreFail(e){
+  try {
+    if (failSent) return;
+    failSent = true;
+    // 로컬·디버그 빌드는 운영 DB를 오염시키지 않는다 (index.html:528과 같은 규율)
+    if (/^(localhost|127\.|$)/.test(location.hostname) || globalThis.__CHUGU_DEV) return;
+    let uid = null; try { uid = localStorage.getItem("czm_uid"); } catch(_){}
+    fetch(`${URL_}/rest/v1/events`, {method:"POST", keepalive:true,   // 재로그인 화면으로 넘어가도 전송이 산다
+      headers:{"Content-Type":"application/json", apikey:KEY, Authorization:`Bearer ${KEY}`,
+               Prefer:"return=minimal"},
+      body: JSON.stringify(failRow(uid, e))}).catch(() => {});
+  } catch(_){}   // 계측이 재로그인 유도를 막으면 안 된다 — 무엇이 터져도 여기서 삼킨다
+}
 
 /**
  * 유효한 세션을 돌려준다. 만료됐으면 갱신하고, **없으면 null**이다.
@@ -43,7 +77,10 @@ export async function getSession(){
   if (s?.refresh) {
     try { s = shape(await authPost("token?grant_type=refresh_token", {refresh_token:s.refresh}));
           save(s); return s; }
-    catch(e){ console.warn("세션 갱신 실패 — 다시 로그인해야 한다", e); localStorage.removeItem(SKEY); }
+    // 계측은 복구 처리 **뒤에** 둔다 — 순서가 반대면 계측이 터졌을 때 토큰이 안 지워져
+    // 유저가 갱신 실패를 무한히 반복하는 자리에 갇힌다. 계측이 인증을 막으면 안 된다.
+    catch(e){ console.warn("세션 갱신 실패 — 다시 로그인해야 한다", e); localStorage.removeItem(SKEY);
+              trackRestoreFail(e); }
   }
   return null;
 }
@@ -281,4 +318,31 @@ export async function deleteAccount(){
   if(!r || r.ok !== true) return {ok:false};
   resetAll();
   return {ok:true, ...r};
+}
+
+/* 자체 점검 — 이 파일이 조용히 깨지는 방식은 하나다: 계측에 실리면 안 되는 것이 실린다.
+   화면에는 아무 표시도 안 나고 서버에만 남으므로(헌법 §4), 나가는 칸을 여기서 못 박아 둔다.
+   실행: node --input-type=module -e "import('./modules/session.js').then(m=>m.sessionCheck())" */
+export function sessionCheck(){
+  const errs = [];
+  const eq = (got, want, what) => { if (got !== want) errs.push(`${what}: ${got} ≠ ${want}`); };
+
+  // 서버로 나갈 수 있는 유일한 통로는 failRow다. 칸이 하나라도 늘면 그게 유출이다
+  eq(Object.keys(failRow("u1", {status:400})).join(","),
+     "user_id,event,props,app_version", "계측 행에 없던 칸이 생겼다");
+  eq(Object.keys(failRow("u1", {status:400}).props).join(","), "reason", "props에 사유 코드 말고 다른 게 실렸다");
+
+  // 사유 코드: 서버가 거절했나(status) · 회선이 끊겼나(fetch가 던짐)
+  eq(failRow(null, {status:400}).props.reason, "http_400", "서버 거절 사유");
+  eq(failRow(null, {status:401}).props.reason, "http_401", "만료 토큰 사유");
+  eq(failRow(null, new TypeError("Failed to fetch")).props.reason, "network", "회선 끊김 사유");
+  eq(failRow(null, undefined).props.reason, "network", "에러 없이 불린 경우");
+
+  // authPost의 메시지에는 **응답 본문**이 붙는다. 그걸 props에 옮기고 싶은 유혹이 언젠가 오는데,
+  // 본문에는 이메일·토큰이 섞일 수 있다. 코드만 나간다는 것을 여기서 붙들어 둔다
+  const leak = Object.assign(new Error("auth token 401 {\"refresh_token\":\"SECRET-abc\"}"), {status:401});
+  if (JSON.stringify(failRow("u1", leak)).includes("SECRET-abc")) errs.push("에러 메시지가 계측에 실려 나갔다");
+
+  if (errs.length) console.error("[session] 자체 점검 실패:", errs);
+  return errs;
 }
