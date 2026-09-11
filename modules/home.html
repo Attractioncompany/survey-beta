@@ -296,7 +296,7 @@ const HIST  = await mod("./history.js", "이력");
 // 옷의 소재·실루엣 표(이론 HAVE-2). 못 뜨면 색 판정만으로 종전처럼 돈다 — 옷장이 안 죽는다.
 const TAGS  = await mod("./cloth-tags.js", "옷 태그");
 const { issueOffer, judgeSkill, selfCheck, withKnowledge } = QE ?? {};
-const { ensureUser, linkUid, sbFetch, sbRpc, fetchStats, removeStat, PUBLIC,
+const { ensureUser, linkUid, sbFetch, sbRpc, sbRpcAll, fetchStats, removeStat, PUBLIC,
         isSignedIn, oauthStart, captureRedirect, signOut,
         signUpPassword, signInPassword, sendRecover, setPassword } = SS ?? {};
 const downBanner = () => DOWN.length
@@ -1089,6 +1089,12 @@ function renderTools(){
         ] : [ item("진단 시작하기", "아직 측정 전이에요", {href:"../index.html?view=start"}) ])
       + group("계정", [ item("하고 싶은 말 남기기", "불편한 곳이나 바라는 것", {id:"toVoc"}),
                         item("회원탈퇴", "서버에 저장된 기록까지 모두 삭제합니다", {id:"quitAll"}) ])
+      /* 데이터 — 서버에 내 것이 무엇이 남아 있나. 처리방침이 "앱 안에서 직접 할 수 있다"고
+         적어 둔 일들의 자리다(privacy.html:38). 지금은 친구 사진 한 줄뿐이고, 계정 그룹과
+         가르는 이유는 성격이 다르기 때문이다 — 계정은 그만두는 문, 여기는 남은 것을 보는 문.
+         서버 모듈이 못 뜨면 아예 안 낸다: 열어봐야 목록을 못 불러온다. */
+      + group("데이터", sbRpcAll ? [
+          item("친구에게 보낸 사진", "서버에 남아 있는 사진을 확인합니다", {id:"toPhotos"}) ] : [])
       + (DEV ? group("개발", [ item("엔진 자체 점검", "산식·사전 정합성", {id:"selfck"}) ]) : ``)
       + `</div>`,
     btm: `<button class="btn quiet" id="out">로그아웃</button>
@@ -1142,6 +1148,7 @@ function renderTools(){
     location.href = "../index.html";
   });
   $("toVoc").onclick = renderVoc;
+  $("toPhotos") && ($("toPhotos").onclick = renderFriendPhotos);
   $("selfck") && ($("selfck").onclick = renderCheck);
   // 로그아웃도 알림을 끄고 나간다. 리셋·탈퇴만 remindOff를 부르고 여기만 빠져 있어서,
   // 나간 사람의 폰에서 예약된 미션 알림이 계속 울렸다(RT-05 · 2026-09-06).
@@ -1300,9 +1307,9 @@ function acceptQuest(id, offerId, position, via){
                                 before: photo || null,
                                 target_type: CZMStats.targetType(USER(), cell(id))}];
   st.homeOffer = null;                    // 다음에 다시 펼 때는 새 집합이다
-  remind(id);
   QTAB = "doing";
-  renderHome();
+  // 알림을 처음 물을 자리면 설명 화면이 먼저 선다 — 그때는 그 화면이 홈을 대신 그린다.
+  if (!remindGate(id)) renderHome();
 }
 
 /* 수락해 놓고 안 끝난 미션을 사흘마다 한 번 확인해 준다 (대표 지시 2026-08-26).
@@ -1311,6 +1318,41 @@ function acceptQuest(id, offerId, position, via){
    ⚠ 며칠 밀렸는지 세지 않는다. 재촉하지 않는다(헌법 §9 — 죄책감 유발형 넛지 금지).
      구미는 확인하는 것이지 다그치는 것이 아니다.
    실패는 삼키다 — 알림 권한을 거절해도 미션은 그대로 돌아야 한다. */
+/* 알림 권한 사전설명 (RT-N2 · 2026-09-11).
+   전에는 미션을 수락하는 순간 OS 권한 팝업이 **설명 없이** 떴다 — 카메라에서 이미 고친 것과
+   같은 문제다(A8, 대표 재가 2026-09-05). 무엇을 위한 알림인지 먼저 말하고, 유저가 고른
+   뒤에만 OS에 묻는다. iOS는 권한을 처음 한 번만 묻기 때문에 그 한 번이 설명 없이 지나가면
+   되돌릴 자리가 없다.
+
+   한 번만 묻는다. 거절한 사람에게 미션마다 다시 묻는 것이 곧 재촉이다(헌법 §9-5).
+   답은 기기에 남긴다 — 서버가 알 이유가 없는 값이다.
+   화면을 세웠으면 true를 돌려준다(부른 쪽이 홈을 덮어 그리지 않게). */
+const REMIND_ASKED = "czm_remind_asked";
+function remindGate(id){
+  if (!HIST?.native) return false;              // 웹에는 예약할 곳이 없다
+  const answered = LS.get(REMIND_ASKED, null);
+  if (answered === "yes") { remind(id); return false; }
+  if (answered === "no")  return false;         // 안 받겠다고 한 사람에게 다시 묻지 않는다
+  track("remind_prime_shown", {quest_id: id});
+  app.innerHTML = shell({
+    top: head("사흘 뒤에 한 번 여쭤볼게요"),
+    body: `<div class="card">
+      <p class="lead">수락한 미션이 어떻게 됐는지 알림으로 여쭤봐요. 며칠 밀렸는지는 세지 않습니다.</p>
+      <p class="note">세 번까지 알린 뒤 더 보내지 않습니다. 알림은 설정에서 언제든 끌 수 있어요.</p></div>`,
+    btm: `<button class="btn" id="rmYes">알림 받기</button>
+          <button class="btn quiet" id="rmNo">괜찮아요</button>`,
+  });
+  const close = (ans) => {
+    LS.set(REMIND_ASKED, ans);
+    track("remind_prime_answered", {quest_id: id, answer: ans});
+    if (ans === "yes") remind(id);
+    renderHome();
+  };
+  $("rmYes").onclick = () => close("yes");
+  $("rmNo").onclick  = () => close("no");
+  return true;
+}
+
 function remind(id){
   const c = cell(id); if (!c || !HIST?.native) return;
   HIST.native("remind", {key:id, afterDays:3,
@@ -1792,6 +1834,88 @@ async function shareFriendLink(url, who){
   });
   $("more").onclick = renderAskFriend;
   $("done").onclick = () => { location.href = "../index.html?view=report"; };
+}
+
+/* ── 친구에게 보낸 사진 (RT-20 · 2026-09-11) ─────────────────────────────────
+   왜 만드나: `privacy.html:22`가 **이미 공개된 처리방침**에서 친구 설문 사진을 두고
+   "이용자는 언제든 내릴 수 있고, 내리면 즉시 삭제됩니다"라고 약속했다. 그런데 그 화면이
+   앱에 없었다(코드 검색 0건). 공개 약속과 실물의 불일치라 다른 무엇보다 먼저다.
+
+   ⚠ 지금 이 화면이 하는 일은 **확인까지**다. 서버에 철회 통로가 없다 —
+     public 스키마의 친구 설문 RPC는 셋뿐이고(friend_survey_create/get, friend_response_add)
+     읽기는 friend_results 하나다(09-11 pg_proc 조회로 직접 확인). 테이블 RLS 정책이 0건이라
+     앱에서 UPDATE를 직접 쏘는 길도 막혀 있다. 사진이 실제로 지워지는 경로는 만료 잡
+     (backend/migrations/2026-09-04_friend_photo_purge.sql)과 회원탈퇴(account_delete)뿐이다.
+     그래서 「내리기」는 **아예 그리지 않는다**(검수 2026-09-11 · 처음에는 disabled로 띄웠다).
+     눌리는 버튼이 아니어도 회색 버튼은 "여기 기능이 있는데 지금 꺼져 있다"고 말한다 —
+     행마다 하나씩 서면 배달 안 된 약속이 목록 길이만큼 늘어난다. 대신 지금 삭제받는 길
+     (처리방침 §7 연락처)을 목록 아래 한 번만 적는다. 서버 함수가 생기면 아래 한 줄만 true로 바꾼다. */
+const REVOKE_READY = false;   // 백엔드에 friend_photo_revoke(p_survey uuid) 신설되면 true
+const PRIVACY_MAIL = "jslim@attractioncompany.com";   // 처리방침 §7 연락처 정본
+
+async function renderFriendPhotos(){
+  app.innerHTML = shell({top: head("친구에게 보낸 사진"), body:`<p class="note">불러오는 중…</p>`});
+  // 목록의 원천은 friend_results뿐이다 — LEFT JOIN이라 답이 아직 안 온 부탁도 같이 온다.
+  // 답이 여럿이면 설문 하나가 여러 줄로 오므로 id로 묶는다.
+  const seen = new Map();
+  for (const r of (await sbRpcAll("friend_results", {p_user: UID})) ?? [])
+    if (!seen.has(r.survey_id)) seen.set(r.survey_id, r);
+  /* 사진이 아직 서버에서 나오는지 아는 길은 friend_survey_get뿐이다 — 만료 유예(하루)가 지나면
+     아예 행을 안 돌려준다. 그게 "더는 아무에게도 안 보인다"는 뜻이고, 컬럼이 비워졌다는 뜻은
+     아니다(비우는 것은 하루 한 번 도는 잡이다 · 아래 목록 주석). 보낸 목록을 그대로 펴면
+     한참 전에 만료된 사진까지 아직 있는 것처럼 보인다. 그 오해가 이 화면의 존재 이유와
+     정면으로 어긋난다.
+     ponytail: 행마다 한 번씩 묻는 N+1 왕복. 한 사람이 보낸 부탁은 한 자릿수라 그대로 둔다 —
+     목록 RPC가 생기면 한 번으로 줄인다. */
+  const rows = await Promise.all([...seen.values()].map(async s =>
+    ({...s, photo: (await sbRpc("friend_survey_get", {p_id: s.survey_id}))?.photo ?? null})));
+  const kept = rows.filter(r => r.photo);
+  track("friend_photos_shown", {n_kept: kept.length, n_gone: rows.length - kept.length});
+
+  const day = t => { const d = new Date(t); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
+  const list = rows.map(r => {
+    const when = `${day(r.created_at)}${r.friend_name ? ` <span style="opacity:.6">· ${esc(r.friend_name)}</span>` : ``}`;
+    /* 사진이 안 오는 행에 "삭제되었습니다"라고 쓰지 않는다 — 이 화면은 그것을 알 수 없다.
+       friend_survey_get은 expires_at+1일이 지나면 행 자체를 안 준다. 그런데 photo 컬럼을 실제로
+       비우는 것은 하루 한 번 01:00 KST에 도는 잡이다(migrations/2026-09-04_friend_photo_purge.sql).
+       그 사이 최대 하루는 "지웠다"가 사실이 아니다. 확실히 아는 것은 기간이 지났다는 것뿐이라
+       거기까지만 적는다(검수 2026-09-11). 자동 삭제 사실은 위 안내문이 이미 말하고 있다. */
+    return `<div class="q" style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+      ${r.photo ? `<img src="${r.photo}" alt="" style="width:44px;height:44px;flex:none;object-fit:cover;border-radius:9px">` : ``}
+      <span class="t" style="flex:1">${when}${r.photo ? `` : `<span class="m">보관 기간이 지났습니다</span>`}</span>
+      ${r.photo && REVOKE_READY ? `<button class="btn quiet" data-rv="${esc(r.survey_id)}"
+        style="margin:0;flex:none">내리기</button>` : ``}</div>`;
+  }).join("");
+
+  /* 문구 [검수 전] — 화자가 둘이다. 말 거는 톤은 구미가, 한계·주의 고지는 규범형 문어체가 맡는다
+     (헌법 §6 브랜드 보이스 2026-08-26). 사실 문장은 처리방침 §2의 한정어를 그대로 옮긴다 —
+     여기서 한 글자라도 넓게 쓰면 그 순간 또 어긋난다. */
+  app.innerHTML = shell({
+    top: head("친구에게 보낸 사진"),
+    body: rows.length ? `<div class="card">
+        <p class="lead">친구에게 보낸 사진이 아직 서버에 남아 있는지 여기서 보실 수 있어요.</p>
+        <p class="note">「친구에게 물어보기」로 보낸 사진은 400px 축소본으로 보관되며,
+          보관 기간(기본 30일)이 지나면 자동으로 삭제됩니다.
+          진단·재촬영에 쓰인 사진은 서버에 저장되지 않습니다.</p></div>
+      <div style="margin-top:14px">${list}</div>
+      ${REVOKE_READY ? `` : `<p class="note">사진을 직접 내리는 기능은 준비 중입니다.
+        지금 삭제를 원하신다면 ${PRIVACY_MAIL}으로 알려 주십시오. 확인 후 지체 없이 삭제합니다.</p>`}`
+      : `<div class="card">
+        <p class="lead">친구에게 보낸 사진이 아직 없어요.</p>
+        <p class="note">「친구에게 물어보기」로 사진을 보내면 여기에 표시됩니다.</p></div>`,
+    btm: `<button class="btn quiet" id="back">닫기</button>`,
+  });
+  $("back").onclick = renderTools;
+  // 서버 함수가 생기면 이 줄부터 살아난다. 되돌릴 수 없는 일이라 한 번 묻되 겁주지 않는다 —
+  // 무슨 일이 일어나는지만 적는다.
+  app.querySelectorAll("[data-rv]").forEach(b => b.onclick = async () => {
+    if (!confirm("이 사진을 서버에서 지웁니다. 친구가 링크를 열어도 사진이 보이지 않습니다.\n계속하시겠습니까?")) return;
+    b.disabled = true;
+    const ok = await sbRpc("friend_photo_revoke", {p_survey: b.dataset.rv});
+    track("friend_photo_revoked", {ok: !!ok});
+    if (!ok) { b.disabled = false; return alert("지우지 못했습니다. 통신 상태를 확인한 뒤 다시 시도해 주십시오."); }
+    renderFriendPhotos();
+  });
 }
 
 /* ── 여러 벌 한 번에 담기 (2026-08-26) ────────────────────────────────────────
