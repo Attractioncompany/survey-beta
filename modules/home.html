@@ -86,6 +86,21 @@ button{font:inherit;cursor:pointer}
 .q .t{font-size:15.5px;line-height:1.45;font-weight:600;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .q .m{font-size:12.5px;color:var(--sub);margin-top:5px;display:flex;gap:7px;flex-wrap:wrap;align-items:center;font-weight:400}
+/* 결승선·근거 한 줄 (MS-01·MS-04) — 화자가 구미가 아니라 시스템이라 얼굴이 달라야 한다.
+   판정 화면의 `.rw .sys`와 같은 계열(자간·tabular·단색)이되, 카드에 얹히는 한 줄이라
+   상자는 두르지 않는다. 대괄호는 B3 미결이라 안 쓴다 — 규격이 서면 여기 줄에 괄호만 붙는다.
+   `.why`는 아이콘 없이 한 칸(13px+gap 5px) 들여써 앞 줄의 글자와 세로가 맞는다. */
+.fin{display:flex;align-items:center;gap:5px;margin-top:6px;
+  font-size:12px;line-height:1.5;color:var(--sub);letter-spacing:.03em}
+.fin svg{flex:none;opacity:.7}
+.fin span{flex:1;min-width:0;word-break:keep-all}
+.fin b{flex:none;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.05em}
+.fin.why{padding-left:18px}
+/* 상세 화면에서는 두 줄이 히어로의 직계라 구미 그림(절대배치 84px)을 피해야 한다.
+   ⚠ 오른쪽 패딩으로 피하면 안 된다 — 글자 자리가 122px짜리 좁은 기둥이 돼 한 문장이
+     세 줄로 쪼개진다(375px 실측). 대신 **제목 칸의 높이를 잡아** 두 줄을 그림 아래로 내린다.
+     구미는 카드 안 12px에 84px이라 바닥이 96px, 제목은 카드 패딩 26px에서 시작한다 → 70px. */
+.quest-detail .ph-title{min-height:70px}
 .tag{border:1px solid var(--line);border-radius:99px;padding:1px 8px;font-size:11px;color:var(--sub)}
 .tag.free{border-color:#CFE0D4;color:var(--ok)}
 /* 미션 종류 배지 — 테두리 태그들과 달리 채워서 낸다. 한 줄에 태그가 서넛 서므로
@@ -114,6 +129,12 @@ button{font:inherit;cursor:pointer}
 .rw p{margin:0;font-size:13.5px;color:var(--sub);line-height:1.7}
 .rw .grew{margin:16px 0 4px}
 .rw .btn{margin-top:18px}
+.rw .btn.quiet{margin-top:6px;width:100%}
+/* 시스템 창(VF-11) — 기계가 적은 사실 고지. 대괄호 표기 규격이 미결이라 괄호 없이
+   자간·tabular·단색만으로 그 질감을 낸다. 구미의 말과 화자가 다르다는 것이 눈에 보여야 한다. */
+.rw .sys{margin:12px 0 14px;padding:10px 13px;background:var(--soft);border-radius:12px;text-align:left}
+.rw .sys span{display:block;font-size:11.5px;font-weight:600;color:var(--sub);
+  letter-spacing:.055em;font-variant-numeric:tabular-nums;line-height:1.95}
 @keyframes rwFade{from{opacity:0}to{opacity:1}}
 @keyframes rwRise{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){
@@ -912,6 +933,7 @@ function questLog(ho, doing, wName){
       ? doing.map(a => { const c = cell(a.id); return c ? `
           <button class="q" data-open="${a.id}">
             <div class="t">${esc(c.copy)}</div>
+            ${finishLine(c, a)}
             <div class="m">${kindTag(c)}${costTag(c)}${dayTag(a)}</div></button>` : ``; }).join("")
       : `<p class="ph-whytxt">아직 수락한 미션이 없어요. 진행 가능에서 골라보세요.</p>`;
   } else if (tab === "done") {
@@ -969,12 +991,16 @@ function renderQuest(id){
       ? (a.before ? `<button class="btn" id="toShot">해봤어요</button>`
                   : `<button class="btn" id="toShot">지금 얼굴 찍어두기</button>`)
       : `<button class="btn" id="tryDone">해봤어요</button>`;
-  // 지식 칸은 좌표를 움직이지 않는다 — "가장 크게 움직입니다"를 얹으면 거짓말이 된다.
+  /* 구미의 한 줄. 사실 고지는 위의 시스템 두 줄(완료 조건·처방 근거)이 맡으므로 여기는
+     해석과 다음 할 일만 말한다(§6 — 해설·처방은 존댓말, 고지는 규범형).
+     지식 칸은 좌표를 움직이지 않아 처방 근거 줄이 안 서고, 그래서 현행 문안을 그대로 둔다.
+     마지막 갈래의 옛 문장 "오늘 당장 해볼 수 있는 것 중 …쪽으로 가장 크게 움직입니다"는
+     걷었다 — 「가장 크게」를 우리가 잴 방법이 없어서 근거 없는 최상급이었다(MS-04). */
   const why = c.kind === "knowledge"
     ? "방향은 이미 잡혀 있어요. 왜 그런지 알아두면 다음 미션이 빨라집니다."
     : (c.countable && c.field && !a.before)
     ? "지금 얼굴부터 한 장 찍어둬요. 나중에 오늘 모습이랑 비교해봐요."
-    : `오늘 당장 해볼 수 있는 것 중 ${wName} 쪽으로 가장 크게 움직입니다.`;
+    : `${wName} 쪽으로 가기로 하셨으니, 여기부터 손대는 편이 빨라요.`;
   // 최소 등급만 약속한다. 승급(+2)은 재촬영 결과 화면에서 처음 등장한다 —
   // 조건부 약속은 미달을 박탈로 만든다.
   const pv = CZMStats.previewGain(c);
@@ -983,8 +1009,10 @@ function renderQuest(id){
 
   app.innerHTML = shell({
     top: head("미션"),
-    body: `<div class="ph-glass ph-hero snap home-hero">${gumiEl}
+    body: `<div class="ph-glass ph-hero snap home-hero quest-detail">${gumiEl}
       <div class="ph-title">${esc(c.copy)}</div>
+      ${finishLine(c, a)}
+      ${whyLine(c)}
       <div class="ph-whytxt">${why}</div>
       ${hint}
       ${primary}
@@ -1026,36 +1054,52 @@ function renderQuest(id){
 /* ③ 해낸 직후 — 무엇이 얼마나 올랐는지 여기서 보여준다(베타 필수 통과 항목).
    카운터 0→1로 끝나던 자리다. 숫자가 실제로 움직이는 것을 보지 못하면
    "해냈다"가 화면 어디에도 남지 않는다. */
-function renderDone(title, lead, g, note){
+function renderDone(title, lead, g, note, opts){
   if (CUR) remindOff([CUR]);
   st.active = null;
   // 뒤에 홈을 먼저 세운다 — 팝업을 닫으면 이미 갱신된 홈이 있고, 오른 숫자가 그 자리에 있다.
   // 완료 화면을 따로 두고 「홈으로」를 누르게 하면 그 사이에 한 번 더 화면이 바뀐다.
   renderHome();
-  reward(title, lead, g, note);
+  reward(title, lead, g, note, opts);
 }
+
+/* ── 시스템 창 한 칸 (VF-11) ─────────────────────────────────
+   판정 화면의 화자는 둘이다 — 사실 고지는 규범형 문어체(§6 경고·안내), 해석과 다음 할 일은
+   구미의 존댓말(§6 해설·처방). 이 상자가 앞쪽 화자를 맡는다.
+   대괄호는 쓰지 않는다: 표기 규격이 아직 미결이라 자간·tabular로만 「기계가 적은 줄」의
+   질감을 낸다. 규격이 정해지면 여기 줄에 괄호만 붙는다.
+   ⚠ 부호·방향은 한 줄도 쓰지 않는다. 문턱 아래 변화까지 "반대로 잡혔다"고 말하면
+     측정 오차를 유저의 실패로 돌리게 된다(VF-11 확정 · 헌법 §4). */
+const sysBox = lines => {
+  const ls = (lines || []).filter(Boolean);
+  return ls.length ? `<div class="sys">${ls.map(s => `<span>${esc(s)}</span>`).join("")}</div>` : ``;
+};
 
 /* 보상 팝업. 구미가 말을 거는 자리다(헌법 §9 — 지시하지 않고 궁금해하고 응원한다).
    ESC·바깥 탭·버튼 셋 다 닫힌다. 닫으면 뒤의 홈이 그대로 남는다. */
-function reward(title, lead, g, note){
+function reward(title, lead, g, note, opts = {}){
   const el = document.createElement("div");
   el.className = "rw-back";
   el.innerHTML = `<div class="rw" role="dialog" aria-modal="true" aria-label="${esc(title)}">
     <img class="rw-gumi" src="${gumiOf(g?.gain_type ?? diag?.want)}" alt=""
          onerror="this.style.display='none'">
     <h3>${esc(title)}</h3>
+    ${sysBox(opts.sys)}
     <p>${lead}</p>
     ${grewBlock(g)}
     ${note ? `<p class="note" style="margin-top:10px;opacity:.8">${note}</p>` : ``}
-    <button class="btn" id="rwOk">확인</button></div>`;
+    <button class="btn" id="rwOk">${esc(opts.ok ?? "확인")}</button>
+    ${opts.more ? `<button class="btn quiet" id="rwMore">${esc(opts.more.label)}</button>` : ``}</div>`;
   const close = () => { el.remove(); document.removeEventListener("keydown", onKey); };
   const onKey = e => { if (e.key === "Escape") close(); };
   el.addEventListener("click", e => { if (e.target === el) close(); });
   document.addEventListener("keydown", onKey);
   document.body.appendChild(el);
-  el.querySelector("#rwOk").onclick = close;
+  el.querySelector("#rwOk").onclick = () => { close(); opts.onOk?.(); };
+  el.querySelector("#rwMore") && (el.querySelector("#rwMore").onclick = () => { close(); opts.more.fn(); });
   el.querySelector("#rwOk").focus();
-  track("reward_shown", {gain: g?.gain ?? 0, type: g?.gain_type ?? null});
+  track("reward_shown", {gain: g?.gain ?? 0, type: g?.gain_type ?? null,
+                         variant: opts.variant ?? null});
 }
 
 /* 설정 화면 (2026-08-26 개편 — 대표: "재측정이라던가 이런 부분이 너무 복잡하게 꼬여있는데
@@ -1279,9 +1323,65 @@ const kindTag = c => {
     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${k[1]}"></path></svg>${k[0]}</span>`;
 };
+/* ── MS-01 · 결승선 한 줄 ─────────────────────────────────────
+   레퍼런스의 `GOALS: -PUSH-UPS [0/100]` 카드와 개발사 가이드의 한 줄이 같은 말을 한다 —
+   "A useful quest says what counts as complete and can be judged without negotiation."
+   완료가 **판단**이 아니라 **관찰**이 되면 시작 문턱과 자기 협상이 같이 사라진다.
+
+   문구를 새로 짓지 않는다. 네 꼴은 사전이 이미 갈라 둔 것(kind·countable·field)을 읽은
+   결과고, 무엇을 하는 미션인지는 `copy`가 제목 자리에서 이미 말한다.
+   ⚠ 안 세는 칸에 "사진 확인은 준비 중"을 여기 또 적지 않는다 — 같은 카드의 태그 줄이
+     이미 그 말을 하고 있다(questBtn의 `countable === false` 태그). */
+const FINISH = c =>
+    c.kind === "knowledge"  ? "문항을 맞히면 끝납니다"
+  : c.kind === "item"       ? "옷장에 담으면 끝납니다"
+  : c.countable && c.field  ? "다시 촬영해서 달라진 것이 확인되면 끝납니다"
+  :                           "해보신 뒤 「해봤어요」를 누르면 끝납니다";
+
+/* 세는 미션은 사진 두 장으로 끝난다 — 기준 한 장, 확인 한 장. 그래서 셀 수 있는 것은
+   가진 장수뿐이고 그게 곧 `a.before`의 유무다. 진행률(%)을 계산하지 않는다:
+   분모를 지어내는 순간 결승선이 다시 판단이 된다.
+   나머지 종류는 한 번에 끝나 셀 것이 없다 — 0/1을 적으면 없는 단계를 만든 셈이 된다. */
+const finishCount = (c, a) =>
+  (c.kind === "skill" && c.countable && c.field) ? `사진 ${a?.before ? 1 : 0}/2` : ``;
+
+const INFO_SVG = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+    stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11.2v4.6M12 8.2v.1"></path></svg>`;
+
+const finishLine = (c, a) => { const n = finishCount(c, a);
+  return `<div class="fin">${INFO_SVG}<span>완료 조건 — ${FINISH(c)}</span>${
+    n ? `<b>${n}</b>` : ``}</div>`; };
+
+/* ── MS-04 · 처방 근거 한 줄 ──────────────────────────────────
+   레퍼런스의 최대 신뢰 붕괴 지점("개인화는 거짓말")을 뒤집는 자리다. 우리 처방은 실제로
+   측정에서 나오므로, 근거를 적는 것 자체가 그쪽이 못 하는 일이다.
+
+   ⚠ 결핍이 아니라 **행동**을 지목한다(판정 통합 확정 조건).
+     (X) 웜·곡선 쪽 간격이 가장 컸습니다 → (O) 이번에 손대기 좋은 곳은 눈매입니다.
+     매번 최대 결핍을 짚으면 그 반복 자체가 자기대상화를 만든다(동기심리 렌즈).
+   ⚠ M축 라벨(`동안`·`성숙`)은 화면에 올리지 않는다. 사전의 M축 유저향 라벨이 그대로
+     나이 프레이밍이라 40대 강의 참가자에게 직격이다. M축 칸은 부위명까지만 말한다.
+     이 회피를 **전 화면 상시 규칙으로 성문화하는 것은 대표 결정 대기**다 — 여기서는
+     코드로 막고, 문체가이드에는 재가 대기 제안으로만 올려 뒀다.
+   ⚠ 없는 근거를 짓지 않는다. 축이 없는 칸(아이템 99칸·봉인 3칸)과 좌표를 안 움직이는
+     지식 칸에는 이 줄이 서지 않는다. */
+const AXIS_SHOWN = new Set(["T", "D"]);      // M은 라벨을 읽지도 않는다
+function whyLine(c){
+  if (!c || c.kind === "knowledge" || !c.axis) return ``;
+  const part = DICT.items.find(i => i.key === c.item)?.label;
+  if (!part) return ``;
+  const ax = AXIS_SHOWN.has(c.axis) && c.dir
+    ? DICT.axes?.[c.axis]?.[c.dir === "+" ? "plus" : "minus"] : null;
+  // 축은 서술로 한 번 더 풀지 않고 명사로 맺는다 — 안 그러면 이 줄과 앞 줄이 ~니다로
+  // 세 번 이어져 한 화면에서 같은 어미가 겹친다(문체가이드 §6-2).
+  return `<div class="fin why"><span>처방 근거 — 이번에 손대기 좋은 곳은 ${esc(part)}입니다.${
+    ax ? ` 방향은 ${esc(ax)}.` : ``}</span></div>`;
+}
+
 // 미션 한 칸을 목록용 버튼으로. 홈과 목록이 같은 모양을 쓴다.
 const questBtn = (c, i) => `<button class="q" data-id="${c.id}" data-i="${i}">
     <div class="t">${esc(c.copy)}</div>
+    ${finishLine(c)}
     <div class="m">
       ${kindTag(c)}
       ${CZMStats.previewGain(c) && tName(CZMStats.targetType(USER(), c))
@@ -2298,7 +2398,27 @@ function judgeBlocked(reason, cause, next){
   return true;
 }
 
-// 재촬영을 마치고 돌아왔을 때 부호를 본다 (photo-module이 chugu_photo_result를 갱신한다)
+/* ── 보류(hold) 화법 ─────────────────────────────────────────
+   보류는 관대화가 아니라 **유보**다. 판정을 무르게 만들지 않는다 — 측정이 무엇을 못 봤는지
+   사실만 말하고, 결과·부호는 예고하지 않는다. 다음에 할 일만 남긴다.
+   한 줄은 스무 자 안쪽으로 맞춘다 — 332px 상자에서 그 이상은 구절 한가운데서 접힌다(실측).
+   그래서 다른 시스템 줄과 같은 명사 종결로 쓴다. */
+const HOLD_WHY = {
+  unmeasured:          "사유 — 해당 부위를 측정하지 못함",
+  baseline_unmeasured: "사유 — 기준 사진에서 측정하지 못함",
+  few_observations:    "사유 — 비교할 지난 촬영분 부족",
+  within_own_band:     "사유 — 평소 오르내리는 폭 안의 변화",
+};
+/* VF-10 — 완화 한 줄은 **첫 보류에만** 쓴다. 반복 보류에 같은 말을 되풀이하면
+   위로가 아니라 회피로 읽힌다. 기기 한 칸이면 충분해 서버로 올리지 않는다. */
+const HOLD_SEEN = "czm_hold_seen";
+// 같은 사진으로 두 번 판정하지 않기 위한 표식. ts는 photo.html이 저장할 때 찍는다(:2144).
+const shotKey = m => m?.ts ?? (m ? JSON.stringify(m) : null);
+// 부위 이름은 사전이 갖고 있다 — 화면에서 새로 짓지 않는다.
+const partName = c => DICT.items.find(i => i.key === c.item)?.label ?? null;
+const shotDay = m => (m?.ts ? `${new Date(m.ts).getMonth() + 1}월 ${new Date(m.ts).getDate()}일` : null);
+
+// 재촬영을 마치고 돌아왔을 때 무엇이 달라졌는지 본다 (photo-module이 chugu_photo_result를 갱신한다)
 function tryJudge(){
   const a = st.active; if (!a) return false;
   const c = cell(a.id); if (!c || c.kind !== "skill" || !c.field) return false;
@@ -2324,8 +2444,15 @@ function tryJudge(){
       ? judgeBlocked("same_as_before", "기준 사진 이후로 새로 측정된 값이 없습니다.",
                      "한 장 더 찍고 오시면 달라진 곳을 짚어드릴게요.")
       : false;
+  /* 보류로 끝난 미션은 목록에 그대로 남는다(그게 유보의 뜻이다). 그러면 홈에 들어올 때마다
+     같은 사진으로 이 자리를 다시 지나가는데, 그때마다 판정 창을 또 띄우면 홈에 못 들어간다.
+     한 번 판정한 사진이면 조용히 지나간다 — 다음 촬영이 오면 ts가 바뀌어 다시 열린다. */
+  if (a.judged != null && a.judged === shotKey(now)) return false;
 
   const v = judgeSkill(c, a.before, now);
+  // VF-10 — 이 유저의 첫 보류인가. 화면을 그리기 전에 정해 둔다(계측에도 같은 값이 실린다).
+  const firstHold = v.verdict === "hold" && !LS.get(HOLD_SEEN, false);
+  if (v.verdict === "hold") LS.set(HOLD_SEEN, true);
   /* 재현성 밴드(측정이 얼마나 흔들리는가)를 낼 유일한 재료다(VF-29). 3상태 판정·보스 판정이
      전부 이 한 줄에 걸려 있다 — 오늘 안 심으면 12주 뒤에도 재료가 없다.
      원 변화량(delta)은 events에 싣지 않는다: field와 함께 쌓이면 부위별 시계열이 여기서
@@ -2334,10 +2461,21 @@ function tryJudge(){
      없어서, 상수를 창작하느니 칸을 비워 두는 편이 낫다. 밴드가 나오면 그때 mag을 얹는다. */
   track("judge_result", {verdict: v.verdict, field: v.field ?? null,
                          dir: v.delta == null ? null : Math.sign(v.delta),
-                         quest_id: a.id, offer_id: a.offer_id});
-  track("quest_completed", {held_days: heldDays(a),
-                            offer_id:a.offer_id, quest_id:a.id, kind:"skill",
-                            field:v.field ?? null, sign_match:v.sign_match, countable:!!c.countable});
+                         quest_id: a.id, offer_id: a.offer_id,
+                         /* 보류 사유별 발생·복귀율이 3상태의 유일한 관측 창구다.
+                            결측(unmeasured)의 더 좁은 원인 — 이마 게이트·헤어라인 미검출 —은
+                            photo.html이 소유하므로, 여기서는 이미 저장분에 실려 있는 품질 깃발만
+                            같이 싣는다. 이 두 칸이 없으면 "왜 못 읽었나"를 영영 못 가른다. */
+                         ...(v.verdict === "hold"
+                             ? {hold_reason: v.hold_reason, first_hold: firstHold,
+                                forehead_used: now?.quality?.forehead_used ?? null,
+                                hairline_detected: now?.quality?.hairline_detected ?? null}
+                             : {})});
+  // 보류는 완료가 아니다 — 미션이 목록에 남아 있는데 완료를 세면 루프 퍼널이 두 번 센다.
+  if (v.verdict !== "hold")
+    track("quest_completed", {held_days: heldDays(a),
+                              offer_id:a.offer_id, quest_id:a.id, kind:"skill",
+                              field:v.field ?? null, sign_match:v.sign_match, countable:!!c.countable});
   // 결과 시점 과금(헌법 §1)의 훅 — **변화가 확인된 바로 이 순간**이다.
   // countable 밖에 둔다: countable은 스탯을 적립할지의 문제고, 여기는 "실제로 변했나"라
   // 축이 다르다. 지금부터 쌓여야 나중에 "전환 제안 자격 유저"를 셀 수 있다(전략팀 R2).
@@ -2360,12 +2498,55 @@ function tryJudge(){
                             source_kind:"auto_detect", attrs:{field:v.field, delta:v.delta}, ...g});
     track("stat_added", {kind:"skill", ref:c.id, source_kind:"auto_detect", ...g});
   }
-  renderDone("확인",
-    v.verdict === "done" ? "방향이 맞게 움직였어요."
-                         : "이번엔 사진에서 방향이 잡히지 않았어요.",
-    g,
-    v.verdict === "done" ? "다음 미션은 홈에 준비돼 있어요."
-                         : "해본 건 그대로 남습니다. 실패로 세지 않아요.");
+
+  // ── 3상태 화면 (VF-08·10·11·13) ────────────────────────────
+  const base = shotDay(a.before), part = partName(c);
+  const ref  = base ? `비교 기준 — ${base} 촬영분` : null;
+
+  if (v.verdict === "hold") {
+    /* 미션을 닫지 않는다 — 그래서 renderDone(닫고 알림을 끈다)을 쓰지 않고 직접 그린다.
+       보류는 "이번 사진으로는 확정하지 않는다"이고, 다음 촬영이 그 판정을 이어받는다. */
+    /* 기준 사진이 그 부위를 못 읽었다면 기준을 지금 사진으로 옮긴다. 안 그러면 그 미션은
+       어떤 촬영으로도 안 풀린다 — 비교 한쪽이 영영 비어 있어 보류만 반복하는 막다른 길이 된다.
+       옮겨도 잃는 것이 없다: 애초에 비교할 수 있는 기준이 없었다. */
+    st.active = {...a, judged: shotKey(now),
+                 before: v.hold_reason === "baseline_unmeasured" ? now : a.before};
+    renderHome();
+    reward("판정 보류",
+      "이번 사진만으로는 확정하지 않았어요. 다음 촬영에서 이어서 봅니다.", g,
+      // VF-10 원안의 "처음이라 놀라셨을 수 있어요"는 뺐다 — 유저의 감정을 우리가 대신
+      // 정하는 문장이라 문체가이드 안티패턴 7에 걸린다. 우리가 왜 미뤘는지만 말한다.
+      firstHold ? "확실하지 않은 것을 확실하다고 말하지 않으려는 거예요. 다음 사진에서 답이 나옵니다." : "",
+      {variant:"hold",
+       sys:["기록 유지 — 감소 없음", HOLD_WHY[v.hold_reason], "미션 유지 — 다음 촬영까지"]});
+    return true;
+  }
+
+  if (v.verdict === "done") {
+    renderDone("측정 완료", "사진에 달라진 곳이 나왔어요.", g,
+      "거울 볼 때 어, 좀 다른데? 싶던 느낌이 오늘 숫자로 남았습니다.",
+      {variant:"done", sys:[ref, part ? `갱신 1 — ${part}` : "갱신 1"]});
+    return true;
+  }
+
+  /* VF-13 — 「아직」의 상승 경로. 여기서 화면을 닫아버리면 미완료를 받은 유저에게 남는 것이
+     닫기 버튼 하나뿐이다. 가산의 근거는 복귀가 아니라 **재촬영이 실제로 일어나 측정된 사실**
+     이므로(czm-stats.js:117 `e.photo_submitted`), 문구도 사진을 근거로 말한다. */
+  const again = () => {
+    track("judge_next", {choice:"same_again", quest_id:a.id, offer_id:a.offer_id});
+    // 기준을 방금 찍은 사진으로 옮겨 다시 연다 — 여기서부터 다시 본다.
+    st.actives = [...st.actives.filter(x => x.id !== a.id),
+                  {id:a.id, offer_id:a.offer_id, started:new Date().toISOString(),
+                   before:now, target_type:a.target_type}];
+    setCur(a.id); renderHome();
+  };
+  renderDone("측정 완료",
+    "이번 사진에서는 달라진 것이 확인되지 않았어요. 해보신 것은 그대로 남습니다.", g,
+    "다시 찍으신 사진 한 장이 스탯 한 칸이 됐어요.",
+    {variant:"not_yet", sys:[ref, "갱신 0", "기록 유지 — 감소 없음"],
+     ok:"다음 미션 보기",
+     onOk:() => track("judge_next", {choice:"next", quest_id:a.id, offer_id:a.offer_id}),
+     more:{label:"같은 미션 한 번 더", fn:again}});
   return true;
 }
 
@@ -2423,8 +2604,73 @@ function outfitCheck(pal){
   ];
 }
 
+/* 3상태 판정 화면 자체 점검 (VF-08·VF-11) — 이 자리가 조용히 깨지는 방식은 하나다:
+   엔진이 보류 사유를 내는데 화면에 그 문구가 없어서 「사유」 줄만 소리 없이 빠지는 것.
+   화면에는 "그냥 한 줄 없음"으로 보여 눈으로는 못 잡는다(옷장 점검과 같은 유형). */
+function judgeCheck(){
+  const cell = DICT.cells.find(c => c.id === "eye.T+");
+  const at   = v => ({eye_angle: v});
+  // 과거 4벌(0·1·2·3)을 붙인다 — 연속 차가 1,1,1이라 이 유저의 밴드는 1이다.
+  const reel = a => ({...a, shots:[at(0), at(1), at(2), at(3), a]});
+  const held = [
+    judgeSkill(cell, at(1), {}),              // 이번 사진 결측
+    judgeSkill(cell, {}, reel(at(2))),        // 기준 사진 결측
+    judgeSkill(cell, at(1), at(2)),           // 과거 관측 없음
+    judgeSkill(cell, at(1), reel(at(1.2))),   // 밴드(1) 안의 변화
+  ];
+  const noCopy = held.filter(r => !HOLD_WHY[r.hold_reason]).map(r => r.hold_reason ?? r.verdict);
+  return [
+    {name:"보류 4경로가 전부 보류로 떨어진다", pass: held.every(r => r.verdict === "hold"),
+     detail: held.map(r => r.hold_reason ?? r.verdict).join(",")},
+    {name:"보류 사유마다 화면 문구가 있다", pass: noCopy.length === 0, detail: noCopy.join(",")},
+    {name:"보류는 부호를 말하지 않는다", pass: held.every(r => r.sign_match === null)},
+    {name:"밴드를 넘으면 그때 판정이 나온다",
+     pass: judgeSkill(cell, at(1), reel(at(3))).verdict === "done", detail:"밴드 1 · delta 2"},
+    {name:"시스템 창은 빈 줄을 그리지 않는다",
+     pass: sysBox([null, "", "갱신 0"]).split("<span").length === 2},
+  ];
+}
+
+/* 결승선·근거 한 줄 자체 점검 (MS-01·MS-04).
+   이 자리가 조용히 깨지는 방식은 둘이다 —
+   ① 사전에 새 kind가 생겼는데 4템플릿이 못 받아 완료 조건 줄이 빈 채로 선다.
+   ② M축 칸의 근거 줄에 `동안`·`성숙`이 새어 나온다. 둘 다 화면에는 "그냥 그런가 보다"로
+      보여서 눈으로는 못 잡는다. ②는 눈에 보여도 잘못인 줄 모른다는 게 더 나쁘다. */
+function missionCheck(){
+  const offered = DICT.cells.filter(c => c.offer && c.copy);
+  // 지식 칸은 축을 물려받지만 근거 줄이 서지 않는다(좌표를 안 움직인다) — 여기서 빼야
+  // 「M축도 부위명은 말한다」가 빈 문자열을 통과로 세지 않는다.
+  const M = DICT.cells.filter(c => c.axis === "M" && c.kind !== "knowledge");
+  const mLabels = [DICT.axes?.M?.minus, DICT.axes?.M?.plus].filter(Boolean);
+  const leak = M.filter(c => mLabels.some(l => whyLine(c).includes(l))).map(c => c.id);
+  const noFin = offered.filter(c => !FINISH(c)).map(c => c.id);
+  const skill = offered.find(c => c.kind === "skill" && c.countable && c.field);
+  const item  = offered.find(c => c.kind === "item");
+  const td    = offered.find(c => c.axis === "T" || c.axis === "D");
+  return [
+    {name:"발행되는 칸은 전부 완료 조건 한 줄을 받는다",
+     pass: noFin.length === 0, detail: noFin.slice(0, 5).join(",")},
+    {name:"★ M축 근거 줄에 나이 라벨이 새지 않는다",
+     pass: leak.length === 0, detail: leak.slice(0, 5).join(",") || `M축 ${M.length}칸 · 라벨 ${mLabels.join("·")}`},
+    {name:"M축 칸도 부위명까지는 말한다",
+     pass: !M.length || M.every(c => whyLine(c).includes("손대기 좋은 곳"))},
+    {name:"축이 없는 칸엔 근거를 지어내지 않는다",
+     pass: !item || whyLine(item) === "", detail: item?.id ?? "아이템 칸 없음"},
+    {name:"지식 칸엔 근거 줄이 서지 않는다",
+     pass: whyLine({kind:"knowledge", axis:"T", dir:"+", item:"eye"}) === ""},
+    {name:"T·D축은 축 라벨까지 적는다",
+     pass: !td || whyLine(td).includes(DICT.axes[td.axis][td.dir === "+" ? "plus" : "minus"]),
+     detail: td?.id ?? "T·D 칸 없음"},
+    {name:"세는 미션만 사진 카운터를 단다",
+     pass: !!skill && finishCount(skill, null) === "사진 0/2"
+           && finishCount(skill, {before:{}}) === "사진 1/2"
+           && (!item || finishCount(item, {before:{}}) === "")},
+  ];
+}
+
 async function renderCheck(){
-  const rows = [...selfCheck(DICT), ...outfitCheck(await palette())];
+  const rows = [...selfCheck(DICT), ...judgeCheck(), ...missionCheck(),
+                ...outfitCheck(await palette())];
   const bad = rows.filter(r => !r.pass).length;
   app.innerHTML = shell({
     top: head("자체 점검"),

@@ -154,15 +154,56 @@ function pack(status, axis, gap, cells, excluded) {
   };
 }
 
+// ── 자기표본 상대 문턱 (VF-08) ───────────────────────────────
+/* 이론팀의 측정 흔들림 밴드가 아직 없다. 그렇다고 부호만 보면, 참 변화가 측정 오차보다
+   작은 유저에게 done(+2)과 not_yet(+1)이 사실상 동전 던지기가 된다 — 헌법 §4가 금지한
+   확률형 보상이 판정기 뒷문으로 들어오는 자리다(적대 검증 A-1).
+
+   문턱을 지어내는 대신 **그 유저 본인의 과거 |delta| 중앙값**을 쓴다. 상수가 아니라 표본이라
+   창작이 아니고, 이론 밴드가 발행되면 이 함수만 갈아끼우면 된다.
+
+   표본은 이미 기기에 있다 — `chugu_photo_result.shots`(최근 24벌, photo.html:2188).
+   따로 적립 통로를 만들지 않는다: stat_entries 사본에는 **등급이 오른 판정만** 행이 남아서
+   (gainFor가 중복 지급을 막으면 attrs도 같이 사라진다) 표본이 조용히 비는 자리가 생긴다.
+
+   ⚠ 필드별로 따로 센다. 같은 |delta| 1이 eye_angle(도)에서는 큰 변화이고 chroma에서는
+      측정 노이즈다 — 필드를 섞어 중앙값을 내면 그 순간 문턱이 물리적으로 무의미해진다.
+   ⚠ 마지막 짝(…→ 지금 판정할 사진)은 표본에서 뺀다. 지금 재는 변화가 제 문턱을 만들면 안 된다. */
+export function ownBand(after, field) {
+  const shots = Array.isArray(after?.shots) ? after.shots : [];
+  const v = shots.map(s => readField(s, field));
+  const d = [];
+  for (let i = 1; i < v.length - 1; i++)
+    if (v[i - 1] !== null && v[i] !== null) d.push(Math.abs(v[i] - v[i - 1]));
+  if (d.length < 3) return null;                  // 관측 n<3 — 문턱을 낼 표본이 없다(전부 보류)
+  d.sort((x, y) => x - y);
+  const h = d.length >> 1;
+  return d.length % 2 ? d[h] : (d[h - 1] + d[h]) / 2;
+}
+
 // ── 완료 판정 ────────────────────────────────────────────────
-// §2-1 성공 = 처방 방향과 같은 부호로 변했다. 크기 문턱 없음 — 문턱은 상수 창작이다.
+/* §2-1 성공 = 처방 방향과 같은 부호로 변했다. 여기에 보류(hold)를 더해 3상태가 된다.
+   보류는 관대화가 아니라 **유보**다 — 판정을 무르게 만드는 것이 아니라 "이번 사진으로는
+   확정하지 않는다"이고, 기록은 감소 없이 그대로 남는다. 사유는 hold_reason으로 갈린다:
+     unmeasured          이번 사진에서 그 부위를 측정하지 못함(이마 게이트·mouth_open 게이트 포함)
+     baseline_unmeasured 기준 사진 쪽이 결측
+     few_observations    그 필드의 과거 관측 n<3 — 문턱을 낼 표본이 없다
+     within_own_band     변화가 그 유저 본인의 평소 흔들림 폭 안 */
 export function judgeSkill(cell, before, after) {
   if (!cell.field) return { verdict: "uncountable", reason: "완료 판정 필드 없음", sign_match: null };
   const b = readField(before, cell.field), a = readField(after, cell.field);
-  if (b === null || a === null) return { verdict: "unmeasured", reason: "측정값 결측", sign_match: null };
+  const hold = (why, delta = null) =>
+    ({ verdict: "hold", hold_reason: why, field: cell.field, delta, sign_match: null });
+  // 이번 사진 쪽을 먼저 본다 — 흔한 쪽이고, 소비처가 기준 결측일 때만 기준을 옮겨 잡는다
+  // (기준 사진이 그 부위를 못 읽은 채로 두면 이후 어떤 촬영도 그 미션을 못 푼다).
+  if (a === null) return hold("unmeasured");
+  if (b === null) return hold("baseline_unmeasured");
   const delta = a - b;
+  const band = ownBand(after, cell.field);
+  if (band === null)            return hold("few_observations", delta);
+  if (Math.abs(delta) < band)   return hold("within_own_band", delta);
   const want = cell.field_dir === "+" ? 1 : -1;
-  const sign_match = Math.sign(delta) === want;   // delta 0이면 불일치 — 변하지 않은 것은 성공이 아니다
+  const sign_match = Math.sign(delta) === want;   // delta 0은 위 밴드에서 이미 보류로 빠진다
   return { verdict: sign_match ? "done" : "not_yet", field: cell.field, delta, sign_match };
 }
 
@@ -219,28 +260,66 @@ export function selfCheck(dict) {
   t("진행 중이어도 학습 짝 칸은 병행된다 (지식이 있을 때)",
     !dict.cells.some(c => c.kind === "knowledge") || busy.cells.length > 0);
 
+  /* 판정 사료에는 **과거 촬영분(shots)이 붙어 있어야 한다** — VF-08 이후 그것이 문턱의 표본이다.
+     붙이지 않으면 전부 보류로 떨어진다(그것도 아래에서 따로 시험한다).
+     make(v)는 그 필드가 v가 되도록 한 벌을 짓는다 — 파생 필드는 원자재로 지어야 읽힌다.
+     과거 4벌의 연속 차가 표본이고(마지막 짝은 제외) 그 중앙값이 밴드라, step이 곧 밴드다. */
+  const hist = (after, make, step) => ({ ...after,
+    shots: [0, 1, 2, 3].map(i => make(i * step)).concat([after]) });
+  const eyeAt  = v => ({ eye_angle: v });
+  const lipAt  = v => ({ lip_upper: v, lip_lower: 0 });
+  const hairAt = v => ({ color: { hair_L: v * 60, skinL: 60 } });   // hair_L_ratio = v
+
   const cell = dict.cells.find(c => c.id === "eye.T+");            // field_dir "+"
-  t("부호가 맞으면 완료", judgeSkill(cell, { eye_angle: 1 }, { eye_angle: 2 }).verdict === "done");
-  t("부호가 반대면 미완료", judgeSkill(cell, { eye_angle: 2 }, { eye_angle: 1 }).verdict === "not_yet");
-  t("변화 0은 완료가 아니다", judgeSkill(cell, { eye_angle: 1 }, { eye_angle: 1 }).verdict === "not_yet");
-  t("아주 작은 변화도 완료 — 크기 문턱 없음",
-    judgeSkill(cell, { eye_angle: 1 }, { eye_angle: 1.0001 }).verdict === "done");
+  const eye = (b, a, step = 0.1) => judgeSkill(cell, { eye_angle: b }, hist({ eye_angle: a }, eyeAt, step));
+  t("부호가 맞으면 완료", eye(1, 2).verdict === "done");
+  t("부호가 반대면 미완료", eye(2, 1).verdict === "not_yet");
+  t("변화 0은 완료가 아니다", eye(1, 1).verdict !== "done", eye(1, 1).verdict);
+  // ★ VF-08 — 여기가 옛 단언("아주 작은 변화도 완료")을 뒤집은 자리다.
+  //   문턱 없이 부호만 보면 노이즈가 완료/미완료를 반씩 가져간다(헌법 §4 확률형 보상).
+  t("★ 자기 문턱보다 작은 변화는 보류다",
+    eye(1, 1.0001).verdict === "hold" && eye(1, 1.0001).hold_reason === "within_own_band",
+    JSON.stringify(eye(1, 1.0001)));
+  t("문턱을 넘으면 그때 판정이 나온다", eye(1, 1.3).verdict === "done", "밴드 0.1 · delta 0.3");
   t("파생 필드가 계산된다",
     judgeSkill(dict.cells.find(c => c.id === "lip.T-"),
-      { lip_upper: 1, lip_lower: 1 }, { lip_upper: 1.2, lip_lower: 1 }).verdict === "done");
+      { lip_upper: 1, lip_lower: 1 },
+      hist({ lip_upper: 1.2, lip_lower: 1 }, lipAt, 0.01)).verdict === "done");
   t("필드 없는 칸은 판정하지 않는다",
     judgeSkill(dict.cells.find(c => c.id === "hair.T"), {}, {}).verdict === "uncountable");
 
+  // ── VF-08 보류 3상태 ──────────────────────────────────────
+  t("관측 n<3이면 보류다 — 문턱을 낼 표본이 없다",
+    judgeSkill(cell, { eye_angle: 1 }, { eye_angle: 9 }).hold_reason === "few_observations");
+  t("관측이 2벌뿐이어도 보류다",
+    judgeSkill(cell, { eye_angle: 1 },
+      { eye_angle: 9, shots: [eyeAt(0), eyeAt(1), { eye_angle: 9 }] }).hold_reason === "few_observations",
+    "연속 차 3개가 모이기 전");
+  t("이번 사진에서 그 부위를 못 읽으면 보류다",
+    judgeSkill(cell, { eye_angle: 1 }, { }).hold_reason === "unmeasured");
+  t("기준 사진 쪽 결측은 사유가 다르다",
+    judgeSkill(cell, { }, hist({ eye_angle: 2 }, eyeAt, 0.1)).hold_reason === "baseline_unmeasured");
+  t("보류는 기록을 깎지 않는다 — 부호를 말하지 않는다",
+    eye(1, 1.0001).sign_match === null);
+  // ★ 필드를 섞으면 문턱이 물리적으로 무의미해진다. 다른 필드 표본은 이 필드에 안 들어온다.
+  t("★ 문턱은 필드별로 따로 센다",
+    ownBand({ shots: [0, 1, 2, 3, 4].map(i => ({ eye_angle: i, color: { chroma: i * 50 } })) },
+            "eye_angle") === 1);
+  t("마지막 짝(지금 판정할 변화)은 표본에서 빠진다",
+    ownBand({ shots: [eyeAt(0), eyeAt(1), eyeAt(2), eyeAt(3), eyeAt(99)] }, "eye_angle") === 1,
+    "99로 튄 마지막 한 벌이 제 문턱을 만들지 않는다");
+
   // 헤어 명도는 비율로 본다(이론 C3). 원값을 쓰면 조명만 밝아져도 "밝게 했다"가 된다.
   const hairCell = dict.cells.find(c => c.id === "hair.M-");   // field_dir "+" = 밝아져야 완료
-  const hs = (hair, skin) => ({ color:{ hair_L:hair, skinL:skin } });
+  const hs  = (hair, skin) => ({ color:{ hair_L:hair, skinL:skin } });
+  const hsH = (hair, skin) => hist(hs(hair, skin), hairAt, 0.01);   // 밴드 0.01
   t("헤어를 실제로 밝게 하면 완료",
-    judgeSkill(hairCell, hs(20, 60), hs(24, 60)).verdict === "done");
+    judgeSkill(hairCell, hs(20, 60), hsH(24, 60)).verdict === "done");
   t("★ 방만 밝아진 것은 완료가 아니다 (노출 게인이 소거된다)",
-    judgeSkill(hairCell, hs(20, 60), hs(24, 72)).verdict === "not_yet",
+    judgeSkill(hairCell, hs(20, 60), hsH(24, 72)).verdict !== "done",
     "머리·피부가 같은 비율로 밝아진 경우");
   t("헤어를 어둡게 하면 M+ 쪽이 완료",
-    judgeSkill(dict.cells.find(c => c.id === "hair.M+"), hs(20, 60), hs(16, 60)).verdict === "done");
+    judgeSkill(dict.cells.find(c => c.id === "hair.M+"), hs(20, 60), hsH(16, 60)).verdict === "done");
 
   // ★ photo-module이 실제로 저장하는 형태로 판정한다.
   //   평탄한 가짜 객체로만 시험하면 단위 시험은 다 통과하는데 실물에서 전부
@@ -249,10 +328,14 @@ export function selfCheck(dict) {
     ratio:{lip_upper:1.0, lip_lower:1.0, eye_len:0.30, brow_eye_gap:0.05},
     line:{eye_angle:eye, brow_arch_deg:12, eye_open:0.25},
     color:{skinL:60, hue:50, chroma, contrast:40} });
+  // 실물 저장분은 shots를 스스로 들고 다닌다(photo.html:2188 — 최근 24벌). 그대로 물린다.
+  const reel = (...ms) => ({ ...ms[ms.length - 1], shots: ms });
   t("실제 저장 형태(ratio/line 중첩)로 판정된다",
-    judgeSkill(dict.cells.find(c => c.id === "eye.T-"), shot(3, 18), shot(2, 18)).verdict === "done");
+    judgeSkill(dict.cells.find(c => c.id === "eye.T-"), shot(3, 18),
+      reel(shot(3, 18), shot(3.1, 18), shot(3.2, 18), shot(3.3, 18), shot(2, 18))).verdict === "done");
   t("color는 이름까지 갈아끼워야 읽힌다(chroma·hue_angle)",
-    judgeSkill(dict.cells.find(c => c.id === "color.D-"), shot(3, 18), shot(3, 15)).verdict === "done");
+    judgeSkill(dict.cells.find(c => c.id === "color.D-"), shot(3, 18),
+      reel(shot(3, 18), shot(3, 18.2), shot(3, 18.4), shot(3, 18.6), shot(3, 15))).verdict === "done");
   t("실제 형태에서 파생 필드도 읽힌다",
     readField(shot(3, 18), "eye_openness") !== null && readField(shot(3, 18), "lip_sum") === 2);
 
